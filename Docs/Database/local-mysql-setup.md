@@ -1,6 +1,6 @@
 # 本机MySQL接入说明
 
-状态：代码接缝已完成；本机`mysqld`正在监听`3306`，真实凭据尚未注入进程
+状态：本机迁移与真实连接验证已完成
 
 ## 安全边界
 
@@ -28,3 +28,11 @@
 6. 启动Host并调用`/health/ready`验证数据库探针。
 
 初始迁移`Server/migrations/0001_p0_identity.sql`只创建`schema_migrations`、`accounts`和`player_profiles`，不会删除旧表。账号密码只预留Argon2id哈希、独立Salt和参数字段，不保存明文密码。
+
+## 验证结果
+
+- `0001_p0_identity.sql`已成功执行，并再次幂等执行通过。
+- 实际核对到3张P0表，`schema_migrations`中存在版本`0001`。
+- Host `/health/live`返回200。
+- `/health/ready`中的数据库状态为`MySQL reachable`；整体仍返回503，因为认证后的LegacyNetworkV1适配尚未接入。
+- 真实连接串保存在已忽略的本机`.env`中，Git仓库只保留占位模板。
