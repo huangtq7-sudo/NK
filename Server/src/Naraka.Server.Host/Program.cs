@@ -2,11 +2,14 @@ using Naraka.Server.Application.Health;
 using Naraka.Server.Application.Modules;
 using Naraka.Server.Application.Networking;
 using Naraka.Server.Infrastructure.Health;
+using Naraka.Server.Infrastructure.Persistence;
 using Naraka.Server.LegacyNetworkV1;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<IDatabaseHealthProbe, EnvironmentDatabaseHealthProbe>();
+builder.Services.AddSingleton<IMySqlConnectionStringSource, EnvironmentMySqlConnectionStringSource>();
+builder.Services.AddSingleton<SqlSugarClientFactory>();
+builder.Services.AddSingleton<IDatabaseHealthProbe, MySqlDatabaseHealthProbe>();
 builder.Services.AddSingleton<ILegacyNetworkTransport, LegacyNetworkTransport>();
 
 var app = builder.Build();

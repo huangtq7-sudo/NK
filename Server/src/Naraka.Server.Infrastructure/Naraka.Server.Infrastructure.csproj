@@ -5,6 +5,13 @@
     <ProjectReference Include="..\Naraka.Server.Domain\Naraka.Server.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+    <!-- SqlSugarCore pulls 2.1.11 transitively; 2.1.13 is the compatible patched 2.x line. -->
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.13" />
+    <PackageReference Include="SqlSugarCore" Version="5.1.4.217" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
