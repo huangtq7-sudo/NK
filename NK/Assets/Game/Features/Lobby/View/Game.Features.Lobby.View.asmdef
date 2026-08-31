@@ -1,0 +1,15 @@
+{
+  "name": "Game.Features.Lobby.View",
+  "rootNamespace": "Naraka.Features.Lobby.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Lobby.Controller",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Game.Features.Lobby.Model",
+  "rootNamespace": "Naraka.Features.Lobby.Model",
+  "references": [
+    "Game.Core.Domain"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

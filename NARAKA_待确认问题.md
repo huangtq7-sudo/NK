@@ -22,7 +22,7 @@
 - 客户端来源：`E:\ClientProject\Assets\Scripts`。
 - 服务端来源：`D:\培训项目\7.21net\SimpleServer`，原项目目标框架为.NET Framework 4.6.1。
 - 决策：协议和运行行为冻结；新服务端使用.NET 10 LTS，通过Golden Files验证后接入`LegacyNetworkV1`适配边界。
-- 执行结果：Host已监听`127.0.0.1:8011`，已完成真实Socket握手、注册、登录与心跳自动化验证；Unity端冒烟属于P0下一项实施任务，不再是待确认事项。
+- 执行结果：Host已监听`127.0.0.1:8011`，已完成真实Socket握手、注册、登录与心跳自动化验证；Unity Account MVC也已对本机Host/MySQL完成真实注册登录冒烟。
 
 ### Q-004 仓库结构
 

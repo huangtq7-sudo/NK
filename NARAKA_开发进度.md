@@ -13,7 +13,7 @@
 - 英雄、技能、武器、10类怪物、任务六章、物品、经济、宠物、天气和多人移动规则已经具备首版数值基线。
 - 地图美术和正式空间布局暂不设计，等待用户提供地图素材。
 - 正式Unity工程位于`E:\NK项目\NK`，版本锁定为`2021.3.45f2c1`；P0客户端和服务端骨架已经建立。
-- 当前已完成MySQL/SqlSugar、Argon2id账号业务和真实LegacyNetworkV1 Socket接入；Unity客户端登录冒烟、空大厅和CI尚未完成，P0未达到退出条件。
+- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、真实客户端登录冒烟和空大厅；配置版本检查、MessagePipe/R3实现和CI尚未完成，P0未达到退出条件。
 
 ## 2. 已有成果
 
@@ -54,7 +54,8 @@
 - 建立MVC接口、MessagePipe/R3抽象接缝、`INetworkFacade`、`MockNetworkFacade`和`LegacyNetworkAdapter`边界。
 - 建立VContainer Composition Root、URP自动配置工具并写入启动场景。
 - 建立.NET 10 LTS模块化单体服务端Solution、健康端点、模块清单、LegacyNetworkV1边界和架构测试。
-- Unity批处理配置返回码0；Unity EditMode测试2/2通过；服务端编译0警告0错误，架构测试4/4、Application测试5/5、LegacyNetworkV1测试21/21、Infrastructure测试10/10通过；NuGet直接和传递依赖漏洞审计为0。
+- Unity批处理配置返回码0；Unity EditMode回归7项通过、0失败、1项真实联网测试默认跳过，PlayMode启动场景测试1/1通过，单独启用的Unity→Host→MySQL真实注册登录冒烟1/1通过并已删除测试账号。
+- 服务端Release编译0警告0错误，架构测试4/4、Application测试5/5、LegacyNetworkV1测试21/21、Infrastructure测试10/10通过；NuGet直接和传递依赖漏洞审计为0。
 - 已配置仓库级Git提交者身份与GitHub `origin`，P0可验证基线已推送至远程`main`分支。
 - 已完成旧客户端与SimpleServer只读审计，保存源文件SHA-256清单、线格式说明和5条旧可执行文件生成的Golden向量。
 - 已建立.NET 10字节兼容的旧AES与组帧/拆帧实现，确认响应协议目录漂移、心跳间隔冲突和公网会话安全阻断项。
@@ -66,11 +67,15 @@
 - 已将protobuf DTO显式白名单、每连接随机会话密钥、粘包/半包、16MiB帧上限、循环完整发送、注册、登录、断连清理和心跳接入真实`Socket.Select`分发。
 - 已保持旧客户端和SimpleServer源码只读；旧客户端300秒心跳与旧服务端120秒判死的冲突在适配边界以360秒超时显式处理。
 - 已用本机MySQL启动正式Host；`/health/ready`返回200、数据库状态为`MySQL reachable`，`127.0.0.1:8011`实际TCP连接成功。
+- 已建立`Game.Features.Account.Model/Controller/View`和`Game.Features.Lobby.Model/Controller/View`六个独立程序集；View只读取PresentationState，Controller只通过`IAccountGateway`调用网络，旧DTO、AES、protobuf和Socket只存在Infrastructure。
+- 已将启动组合根从`MockNetworkFacade`切换到真实`LegacyNetworkAdapter`，接入每连接密钥握手、白名单反序列化、16MiB帧上限、连续收发、300秒心跳、请求超时与取消。
+- 已在启动场景生成1920×1080缩放基准的UI Toolkit登录界面和空大厅；这是P0功能界面，尚未导入和绑定已验收的正式UI美术资源。
 
 待完成：
 
 - 接入MessagePipe和兼容Unity 2021.3的R3实现，保持现有抽象接口不变。
-- 完成配置版本、登录冒烟、空大厅和基础CI。
+- 接入MessagePipe和兼容Unity 2021.3的R3实现，保持现有抽象接口不变。
+- 完成配置版本检查和基础CI。
 
 退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。
 
@@ -120,9 +125,9 @@
 
 继续P0，按以下顺序推进：
 
-1. 在正式Unity工程中把现有`LegacyNetworkAdapter`接到Account MVC，完成真实客户端握手、注册和登录冒烟。
-2. 接入MessagePipe/R3实现并建立空大厅。
-3. 建立客户端/服务端基础CI，确保Unity EditMode和.NET测试持续通过。
+1. 接入MessagePipe/R3的Unity 2021.3兼容实现，完成`ConfigVersion`和登录前版本检查。
+2. 建立客户端/服务端基础CI，确保Unity EditMode、PlayMode和.NET测试持续通过。
+3. 完成P0本机验收后，再准备阿里云Windows Host与云端MySQL部署。
 
 ## 5. 新对话续接提示词
 

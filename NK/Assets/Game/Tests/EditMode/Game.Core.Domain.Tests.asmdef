@@ -2,7 +2,14 @@
   "name": "Game.Core.Domain.Tests",
   "rootNamespace": "Naraka.Core.Domain.Tests",
   "references": [
-    "Game.Core.Domain"
+    "Game.Core.Application",
+    "Game.Core.Domain",
+    "Game.Features.Account.Controller",
+    "Game.Features.Account.Model",
+    "Game.Features.Lobby.Controller",
+    "Game.Features.Lobby.Model",
+    "Game.Infrastructure.Network",
+    "UniTask"
   ],
   "includePlatforms": [
     "Editor"
@@ -11,7 +18,8 @@
   "allowUnsafeCode": false,
   "overrideReferences": true,
   "precompiledReferences": [
-    "nunit.framework.dll"
+    "nunit.framework.dll",
+    "protobuf-net.dll"
   ],
   "autoReferenced": false,
   "defineConstraints": [

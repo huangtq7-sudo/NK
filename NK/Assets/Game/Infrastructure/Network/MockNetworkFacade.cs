@@ -7,7 +7,7 @@ using Naraka.Core.Domain;
 namespace Naraka.Infrastructure.Network
 {
     /// <summary>
-    /// P0 transport substitute. Replace at the composition root with LegacyNetworkAdapter.
+    /// Test-only transport substitute. The runtime composition root uses LegacyNetworkAdapter.
     /// </summary>
     public sealed class MockNetworkFacade : INetworkFacade
     {

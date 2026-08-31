@@ -1,0 +1,14 @@
+{
+  "name": "Game.Features.Lobby.Controller",
+  "rootNamespace": "Naraka.Features.Lobby.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Lobby.Model"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

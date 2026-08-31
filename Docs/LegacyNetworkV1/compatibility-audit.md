@@ -97,7 +97,9 @@ AES Encrypted Protobuf Payload
 
 Golden Files只使用专用测试口令，不包含本机数据库密码、云服务器凭据或生产密钥。
 
+Unity端为保持旧客户端线级兼容，只在`Game.Infrastructure.Network`使用protobuf-net 2.4.4.9。其SHA-256与NuGet官方2.4.4包中`lib/net40/protobuf-net.dll`完全一致；接收端只允许`MsgSecret`、`MsgPing`、`MsgRegister`和`MsgLogin`显式类型白名单。截至2026-08-31，上游GitHub没有已发布安全公告，但该旧版本仍是冻结边界技术债，新模块不得引用。
+
 ## 7. 下一步
 
-1. 在正式Unity工程中将Account MVC接入既有`LegacyNetworkAdapter`，对本机Host完成握手、注册和登录冒烟。
-2. 完成客户端版本检查和空大厅后，再准备阿里云部署。
+1. Unity Account MVC、冻结客户端适配器、本机Host/MySQL真实注册登录冒烟和空大厅已完成。
+2. 完成客户端配置版本检查和P0基础CI后，再准备阿里云部署。

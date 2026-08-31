@@ -1,0 +1,16 @@
+{
+  "name": "Game.Features.Account.View",
+  "rootNamespace": "Naraka.Features.Account.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Account.Controller",
+    "UniTask",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

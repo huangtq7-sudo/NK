@@ -1,0 +1,13 @@
+{
+  "name": "Game.Features.Account.Model",
+  "rootNamespace": "Naraka.Features.Account.Model",
+  "references": [
+    "Game.Core.Domain"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

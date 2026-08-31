@@ -11,6 +11,26 @@ if (!MySqlConnectionStringPolicy.TryNormalize(source.GetConnectionString(), out 
     return 2;
 }
 
+var cleanupUsername = Environment.GetEnvironmentVariable("NARAKA_ACCOUNT_SMOKE_CLEANUP_USERNAME");
+if (!string.IsNullOrWhiteSpace(cleanupUsername))
+{
+    if (!cleanupUsername.StartsWith("p0_", StringComparison.Ordinal))
+    {
+        Console.Error.WriteLine("Smoke cleanup only accepts usernames with the p0_ prefix.");
+        return 5;
+    }
+
+    await using var cleanupConnection = new MySqlConnection(connectionString);
+    await cleanupConnection.OpenAsync();
+    await using var cleanupCommand = new MySqlCommand(
+        "DELETE FROM accounts WHERE username = @username",
+        cleanupConnection);
+    cleanupCommand.Parameters.AddWithValue("@username", cleanupUsername);
+    var removed = await cleanupCommand.ExecuteNonQueryAsync();
+    Console.WriteLine($"Account smoke cleanup completed; removed rows: {removed}.");
+    return 0;
+}
+
 var username = $"p0_smoke_{Guid.NewGuid():N}";
 var password = $"Smoke-{Guid.NewGuid():N}!";
 long? accountId = null;

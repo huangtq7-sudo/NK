@@ -4,6 +4,7 @@
   "references": [
     "Game.Core.Application",
     "Game.Core.Domain",
+    "Game.Features.Account.Controller",
     "UniTask"
   ],
   "autoReferenced": true,
