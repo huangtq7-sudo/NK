@@ -1,7 +1,7 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.1  
-更新日期：2026-08-31  
+版本：1.2
+更新日期：2026-08-31
 当前阶段：P0工程基础进行中
 
 ## 1. 当前状态
@@ -13,7 +13,7 @@
 - 英雄、技能、武器、10类怪物、任务六章、物品、经济、宠物、天气和多人移动规则已经具备首版数值基线。
 - 地图美术和正式空间布局暂不设计，等待用户提供地图素材。
 - 正式Unity工程位于`E:\NK项目\NK`，版本锁定为`2021.3.45f2c1`；P0客户端和服务端骨架已经建立。
-- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、真实客户端登录冒烟和空大厅；配置版本检查、MessagePipe/R3实现和CI尚未完成，P0未达到退出条件。
+- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟和空大厅；基础CI尚未完成，因此P0仍未关闭。
 
 ## 2. 已有成果
 
@@ -49,13 +49,13 @@
 已完成：
 
 - 以`E:\NK项目`作为单仓库根目录，建立Git忽略规则、属性规则和无密钥环境变量模板。
-- 在正式Unity工程中锁定URP 12.1.15、VContainer 1.18.0和UniTask 2.5.11；第三方包以项目内嵌包保存，避免Git网络不可用时无法还原。
+- 在正式Unity工程中锁定URP 12.1.15、VContainer 1.18.0、UniTask 2.5.11、MessagePipe 1.8.2和R3 1.3.1；关键第三方包以项目内嵌包或固定DLL保存，避免Git网络不可用时无法还原。
 - 建立`Game.Core.Domain`、`Game.Core.Application`、`Game.Infrastructure.Network`、`Game.Boot`和Editor/Test程序集边界。
-- 建立MVC接口、MessagePipe/R3抽象接缝、`INetworkFacade`、`MockNetworkFacade`和`LegacyNetworkAdapter`边界。
+- 建立MVC接口、`INetworkFacade`、`MockNetworkFacade`和`LegacyNetworkAdapter`边界；MessagePipe/R3实现位于Infrastructure/Application接缝后，未改变既有业务接口或网络传输层。
 - 建立VContainer Composition Root、URP自动配置工具并写入启动场景。
 - 建立.NET 10 LTS模块化单体服务端Solution、健康端点、模块清单、LegacyNetworkV1边界和架构测试。
-- Unity批处理配置返回码0；Unity EditMode回归7项通过、0失败、1项真实联网测试默认跳过，PlayMode启动场景测试1/1通过，单独启用的Unity→Host→MySQL真实注册登录冒烟1/1通过并已删除测试账号。
-- 服务端Release编译0警告0错误，架构测试4/4、Application测试5/5、LegacyNetworkV1测试21/21、Infrastructure测试10/10通过；NuGet直接和传递依赖漏洞审计为0。
+- Unity批处理配置返回码0；Unity EditMode回归14项通过、0失败、1项真实联网测试按环境条件默认跳过，PlayMode启动场景测试1/1通过；此前单独启用的Unity→Host→MySQL真实注册登录冒烟1/1通过并已删除测试账号。
+- 服务端Release测试构建通过，架构测试4/4、Application测试7/7、LegacyNetworkV1测试21/21、Infrastructure测试10/10通过，共42项、0失败；NuGet直接和传递依赖漏洞审计为0。
 - 已配置仓库级Git提交者身份与GitHub `origin`，P0可验证基线已推送至远程`main`分支。
 - 已完成旧客户端与SimpleServer只读审计，保存源文件SHA-256清单、线格式说明和5条旧可执行文件生成的Golden向量。
 - 已建立.NET 10字节兼容的旧AES与组帧/拆帧实现，确认响应协议目录漂移、心跳间隔冲突和公网会话安全阻断项。
@@ -70,12 +70,13 @@
 - 已建立`Game.Features.Account.Model/Controller/View`和`Game.Features.Lobby.Model/Controller/View`六个独立程序集；View只读取PresentationState，Controller只通过`IAccountGateway`调用网络，旧DTO、AES、protobuf和Socket只存在Infrastructure。
 - 已将启动组合根从`MockNetworkFacade`切换到真实`LegacyNetworkAdapter`，接入每连接密钥握手、白名单反序列化、16MiB帧上限、连续收发、300秒心跳、请求超时与取消。
 - 已在启动场景生成1920×1080缩放基准的UI Toolkit登录界面和空大厅；这是P0功能界面，尚未导入和绑定已验收的正式UI美术资源。
+- 已接入官方MessagePipe 1.8.2与R3 1.3.1：跨模块认证完成事件使用MessagePipe，Account/Lobby/Bootstrap的连续展示状态使用R3；View仍只取得现有`IReadOnlyState<T>`接口。
+- 已建立Bootstrap模块化MVC、`UnityConfigVersionGateway`和服务端`GET /bootstrap/config-version`；客户端启动后先核对ClientVersion、ConfigVersion与ProtocolVersion，未通过时禁止注册和登录，并提供重试提示。
+- 本机Host的版本端点已返回`p0-config-1`、客户端范围`0.1`至`0.1`及`LegacyNetworkV1`，真实HTTP响应已完成冒烟核对。
 
 待完成：
 
-- 接入MessagePipe和兼容Unity 2021.3的R3实现，保持现有抽象接口不变。
-- 接入MessagePipe和兼容Unity 2021.3的R3实现，保持现有抽象接口不变。
-- 完成配置版本检查和基础CI。
+- 建立客户端/服务端基础CI，并以持续集成结果完成P0最终退出验收。
 
 退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。
 
@@ -125,9 +126,9 @@
 
 继续P0，按以下顺序推进：
 
-1. 接入MessagePipe/R3的Unity 2021.3兼容实现，完成`ConfigVersion`和登录前版本检查。
-2. 建立客户端/服务端基础CI，确保Unity EditMode、PlayMode和.NET测试持续通过。
-3. 完成P0本机验收后，再准备阿里云Windows Host与云端MySQL部署。
+1. 建立客户端/服务端基础CI，确保Unity EditMode、PlayMode和.NET测试持续通过。
+2. 执行P0最终本机验收并关闭P0。
+3. P0关闭后，再准备阿里云Windows Host与云端MySQL部署。
 
 ## 5. 新对话续接提示词
 

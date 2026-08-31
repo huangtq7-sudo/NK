@@ -1,0 +1,13 @@
+{
+  "name": "Game.Features.Bootstrap.Model",
+  "rootNamespace": "Naraka.Features.Bootstrap.Model",
+  "references": [
+    "Game.Core.Domain"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

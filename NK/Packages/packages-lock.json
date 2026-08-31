@@ -1,5 +1,25 @@
 {
   "dependencies": {
+    "com.cysharp.messagepipe": {
+      "version": "file:com.cysharp.messagepipe",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.cysharp.messagepipe.vcontainer": {
+      "version": "file:com.cysharp.messagepipe.vcontainer",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.cysharp.r3": {
+      "version": "file:com.cysharp.r3",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.modules.imgui": "1.0.0"
+      }
+    },
     "com.cysharp.unitask": {
       "version": "file:com.cysharp.unitask",
       "depth": 0,

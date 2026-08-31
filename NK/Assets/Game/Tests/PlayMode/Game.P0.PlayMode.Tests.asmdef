@@ -3,6 +3,7 @@
   "rootNamespace": "Naraka.P0.PlayMode.Tests",
   "references": [
     "Game.Features.Account.View",
+    "Game.Features.Bootstrap.View",
     "Game.Features.Lobby.View"
   ],
   "includePlatforms": [],

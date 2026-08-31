@@ -1,7 +1,7 @@
 # 《NARAKA》待确认问题与决策记录
 
-版本：1.1  
-更新日期：2026-08-31  
+版本：1.2
+更新日期：2026-08-31
 说明：本文件只保存尚未确认、需要外部素材/权限或会影响实施的事项。已确认玩法不得重新列为问题。
 
 ## 1. 开始P0前需要确认
@@ -126,3 +126,9 @@
 
 - 决策：客户端业务必须采用模块化MVC。
 - 说明：R3、Atomic Design、ECS、行为树和事件总线都是MVC内部工具，不得改变顶层依赖方向。
+
+### D-006 P0登录前版本检查
+
+- 决策：客户端启动后通过独立Bootstrap端点核对ClientVersion、ConfigVersion和ProtocolVersion；检查成功前禁止注册和登录，失败后允许用户重试。
+- 说明：该HTTP预检不修改冻结的`LegacyNetworkV1`传输层。本机开发只允许loopback HTTP，远端必须使用HTTPS；P5再补齐正式配置Manifest签名、哈希校验、A/B缓存与回滚。
+- 执行结果：客户端Bootstrap模块化MVC、服务端`GET /bootstrap/config-version`、UI阻塞提示及自动化测试已经完成，无新增待确认项。

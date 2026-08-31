@@ -1,4 +1,5 @@
 using Naraka.Server.Application.Accounts;
+using Naraka.Server.Application.Bootstrap;
 using Naraka.Server.Application.Health;
 using Naraka.Server.Application.Modules;
 using Naraka.Server.Application.Networking;
@@ -13,6 +14,14 @@ using Naraka.Server.LegacyNetworkV1.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var bootstrapSection = builder.Configuration.GetSection("Naraka:Bootstrap");
+var configVersionManifest = ConfigVersionManifest.Create(
+    bootstrapSection["ConfigVersion"],
+    bootstrapSection["MinimumClientVersion"],
+    bootstrapSection["MaximumClientVersion"],
+    bootstrapSection["ProtocolVersion"]);
+
+builder.Services.AddSingleton(configVersionManifest);
 builder.Services.AddSingleton<IMySqlConnectionStringSource, EnvironmentMySqlConnectionStringSource>();
 builder.Services.AddSingleton<SqlSugarClientFactory>();
 builder.Services.AddSingleton<IAccountRepository, SqlSugarAccountRepository>();
@@ -53,6 +62,10 @@ app.MapGet(
     });
 
 app.MapGet("/modules", () => Results.Ok(ModuleCatalog.Names));
+
+app.MapGet(
+    "/bootstrap/config-version",
+    (ConfigVersionManifest manifest) => Results.Ok(manifest));
 
 app.Run();
 

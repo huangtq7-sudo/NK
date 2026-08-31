@@ -1,8 +1,8 @@
 # 《NARAKA》技术架构基线
 
-版本：2.1  
-更新日期：2026-08-30  
-状态：实施权威摘要  
+版本：2.2
+更新日期：2026-08-31
+状态：实施权威摘要
 详细来源：`outputs/naraka_design_v2/NARAKA_TDD_技术设计文档_MVC_v2.0.docx`
 
 ## 1. 固定技术基线
@@ -49,8 +49,8 @@
 
 - VContainer：Composition Root、场景 LifetimeScope 和依赖注入；禁止 Service Locator。
 - UniTask：网络等待、场景加载、Addressables、动画编排和取消；所有异步链传递 CancellationToken。
-- MessagePipe：跨模块离散事件，例如 `MonsterKilledEvent`、`LootPickedEvent`。
-- R3：只读连续状态和UI订阅；View只能取得只读流。
+- MessagePipe 1.8.2：跨模块离散事件，例如 `AccountAuthenticatedEvent`、`MonsterKilledEvent`、`LootPickedEvent`；通过VContainer注入`IDomainEventBus`，禁止全局总线和Service Locator。
+- R3 1.3.1：只读连续状态和UI订阅；`ReactiveProperty<T>`封装在Application内部的`ReactiveState<T>`中，View只能取得既有`IReadOnlyState<T>`，不得取得可写属性。
 - UnityHFSM或自研HFSM适配层：玩家动作和怪物动作状态机。
 - 自研/授权行为树适配层：怪物巡逻、追击、技能选择和阶段决策。
 - Input System：键鼠输入、按键重映射和动作上下文。
@@ -153,6 +153,8 @@
 - Addressables更新场景、Prefab、材质、UI、音频和特效。
 - 配置采用 `Excel → Luban校验 → 生成两端C#/二进制 → 差异与签名 → 灰度 → 全量/回滚`。
 - 版本分为ClientVersion、CodeHotfixVersion、ResourceVersion、ConfigVersion和ProtocolVersion。
+- P0使用Host的`GET /bootstrap/config-version`返回ConfigVersion、客户端最低/最高版本和ProtocolVersion；客户端Bootstrap MVC必须在注册或登录前完成兼容性检查，失败时保持Account入口阻塞并允许重试。
+- 版本预检不进入冻结的`LegacyNetworkV1`传输实现：本机开发允许loopback HTTP，远端地址必须使用HTTPS。P0端点只提供兼容性元数据，不替代P5正式Manifest的签名、SHA-256、A/B缓存和KnownGood回滚机制。
 - Manifest使用签名和SHA-256校验，客户端保留A/B缓存和KnownGood版本。
 - FileSystemWatcher只允许开发环境，不作为生产配置热更方案。
 - XNB属于XNA内容格式，不作为Unity项目的运行时数据方案。

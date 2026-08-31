@@ -3,6 +3,7 @@
   "rootNamespace": "Naraka.EditorTools",
   "references": [
     "Game.Boot",
+    "Game.Features.Bootstrap.View",
     "Game.Features.Account.View",
     "Game.Features.Lobby.View",
     "VContainer",

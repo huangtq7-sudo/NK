@@ -12,3 +12,9 @@ The first release is a .NET 10 modular monolith. The solution preserves the lega
 - `Naraka.Server.ArchitectureTests`: dependency-direction tests.
 
 The legacy source remains read-only at `D:\培训项目\7.21net\SimpleServer`. The Host runs the byte-compatible listener at `127.0.0.1:8011` for local development; connection strings are supplied only through `NARAKA_MYSQL_CONNECTION_STRING`.
+
+## P0 bootstrap version endpoint
+
+`GET /bootstrap/config-version` exposes the compatibility metadata required before account registration or login. Values are configured under `Naraka:Bootstrap` and the Host refuses to start if a value is empty, longer than 64 characters, or if the client-version range is invalid.
+
+The local P0 defaults are `ConfigVersion=p0-config-1`, `MinimumClientVersion=0.1`, `MaximumClientVersion=0.1`, and `ProtocolVersion=LegacyNetworkV1`. This endpoint does not change the frozen socket transport. Loopback HTTP is allowed only for local development; remote clients must use HTTPS.

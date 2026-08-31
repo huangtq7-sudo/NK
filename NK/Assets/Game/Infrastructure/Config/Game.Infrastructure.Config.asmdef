@@ -1,0 +1,15 @@
+{
+  "name": "Game.Infrastructure.Config",
+  "rootNamespace": "Naraka.Infrastructure.Config",
+  "references": [
+    "Game.Features.Bootstrap.Controller",
+    "Game.Features.Bootstrap.Model",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

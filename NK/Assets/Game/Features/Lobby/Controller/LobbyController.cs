@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Naraka.Core.Application.MVC;
 using Naraka.Core.Application.Presentation;
 using Naraka.Features.Lobby.Model;
@@ -22,19 +21,19 @@ namespace Naraka.Features.Lobby.Controller
         public long AccountId { get; }
     }
 
-    public sealed class LobbyController : IController, IReadOnlyState<LobbyPresentationState>
+    public sealed class LobbyController : IController, IReadOnlyState<LobbyPresentationState>, IDisposable
     {
         private readonly LobbyModel _model;
-        private readonly List<IObserver<LobbyPresentationState>> _observers =
-            new List<IObserver<LobbyPresentationState>>();
+        private readonly ReactiveState<LobbyPresentationState> _state;
 
         public LobbyController(LobbyModel model)
         {
             _model = model ?? throw new ArgumentNullException(nameof(model));
-            Current = new LobbyPresentationState(false, string.Empty, 0);
+            _state = new ReactiveState<LobbyPresentationState>(
+                new LobbyPresentationState(false, string.Empty, 0));
         }
 
-        public LobbyPresentationState Current { get; private set; }
+        public LobbyPresentationState Current => _state.Current;
 
         public void Enter(string username, long accountId)
         {
@@ -47,50 +46,11 @@ namespace Naraka.Features.Lobby.Controller
             Publish(new LobbyPresentationState(true, _model.Username, _model.AccountId));
         }
 
-        public IDisposable Subscribe(IObserver<LobbyPresentationState> observer)
-        {
-            if (observer == null)
-            {
-                throw new ArgumentNullException(nameof(observer));
-            }
+        public IDisposable Subscribe(IObserver<LobbyPresentationState> observer) =>
+            _state.Subscribe(observer);
 
-            _observers.Add(observer);
-            observer.OnNext(Current);
-            return new Subscription(_observers, observer);
-        }
+        public void Dispose() => _state.Dispose();
 
-        private void Publish(LobbyPresentationState state)
-        {
-            Current = state;
-            foreach (var observer in _observers.ToArray())
-            {
-                observer.OnNext(state);
-            }
-        }
-
-        private sealed class Subscription : IDisposable
-        {
-            private readonly List<IObserver<LobbyPresentationState>> _observers;
-            private IObserver<LobbyPresentationState> _observer;
-
-            public Subscription(
-                List<IObserver<LobbyPresentationState>> observers,
-                IObserver<LobbyPresentationState> observer)
-            {
-                _observers = observers;
-                _observer = observer;
-            }
-
-            public void Dispose()
-            {
-                if (_observer == null)
-                {
-                    return;
-                }
-
-                _observers.Remove(_observer);
-                _observer = null;
-            }
-        }
+        private void Publish(LobbyPresentationState state) => _state.Set(state);
     }
 }

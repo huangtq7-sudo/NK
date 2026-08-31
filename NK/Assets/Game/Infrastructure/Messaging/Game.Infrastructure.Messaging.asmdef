@@ -1,0 +1,15 @@
+{
+  "name": "Game.Infrastructure.Messaging",
+  "rootNamespace": "Naraka.Infrastructure.Messaging",
+  "references": [
+    "Game.Core.Application",
+    "MessagePipe",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

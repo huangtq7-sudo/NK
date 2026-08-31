@@ -1,34 +1,49 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Naraka.Core.Application.Bootstrap;
+using Naraka.Core.Application.Messaging;
 using Naraka.Core.Application.MVC;
 using Naraka.Core.Application.Presentation;
 using Naraka.Features.Account.Model;
 
 namespace Naraka.Features.Account.Controller
 {
-    public sealed class AccountController : IController, IReadOnlyState<AccountPresentationState>
+    public sealed class AccountController : IController, IReadOnlyState<AccountPresentationState>, IDisposable
     {
         private readonly IAccountGateway _gateway;
         private readonly AccountSessionModel _model;
-        private readonly List<IObserver<AccountPresentationState>> _observers =
-            new List<IObserver<AccountPresentationState>>();
+        private readonly IDomainEventBus _events;
+        private readonly IStartupReadiness _startupReadiness;
+        private readonly ReactiveState<AccountPresentationState> _state;
 
-        public AccountController(IAccountGateway gateway, AccountSessionModel model)
+        public AccountController(
+            IAccountGateway gateway,
+            AccountSessionModel model,
+            IDomainEventBus events,
+            IStartupReadiness startupReadiness)
         {
             _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
             _model = model ?? throw new ArgumentNullException(nameof(model));
-            Current = new AccountPresentationState(AccountFlowPhase.Ready, string.Empty, 0, string.Empty);
+            _events = events ?? throw new ArgumentNullException(nameof(events));
+            _startupReadiness = startupReadiness ??
+                throw new ArgumentNullException(nameof(startupReadiness));
+            _state = new ReactiveState<AccountPresentationState>(
+                new AccountPresentationState(AccountFlowPhase.Ready, string.Empty, 0, string.Empty));
         }
 
-        public AccountPresentationState Current { get; private set; }
+        public AccountPresentationState Current => _state.Current;
 
         public async UniTask RegisterAsync(string username, string password, CancellationToken cancellationToken)
         {
             if (!TryValidate(username, password, out var normalizedUsername, out var validationMessage))
             {
                 Publish(new AccountPresentationState(AccountFlowPhase.Failed, normalizedUsername, 0, validationMessage));
+                return;
+            }
+
+            if (!TryPassStartupGate(normalizedUsername))
+            {
                 return;
             }
 
@@ -73,6 +88,11 @@ namespace Naraka.Features.Account.Controller
                 return;
             }
 
+            if (!TryPassStartupGate(normalizedUsername))
+            {
+                return;
+            }
+
             Publish(new AccountPresentationState(
                 AccountFlowPhase.LoggingIn,
                 normalizedUsername,
@@ -86,6 +106,7 @@ namespace Naraka.Features.Account.Controller
                 if (result.Status == AccountLoginStatus.Success && result.AccountId > 0)
                 {
                     _model.Authenticate(normalizedUsername, result.AccountId);
+                    _events.Publish(new AccountAuthenticatedEvent(_model.Username, _model.AccountId));
                     Publish(new AccountPresentationState(
                         AccountFlowPhase.Authenticated,
                         _model.Username,
@@ -114,17 +135,10 @@ namespace Naraka.Features.Account.Controller
             }
         }
 
-        public IDisposable Subscribe(IObserver<AccountPresentationState> observer)
-        {
-            if (observer == null)
-            {
-                throw new ArgumentNullException(nameof(observer));
-            }
+        public IDisposable Subscribe(IObserver<AccountPresentationState> observer) =>
+            _state.Subscribe(observer);
 
-            _observers.Add(observer);
-            observer.OnNext(Current);
-            return new Subscription(_observers, observer);
-        }
+        public void Dispose() => _state.Dispose();
 
         private static bool TryValidate(
             string username,
@@ -154,38 +168,21 @@ namespace Naraka.Features.Account.Controller
                 ? "请求超时，请检查服务器连接。"
                 : "无法连接服务器，请稍后重试。";
 
-        private void Publish(AccountPresentationState state)
+        private bool TryPassStartupGate(string username)
         {
-            Current = state;
-            foreach (var observer in _observers.ToArray())
+            if (_startupReadiness.IsReady)
             {
-                observer.OnNext(state);
+                return true;
             }
+
+            Publish(new AccountPresentationState(
+                AccountFlowPhase.Failed,
+                username,
+                0,
+                _startupReadiness.BlockingReason));
+            return false;
         }
 
-        private sealed class Subscription : IDisposable
-        {
-            private readonly List<IObserver<AccountPresentationState>> _observers;
-            private IObserver<AccountPresentationState> _observer;
-
-            public Subscription(
-                List<IObserver<AccountPresentationState>> observers,
-                IObserver<AccountPresentationState> observer)
-            {
-                _observers = observers;
-                _observer = observer;
-            }
-
-            public void Dispose()
-            {
-                if (_observer == null)
-                {
-                    return;
-                }
-
-                _observers.Remove(_observer);
-                _observer = null;
-            }
-        }
+        private void Publish(AccountPresentationState state) => _state.Set(state);
     }
 }

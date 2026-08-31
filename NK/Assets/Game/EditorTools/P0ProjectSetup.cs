@@ -1,6 +1,7 @@
 using System.IO;
 using Naraka.Boot;
 using Naraka.Features.Account.View;
+using Naraka.Features.Bootstrap.View;
 using Naraka.Features.Lobby.View;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -88,6 +89,11 @@ namespace Naraka.EditorTools
             if (shell.GetComponent<AccountView>() == null)
             {
                 shell.AddComponent<AccountView>();
+            }
+
+            if (shell.GetComponent<ConfigVersionView>() == null)
+            {
+                shell.AddComponent<ConfigVersionView>();
             }
 
             if (shell.GetComponent<LobbyView>() == null)

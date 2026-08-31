@@ -3,6 +3,19 @@ using Cysharp.Threading.Tasks;
 
 namespace Naraka.Features.Account.Controller
 {
+    public readonly struct AccountAuthenticatedEvent
+    {
+        public AccountAuthenticatedEvent(string username, long accountId)
+        {
+            Username = username ?? string.Empty;
+            AccountId = accountId;
+        }
+
+        public string Username { get; }
+
+        public long AccountId { get; }
+    }
+
     public enum AccountRegistrationStatus
     {
         Success,

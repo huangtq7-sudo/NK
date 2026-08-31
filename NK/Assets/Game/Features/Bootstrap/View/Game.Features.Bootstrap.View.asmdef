@@ -1,0 +1,16 @@
+{
+  "name": "Game.Features.Bootstrap.View",
+  "rootNamespace": "Naraka.Features.Bootstrap.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Bootstrap.Controller",
+    "UniTask",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

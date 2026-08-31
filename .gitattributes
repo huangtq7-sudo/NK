@@ -10,6 +10,12 @@
 *.prefab text eol=lf
 *.asset text eol=lf
 *.meta text eol=lf
+# Unity-generated .meta files and vendored upstream packages may preserve harmless
+# trailing spaces; exclude them from first-party whitespace diagnostics.
+*.meta -whitespace
+NK/Packages/com.cysharp.messagepipe/** -whitespace
+NK/Packages/com.cysharp.messagepipe.vcontainer/** -whitespace
+NK/Packages/com.cysharp.r3/** -whitespace
 *.png binary
 *.jpg binary
 *.jpeg binary
@@ -19,4 +25,3 @@
 *.mp3 binary
 *.mp4 binary
 *.unitypackage binary
-

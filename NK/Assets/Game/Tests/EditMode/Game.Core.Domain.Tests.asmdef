@@ -4,12 +4,18 @@
   "references": [
     "Game.Core.Application",
     "Game.Core.Domain",
+    "Game.Features.Bootstrap.Controller",
+    "Game.Features.Bootstrap.Model",
     "Game.Features.Account.Controller",
     "Game.Features.Account.Model",
     "Game.Features.Lobby.Controller",
     "Game.Features.Lobby.Model",
     "Game.Infrastructure.Network",
-    "UniTask"
+    "Game.Infrastructure.Messaging",
+    "MessagePipe",
+    "MessagePipe.VContainer",
+    "UniTask",
+    "VContainer"
   ],
   "includePlatforms": [
     "Editor"

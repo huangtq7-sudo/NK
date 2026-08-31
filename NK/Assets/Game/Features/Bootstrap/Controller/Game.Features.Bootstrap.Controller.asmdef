@@ -1,0 +1,16 @@
+{
+  "name": "Game.Features.Bootstrap.Controller",
+  "rootNamespace": "Naraka.Features.Bootstrap.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Core.Domain",
+    "Game.Features.Bootstrap.Model",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}
