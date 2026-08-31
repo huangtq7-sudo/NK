@@ -7,6 +7,7 @@ using Naraka.Server.Infrastructure.Health;
 using Naraka.Server.Infrastructure.Persistence;
 using Naraka.Server.Infrastructure.Persistence.Accounts;
 using Naraka.Server.Infrastructure.Security;
+using Naraka.Server.Host;
 using Naraka.Server.LegacyNetworkV1;
 using Naraka.Server.LegacyNetworkV1.Authentication;
 
@@ -14,14 +15,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<IMySqlConnectionStringSource, EnvironmentMySqlConnectionStringSource>();
 builder.Services.AddSingleton<SqlSugarClientFactory>();
-builder.Services.AddScoped<IAccountRepository, SqlSugarAccountRepository>();
+builder.Services.AddSingleton<IAccountRepository, SqlSugarAccountRepository>();
 builder.Services.AddSingleton<IPasswordHasher, Argon2idPasswordHasher>();
-builder.Services.AddScoped<AccountService>();
+builder.Services.AddSingleton<AccountService>();
 builder.Services.AddSingleton<IAuthenticatedSessionRegistry, InMemoryAuthenticatedSessionRegistry>();
-builder.Services.AddScoped<LoginSessionService>();
+builder.Services.AddSingleton<LoginSessionService>();
 builder.Services.AddSingleton<LegacySessionAccountResolver>();
 builder.Services.AddSingleton<IDatabaseHealthProbe, MySqlDatabaseHealthProbe>();
-builder.Services.AddSingleton<ILegacyNetworkTransport, LegacyNetworkTransport>();
+builder.Services.AddSingleton<LegacyNetworkTransport>();
+builder.Services.AddSingleton<ILegacyNetworkTransport>(services =>
+    services.GetRequiredService<LegacyNetworkTransport>());
+builder.Services.AddHostedService<LegacyNetworkHostedService>();
 
 var app = builder.Build();
 

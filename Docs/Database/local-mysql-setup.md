@@ -34,5 +34,5 @@
 - `0001_p0_identity.sql`已成功执行，并再次幂等执行通过。
 - 实际核对到3张P0表，`schema_migrations`中存在版本`0001`。
 - Host `/health/live`返回200。
-- `/health/ready`中的数据库状态为`MySQL reachable`；整体仍返回503，因为认证后的LegacyNetworkV1适配尚未接入。
+- `/health/ready`返回200，数据库状态为`MySQL reachable`，LegacyNetworkV1状态为已监听8011端口。
 - 真实连接串保存在已忽略的本机`.env`中，Git仓库只保留占位模板。

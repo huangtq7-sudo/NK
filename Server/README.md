@@ -11,4 +11,4 @@ The first release is a .NET 10 modular monolith. The solution preserves the lega
 - `Naraka.Server.Host`: composition root and health endpoints.
 - `Naraka.Server.ArchitectureTests`: dependency-direction tests.
 
-The legacy source remains read-only at `D:\培训项目\7.21net\SimpleServer` until golden protocol tests have captured its current behavior.
+The legacy source remains read-only at `D:\培训项目\7.21net\SimpleServer`. The Host runs the byte-compatible listener at `127.0.0.1:8011` for local development; connection strings are supplied only through `NARAKA_MYSQL_CONNECTION_STRING`.

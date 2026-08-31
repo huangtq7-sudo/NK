@@ -4,6 +4,10 @@
     <ProjectReference Include="..\Naraka.Server.Application\Naraka.Server.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="protobuf-net" Version="3.4.19" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

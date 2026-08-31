@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Naraka.Server.LegacyNetworkV1.Messages;
 using Naraka.Server.LegacyNetworkV1.Protocol;
 
 namespace Naraka.Server.LegacyNetworkV1.Tests;
@@ -35,6 +36,62 @@ public sealed class LegacyWireGoldenTests
         Assert.Equal(packet.Length, consumed);
         Assert.Equal(golden.ProtocolName, decoded.ProtocolName);
         Assert.Equal(ciphertext, decoded.EncryptedBody);
+    }
+
+    [Theory]
+    [InlineData("secret-request")]
+    [InlineData("secret-response")]
+    [InlineData("ping")]
+    [InlineData("login-request")]
+    public void ProtobufSerializationMatchesFrozenExecutable(string caseName)
+    {
+        var golden = Contract.Cases.Single(item => item.Name == caseName);
+        LegacyMessage message = caseName switch
+        {
+            "secret-request" => new LegacyMsgSecret(),
+            "secret-response" => new LegacyMsgSecret { Secret = Contract.FixtureSessionKey },
+            "ping" => new LegacyMsgPing(),
+            "login-request" => new LegacyMsgLogin
+            {
+                Account = "fixture-user",
+                Password = "fixture-password"
+            },
+            _ => throw new InvalidDataException($"Unknown protobuf golden case: {caseName}.")
+        };
+
+        Assert.Equal(Convert.FromHexString(golden.ProtobufHex), LegacyProtobufCodec.Serialize(message));
+    }
+
+    [Fact]
+    public void ProtobufDeserializationAcceptsFrozenLoginRequest()
+    {
+        var golden = Contract.Cases.Single(item => item.Name == "login-request");
+
+        var message = Assert.IsType<LegacyMsgLogin>(
+            LegacyProtobufCodec.DeserializeIncoming(golden.ProtocolName, Convert.FromHexString(golden.ProtobufHex)));
+
+        Assert.Equal(LegacyProtocolValue.MsgLogin, message.ProtocolType);
+        Assert.Equal("fixture-user", message.Account);
+        Assert.Equal("fixture-password", message.Password);
+    }
+
+    [Fact]
+    public void PlayerDataResponseSerializesWithClientRecognizedAliasValue()
+    {
+        var message = new LegacyMsgPlayerDataResponse
+        {
+            Gold = 123,
+            MaxHealth = 1000,
+            CurrentHealth = 777,
+            Attack = 42,
+            Defense = 21,
+            CurrentWeaponId = 7,
+            SelectedHeroId = 3
+        };
+
+        Assert.Equal(
+            Convert.FromHexString("0806187B20E807288906302A381540074803"),
+            LegacyProtobufCodec.Serialize(message));
     }
 
     [Fact]
