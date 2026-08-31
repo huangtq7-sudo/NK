@@ -1,0 +1,16 @@
+{
+  "name": "Game.Boot",
+  "rootNamespace": "Naraka.Boot",
+  "references": [
+    "Game.Core.Application",
+    "Game.Infrastructure.Network",
+    "VContainer",
+    "VContainer.Unity"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

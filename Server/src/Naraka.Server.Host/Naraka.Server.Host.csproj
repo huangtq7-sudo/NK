@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Naraka.Server.Application\Naraka.Server.Application.csproj" />
+    <ProjectReference Include="..\Naraka.Server.Infrastructure\Naraka.Server.Infrastructure.csproj" />
+    <ProjectReference Include="..\Naraka.Server.LegacyNetworkV1\Naraka.Server.LegacyNetworkV1.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

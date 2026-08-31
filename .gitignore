@@ -1,0 +1,63 @@
+# Unity generated content
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# IDE generated content
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity/Plastic local metadata
+.plastic/
+ignore.conf
+
+# Local tools and package caches
+.tools/
+.packages/
+
+# Unity-generated IDE files (server project files are source and must be tracked)
+/NK/*.csproj
+/NK/*.sln
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Build and test outputs
+bin/
+TestResults/
+coverage/
+artifacts/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Duplicate scratch Unity project; NK/ is the formal client.
+/My project/

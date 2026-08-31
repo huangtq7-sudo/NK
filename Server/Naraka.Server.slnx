@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Naraka.Server.Application/Naraka.Server.Application.csproj" />
+    <Project Path="src/Naraka.Server.Domain/Naraka.Server.Domain.csproj" />
+    <Project Path="src/Naraka.Server.Host/Naraka.Server.Host.csproj" />
+    <Project Path="src/Naraka.Server.Infrastructure/Naraka.Server.Infrastructure.csproj" />
+    <Project Path="src/Naraka.Server.LegacyNetworkV1/Naraka.Server.LegacyNetworkV1.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Naraka.Server.ArchitectureTests/Naraka.Server.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>

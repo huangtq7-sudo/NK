@@ -1,0 +1,11 @@
+{
+  "name": "Game.Core.Domain",
+  "rootNamespace": "Naraka.Core.Domain",
+  "references": [],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

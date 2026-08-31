@@ -1,0 +1,14 @@
+{
+  "name": "Game.Core.Application",
+  "rootNamespace": "Naraka.Core.Application",
+  "references": [
+    "Game.Core.Domain",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

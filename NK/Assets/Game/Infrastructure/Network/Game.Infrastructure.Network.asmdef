@@ -1,0 +1,15 @@
+{
+  "name": "Game.Infrastructure.Network",
+  "rootNamespace": "Naraka.Infrastructure.Network",
+  "references": [
+    "Game.Core.Application",
+    "Game.Core.Domain",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}
