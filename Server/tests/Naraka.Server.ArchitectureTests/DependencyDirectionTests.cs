@@ -24,12 +24,12 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
-    public void ApplicationDoesNotReferenceSqlSugarOrMySqlConnector()
+    public void ApplicationDoesNotReferenceInfrastructurePackages()
     {
         var references = typeof(ModuleCatalog).Assembly.GetReferencedAssemblies();
 
         Assert.DoesNotContain(references, reference =>
-            reference.Name is "SqlSugar" or "MySqlConnector");
+            reference.Name is "SqlSugar" or "MySqlConnector" or "Konscious.Security.Cryptography.Argon2");
     }
 
     [Fact]

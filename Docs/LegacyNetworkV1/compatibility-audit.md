@@ -67,7 +67,7 @@ AES Encrypted Protobuf Payload
 
 同时，旧客户端的三个响应DTO把`ProtocolType`分别设置为对应请求协议；旧服务端则发送独立响应名。因此服务端下发`MsgPlayerDataResponse`、`MsgInventoryResponse`或`MsgTaskResponse`时，当前旧客户端无法通过`ProtocolEnum.Parse`完成解码。
 
-该漂移已作为测试中的显式兼容事实保存，尚未擅自选择“客户端别名”或“服务端独立响应”作为最终修复方案。
+该漂移已作为测试中的显式兼容事实保存。适配边界已选择冻结客户端能够识别的请求名作为三个响应的线协议名和嵌入协议值；旧源码和历史服务端目录保持不变。
 
 ## 5. 公网部署阻断项
 
@@ -98,8 +98,7 @@ Golden Files只使用专用测试口令，不包含本机数据库密码、云�
 
 ## 7. 下一步
 
-1. 在不修改线格式的前提下，为连接建立服务端会话身份，禁止业务Handler信任客户端`accountId`。
-2. 明确三个响应协议的兼容策略，并补齐客户端与服务端双向回归向量。
-3. 将protobuf-net 2.4.4 DTO隔离在LegacyNetworkV1，映射到Application层命令和响应。
-4. 接入本机MySQL的环境变量配置、SqlSugar Repository和真实健康检查。
-5. 本机完成版本检查、登录和空大厅冒烟后，再准备阿里云部署。
+1. 把已完成的认证会话守卫和响应别名解析器接入真实Socket消息分发。
+2. 将protobuf-net 2.4.4 DTO隔离在LegacyNetworkV1，映射到Application层命令和响应。
+3. 处理旧客户端300秒心跳与服务端120秒超时的冲突，并补充时序测试。
+4. 本机完成客户端版本检查、登录和空大厅冒烟后，再准备阿里云部署。

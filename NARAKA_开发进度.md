@@ -54,18 +54,20 @@
 - 建立MVC接口、MessagePipe/R3抽象接缝、`INetworkFacade`、`MockNetworkFacade`和`LegacyNetworkAdapter`边界。
 - 建立VContainer Composition Root、URP自动配置工具并写入启动场景。
 - 建立.NET 10 LTS模块化单体服务端Solution、健康端点、模块清单、LegacyNetworkV1边界和架构测试。
-- Unity批处理配置返回码0；Unity EditMode测试2/2通过；服务端Release编译0警告0错误，架构测试4/4、LegacyNetworkV1兼容测试7/7、数据库与迁移测试8/8通过；NuGet直接和传递依赖漏洞审计为0。
+- Unity批处理配置返回码0；Unity EditMode测试2/2通过；服务端Release编译0警告0错误，架构测试4/4、Application测试5/5、LegacyNetworkV1兼容测试14/14、Infrastructure测试10/10通过；NuGet直接和传递依赖漏洞审计为0。
 - 已配置仓库级Git提交者身份与GitHub `origin`，P0可验证基线已推送至远程`main`分支。
 - 已完成旧客户端与SimpleServer只读审计，保存源文件SHA-256清单、线格式说明和5条旧可执行文件生成的Golden向量。
 - 已建立.NET 10字节兼容的旧AES与组帧/拆帧实现，确认响应协议目录漂移、心跳间隔冲突和公网会话安全阻断项。
 - 已接入环境变量连接串、MySqlConnector真实健康探针和Infrastructure内部SqlSugar工厂；依赖漏洞门禁保持启用。
 - 已为本机MySQL 5.7.26建立非破坏性P0身份迁移、账号Repository和无密钥迁移工具；目标开发库为`NK`、用户为`NK`。
 - 已安全执行`0001_p0_identity.sql`，实际核对3张P0表和迁移版本；Host存活检查为200，数据库探针返回`MySQL reachable`。
+- 已实现Argon2id注册登录、连接级认证会话、客户端`accountId`防伪守卫和三个响应协议的客户端兼容别名。
+- 已在本机`NK`库完成注册、正确密码登录、错误密码拒绝冒烟，并自动删除测试账号。
 
 待完成：
 
 - 接入MessagePipe和兼容Unity 2021.3的R3实现，保持现有抽象接口不变。
-- 明确三个响应协议的兼容策略，并在认证会话边界后接入`LegacyNetworkAdapter`；旧线格式保持不变。
+- 把认证会话、响应别名和Application命令接入真实`LegacyNetworkAdapter` Socket分发；旧线格式保持不变。
 - 完成配置版本、登录冒烟、空大厅和基础CI。
 
 退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。
@@ -116,8 +118,8 @@
 
 继续P0，按以下顺序推进：
 
-1. 建立服务端认证会话，把玩家身份从连接上下文注入业务命令，并处理三个响应协议的客户端兼容别名。
-2. 接入MessagePipe/R3实现、登录冒烟和空大厅。
+1. 把认证会话、响应别名和protobuf DTO映射接入真实Socket分发，并解决心跳时序冲突。
+2. 接入MessagePipe/R3实现、客户端登录冒烟和空大厅。
 3. 建立客户端/服务端基础CI，确保Unity EditMode和.NET测试持续通过。
 
 ## 5. 新对话续接提示词

@@ -2,16 +2,24 @@ using Naraka.Server.Application.Accounts;
 using Naraka.Server.Application.Health;
 using Naraka.Server.Application.Modules;
 using Naraka.Server.Application.Networking;
+using Naraka.Server.Application.Sessions;
 using Naraka.Server.Infrastructure.Health;
 using Naraka.Server.Infrastructure.Persistence;
 using Naraka.Server.Infrastructure.Persistence.Accounts;
+using Naraka.Server.Infrastructure.Security;
 using Naraka.Server.LegacyNetworkV1;
+using Naraka.Server.LegacyNetworkV1.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<IMySqlConnectionStringSource, EnvironmentMySqlConnectionStringSource>();
 builder.Services.AddSingleton<SqlSugarClientFactory>();
 builder.Services.AddScoped<IAccountRepository, SqlSugarAccountRepository>();
+builder.Services.AddSingleton<IPasswordHasher, Argon2idPasswordHasher>();
+builder.Services.AddScoped<AccountService>();
+builder.Services.AddSingleton<IAuthenticatedSessionRegistry, InMemoryAuthenticatedSessionRegistry>();
+builder.Services.AddScoped<LoginSessionService>();
+builder.Services.AddSingleton<LegacySessionAccountResolver>();
 builder.Services.AddSingleton<IDatabaseHealthProbe, MySqlDatabaseHealthProbe>();
 builder.Services.AddSingleton<ILegacyNetworkTransport, LegacyNetworkTransport>();
 
