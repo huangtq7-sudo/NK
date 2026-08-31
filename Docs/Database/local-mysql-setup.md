@@ -1,6 +1,6 @@
 # 本机MySQL接入说明
 
-状态：代码接缝已完成；本机MySQL服务尚未检测到
+状态：代码接缝已完成；本机`mysqld`正在监听`3306`，真实凭据尚未注入进程
 
 ## 安全边界
 
@@ -12,6 +12,7 @@
 
 ## 当前实现
 
+- 本机开发目标为MySQL 5.7.26、数据库`NK`、用户`NK`。
 - `MySqlConnector 2.6.2`负责异步连接和`SELECT 1`真实健康检查。
 - `SqlSugarCore 5.1.4.217`只在Infrastructure内创建客户端，Application和Domain不引用SqlSugar类型。
 - 显式覆盖`SQLitePCLRaw.lib.e_sqlite3 2.1.13`，避免SqlSugar传递依赖中的高危`2.1.11`版本。
@@ -19,10 +20,11 @@
 
 ## 本机准备
 
-1. 安装或启动受支持的MySQL 8.x Windows服务。
-2. 创建仅供本机开发使用的`naraka_dev`数据库和最小权限账号。
-3. 把`.env.example`复制为不会提交的`.env`，只在本机填入真实连接串。
-4. 通过启动脚本把`.env`注入进程环境；应用本身不读取仓库中的明文秘密文件。
-5. 执行数据库迁移后调用`/health/ready`验证数据库探针。
+1. 保持本机MySQL 5.7.26仅用于开发兼容验证；云端生产库使用仍受安全维护的MySQL版本。
+2. 确认数据库`NK`和最小权限用户`NK`存在。
+3. 把`.env.example`复制为不会提交的`.env`，只在本机填入真实密码。
+4. 把连接串注入当前进程的`NARAKA_MYSQL_CONNECTION_STRING`环境变量；不要把密码写进命令历史。
+5. 运行`Naraka.Server.DatabaseMigrator --dry-run`检查迁移，再执行正式迁移。
+6. 启动Host并调用`/health/ready`验证数据库探针。
 
-当前尚未创建业务表或迁移，因为需要先确认本机MySQL版本、现有数据库名称以及是否保留旧表数据。
+初始迁移`Server/migrations/0001_p0_identity.sql`只创建`schema_migrations`、`accounts`和`player_profiles`，不会删除旧表。账号密码只预留Argon2id哈希、独立Salt和参数字段，不保存明文密码。

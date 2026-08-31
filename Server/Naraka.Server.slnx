@@ -11,4 +11,7 @@
     <Project Path="tests/Naraka.Server.Infrastructure.Tests/Naraka.Server.Infrastructure.Tests.csproj" />
     <Project Path="tests/Naraka.Server.LegacyNetworkV1.Tests/Naraka.Server.LegacyNetworkV1.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Naraka.Server.DatabaseMigrator/Naraka.Server.DatabaseMigrator.csproj" />
+  </Folder>
 </Solution>

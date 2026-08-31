@@ -24,6 +24,15 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
+    public void ApplicationDoesNotReferenceSqlSugarOrMySqlConnector()
+    {
+        var references = typeof(ModuleCatalog).Assembly.GetReferencedAssemblies();
+
+        Assert.DoesNotContain(references, reference =>
+            reference.Name is "SqlSugar" or "MySqlConnector");
+    }
+
+    [Fact]
     public void RequiredModulesAreDeclaredOnce()
     {
         Assert.Equal(ModuleCatalog.Names.Count, ModuleCatalog.Names.Distinct(StringComparer.Ordinal).Count());

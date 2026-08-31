@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\src\Naraka.Server.Infrastructure\Naraka.Server.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\migrations\0001_p0_identity.sql" Link="Migrations\0001_p0_identity.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
