@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": ".NET Framework 4.6.1 SimpleServer.exe with protobuf-net 2.4.4",
+  "fixturePublicKey": "golden-public-key",
+  "fixtureSessionKey": "golden-session-key",
+  "cases": [
+    {
+      "name": "secret-request",
+      "protocolName": "MsgSecret",
+      "keyKind": "public",
+      "protobufHex": "0801",
+      "cipherBase64": "0x+HD4QxfYP1PctXoqzfZw==",
+      "packetBase64": "GwAAAAkATXNnU2VjcmV00x+HD4QxfYP1PctXoqzfZw=="
+    },
+    {
+      "name": "secret-response",
+      "protocolName": "MsgSecret",
+      "keyKind": "public",
+      "protobufHex": "08011212676F6C64656E2D73657373696F6E2D6B6579",
+      "cipherBase64": "HYO0QVTThDxsCTYu04va5lQ9RJkXJ+NsC3t4KwVNRlc=",
+      "packetBase64": "KwAAAAkATXNnU2VjcmV0HYO0QVTThDxsCTYu04va5lQ9RJkXJ+NsC3t4KwVNRlc="
+    },
+    {
+      "name": "ping",
+      "protocolName": "MsgPing",
+      "keyKind": "session",
+      "protobufHex": "0802",
+      "cipherBase64": "C43gq4A5CsqJr/rvaZoM7w==",
+      "packetBase64": "GQAAAAcATXNnUGluZwuN4KuAOQrKia/672maDO8="
+    },
+    {
+      "name": "login-request",
+      "protocolName": "MsgLogin",
+      "keyKind": "session",
+      "protobufHex": "0805120C666978747572652D757365721A10666978747572652D70617373776F7264",
+      "cipherBase64": "dT/SX6FTLijMAXq/79gJh7ALcL71WgZ8Gnq7If3OM7nZ34dZoOq4/1oXHqg/Hi8k",
+      "packetBase64": "OgAAAAgATXNnTG9naW51P9JfoVMuKMwBer/v2AmHsAtwvvVaBnwaersh/c4zudnfh1mg6rj/WhceqD8eLyQ="
+    },
+    {
+      "name": "player-data-response",
+      "protocolName": "MsgPlayerDataResponse",
+      "keyKind": "session",
+      "protobufHex": "080C187B20E807288906302A381540074803",
+      "cipherBase64": "cLw3NBheklrp9VOYJUhTzi3W7f37w5Lnd3QiSF/zaNQ=",
+      "packetBase64": "NwAAABUATXNnUGxheWVyRGF0YVJlc3BvbnNlcLw3NBheklrp9VOYJUhTzi3W7f37w5Lnd3QiSF/zaNQ="
+    }
+  ]
+}

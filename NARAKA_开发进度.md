@@ -54,13 +54,15 @@
 - 建立MVC接口、MessagePipe/R3抽象接缝、`INetworkFacade`、`MockNetworkFacade`和`LegacyNetworkAdapter`边界。
 - 建立VContainer Composition Root、URP自动配置工具并写入启动场景。
 - 建立.NET 10 LTS模块化单体服务端Solution、健康端点、模块清单、LegacyNetworkV1边界和架构测试。
-- Unity批处理配置返回码0；Unity EditMode测试2/2通过；服务端Release编译0警告0错误，架构测试3/3通过。
+- Unity批处理配置返回码0；Unity EditMode测试2/2通过；服务端Release编译0警告0错误，架构测试3/3、LegacyNetworkV1兼容测试7/7通过。
 - 已配置仓库级Git提交者身份与GitHub `origin`，P0可验证基线已推送至远程`main`分支。
+- 已完成旧客户端与SimpleServer只读审计，保存源文件SHA-256清单、线格式说明和5条旧可执行文件生成的Golden向量。
+- 已建立.NET 10字节兼容的旧AES与组帧/拆帧实现，确认响应协议目录漂移、心跳间隔冲突和公网会话安全阻断项。
 
 待完成：
 
 - 接入MessagePipe和兼容Unity 2021.3的R3实现，保持现有抽象接口不变。
-- 为旧客户端/服务端网络实现建立Golden Files和协议兼容测试，再接入`LegacyNetworkAdapter`。
+- 明确三个响应协议的兼容策略，并在认证会话边界后接入`LegacyNetworkAdapter`；旧线格式保持不变。
 - 接入本机MySQL、SqlSugar和真实数据库健康检查。
 - 完成配置版本、登录冒烟、空大厅和基础CI。
 
@@ -112,8 +114,8 @@
 
 继续P0，按以下顺序推进：
 
-1. 审计`E:\ClientProject`与`D:\培训项目\7.21net\SimpleServer`的冻结网络行为，先生成Golden Files，再接适配器。
-2. 通过环境变量接入本机MySQL，建立SqlSugar Repository和真实健康检查；任何密码不得进入仓库。
+1. 通过环境变量接入本机MySQL，建立SqlSugar Repository和真实健康检查；任何密码不得进入仓库。
+2. 建立服务端认证会话，把玩家身份从连接上下文注入业务命令，并处理三个响应协议的客户端兼容别名。
 3. 接入MessagePipe/R3实现、登录冒烟和空大厅。
 4. 建立客户端/服务端基础CI，确保Unity EditMode和.NET测试持续通过。
 

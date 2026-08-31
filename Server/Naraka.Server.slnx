@@ -8,5 +8,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Naraka.Server.ArchitectureTests/Naraka.Server.ArchitectureTests.csproj" />
+    <Project Path="tests/Naraka.Server.LegacyNetworkV1.Tests/Naraka.Server.LegacyNetworkV1.Tests.csproj" />
   </Folder>
 </Solution>
