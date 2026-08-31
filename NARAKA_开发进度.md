@@ -55,6 +55,7 @@
 - 建立VContainer Composition Root、URP自动配置工具并写入启动场景。
 - 建立.NET 10 LTS模块化单体服务端Solution、健康端点、模块清单、LegacyNetworkV1边界和架构测试。
 - Unity批处理配置返回码0；Unity EditMode测试2/2通过；服务端Release编译0警告0错误，架构测试3/3通过。
+- 已配置仓库级Git提交者身份与GitHub `origin`，P0可验证基线已推送至远程`main`分支。
 
 待完成：
 
@@ -62,7 +63,6 @@
 - 为旧客户端/服务端网络实现建立Golden Files和协议兼容测试，再接入`LegacyNetworkAdapter`。
 - 接入本机MySQL、SqlSugar和真实数据库健康检查。
 - 完成配置版本、登录冒烟、空大厅和基础CI。
-- 配置Git提交者身份、GitHub远程仓库并完成首次安全备份。
 
 退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。
 
@@ -112,11 +112,10 @@
 
 继续P0，按以下顺序推进：
 
-1. 完成Git提交者身份和GitHub远程连接，提交当前可验证基线。
-2. 审计`E:\ClientProject`与`D:\培训项目\7.21net\SimpleServer`的冻结网络行为，先生成Golden Files，再接适配器。
-3. 通过环境变量接入本机MySQL，建立SqlSugar Repository和真实健康检查；任何密码不得进入仓库。
-4. 接入MessagePipe/R3实现、登录冒烟和空大厅。
-5. 建立客户端/服务端基础CI，确保Unity EditMode和.NET测试持续通过。
+1. 审计`E:\ClientProject`与`D:\培训项目\7.21net\SimpleServer`的冻结网络行为，先生成Golden Files，再接适配器。
+2. 通过环境变量接入本机MySQL，建立SqlSugar Repository和真实健康检查；任何密码不得进入仓库。
+3. 接入MessagePipe/R3实现、登录冒烟和空大厅。
+4. 建立客户端/服务端基础CI，确保Unity EditMode和.NET测试持续通过。
 
 ## 5. 新对话续接提示词
 
