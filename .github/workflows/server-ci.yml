@@ -1,0 +1,55 @@
+name: Server CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Server/**"
+      - "Tools/CI/Invoke-ServerTests.ps1"
+      - "global.json"
+      - ".github/workflows/server-ci.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "Server/**"
+      - "Tools/CI/Invoke-ServerTests.ps1"
+      - "global.json"
+      - ".github/workflows/server-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install pinned .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Run server CI gate
+        shell: pwsh
+        run: ./Tools/CI/Invoke-ServerTests.ps1 -DotNetPath (Get-Command dotnet).Source
+
+      - name: Upload server test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-test-results
+          path: artifacts/ci/server
+          if-no-files-found: warn
+          retention-days: 14

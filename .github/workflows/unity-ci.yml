@@ -1,0 +1,58 @@
+name: Unity Client CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "NK/**"
+      - "Tools/CI/Invoke-UnityTests.ps1"
+      - ".github/workflows/unity-ci.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "NK/**"
+      - "Tools/CI/Invoke-UnityTests.ps1"
+      - ".github/workflows/unity-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unity-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: EditMode and PlayMode
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+      - unity-2021.3.45f2c1
+    timeout-minutes: 30
+    env:
+      UNITY_EDITOR_PATH: ${{ vars.NARAKA_UNITY_EDITOR_PATH }}
+      NARAKA_RUN_LEGACY_CLIENT_SMOKE: "0"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          clean: true
+
+      - name: Run Unity test gates
+        shell: pwsh
+        run: ./Tools/CI/Invoke-UnityTests.ps1
+
+      - name: Upload Unity test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unity-test-results
+          path: artifacts/ci/unity
+          if-no-files-found: warn
+          retention-days: 14

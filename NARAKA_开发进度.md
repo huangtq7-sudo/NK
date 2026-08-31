@@ -1,6 +1,6 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.2
+版本：1.3
 更新日期：2026-08-31
 当前阶段：P0工程基础进行中
 
@@ -13,7 +13,7 @@
 - 英雄、技能、武器、10类怪物、任务六章、物品、经济、宠物、天气和多人移动规则已经具备首版数值基线。
 - 地图美术和正式空间布局暂不设计，等待用户提供地图素材。
 - 正式Unity工程位于`E:\NK项目\NK`，版本锁定为`2021.3.45f2c1`；P0客户端和服务端骨架已经建立。
-- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟和空大厅；基础CI尚未完成，因此P0仍未关闭。
+- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；两套CI入口已经本机实跑通过，尚待首轮GitHub远端结果和P0最终验收，因此P0仍未关闭。
 
 ## 2. 已有成果
 
@@ -56,6 +56,8 @@
 - 建立.NET 10 LTS模块化单体服务端Solution、健康端点、模块清单、LegacyNetworkV1边界和架构测试。
 - Unity批处理配置返回码0；Unity EditMode回归14项通过、0失败、1项真实联网测试按环境条件默认跳过，PlayMode启动场景测试1/1通过；此前单独启用的Unity→Host→MySQL真实注册登录冒烟1/1通过并已删除测试账号。
 - 服务端Release测试构建通过，架构测试4/4、Application测试7/7、LegacyNetworkV1测试21/21、Infrastructure测试10/10通过，共42项、0失败；NuGet直接和传递依赖漏洞审计为0。
+- 已建立GitHub Actions基础CI：服务端使用GitHub托管Windows Runner执行固定.NET 10.0.400 SDK、NuGet漏洞门禁、Release构建和四个测试程序集；Unity客户端使用安装并激活`2021.3.45f2c1`的受信任Windows自托管Runner执行EditMode和PlayMode，并拒绝在外部Fork PR上运行。
+- 已建立`Tools/CI/Invoke-ServerTests.ps1`和`Tools/CI/Invoke-UnityTests.ps1`作为本机与CI统一入口；本机实跑结果为服务端42/42、Unity EditMode 14通过/0失败/1按环境跳过、PlayMode 1/1。基础CI不读取`.env`、不连接MySQL，也不启用真实登录冒烟。
 - 已配置仓库级Git提交者身份与GitHub `origin`，P0可验证基线已推送至远程`main`分支。
 - 已完成旧客户端与SimpleServer只读审计，保存源文件SHA-256清单、线格式说明和5条旧可执行文件生成的Golden向量。
 - 已建立.NET 10字节兼容的旧AES与组帧/拆帧实现，确认响应协议目录漂移、心跳间隔冲突和公网会话安全阻断项。
@@ -76,7 +78,7 @@
 
 待完成：
 
-- 建立客户端/服务端基础CI，并以持续集成结果完成P0最终退出验收。
+- 推送CI基线并确认GitHub首轮服务端与Unity自托管工作流结果；随后执行P0最终本机验收并关闭P0。
 
 退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。
 
@@ -126,7 +128,7 @@
 
 继续P0，按以下顺序推进：
 
-1. 建立客户端/服务端基础CI，确保Unity EditMode、PlayMode和.NET测试持续通过。
+1. 确认GitHub首轮服务端与Unity自托管CI结果。
 2. 执行P0最终本机验收并关闭P0。
 3. P0关闭后，再准备阿里云Windows Host与云端MySQL部署。
 
