@@ -87,6 +87,58 @@ else {
 # Baseline CI never opts into the real Host/MySQL smoke test.
 $env:NARAKA_RUN_LEGACY_CLIENT_SMOKE = $null
 
+$warmupLogFile = Join-Path $ResultsDirectory "warmup.log"
+if (Test-Path -LiteralPath $warmupLogFile -PathType Leaf) {
+    Remove-Item -Force -LiteralPath $warmupLogFile
+}
+
+Write-Host "Importing and compiling the Unity project before test discovery."
+$warmupArguments = @(
+    "-batchmode",
+    "-nographics",
+    "-quit",
+    "-projectPath", "`"$ProjectPath`"",
+    "-logFile", "`"$warmupLogFile`""
+)
+$warmupProcess = Start-Process -FilePath $UnityEditorPath `
+    -ArgumentList $warmupArguments `
+    -PassThru
+$warmupDeadline = [DateTime]::UtcNow.AddMinutes($TimeoutMinutes)
+
+while (-not $warmupProcess.HasExited) {
+    if ([DateTime]::UtcNow -ge $warmupDeadline) {
+        Stop-Process -Id $warmupProcess.Id -Force
+        $warmupProcess.WaitForExit()
+        throw "Unity project import exceeded the $TimeoutMinutes minute timeout. See $warmupLogFile."
+    }
+
+    Start-Sleep -Seconds 1
+    $warmupProcess.Refresh()
+}
+
+if ($warmupProcess.ExitCode -ne 0) {
+    throw "Unity project import failed with exit code $($warmupProcess.ExitCode). See $warmupLogFile."
+}
+
+if (-not (Test-Path -LiteralPath $warmupLogFile -PathType Leaf)) {
+    throw "Unity project import did not produce $warmupLogFile."
+}
+
+$warmupLog = Get-Content -Raw -Encoding UTF8 -LiteralPath $warmupLogFile
+$compilationErrorPatterns = @(
+    '(?im)^[^\r\n]*\(\d+,\d+\):\s+error\s+CS\d+\b',
+    '(?im)^\s*error\s+CS\d+\b',
+    '(?im)^\s*Scripts have compiler errors\.?\s*$',
+    '(?im)^\s*Compilation failed\b'
+)
+foreach ($compilationErrorPattern in $compilationErrorPatterns) {
+    if ($warmupLog -match $compilationErrorPattern) {
+        throw "Unity project import reported C# compilation errors. See $warmupLogFile."
+    }
+}
+
+Write-Host "Unity project import passed: exit=0, no C# compilation errors found."
+
 foreach ($platform in $platforms) {
     $filePrefix = $platform.ToLowerInvariant()
     $resultFile = Join-Path $ResultsDirectory "$filePrefix-results.xml"
