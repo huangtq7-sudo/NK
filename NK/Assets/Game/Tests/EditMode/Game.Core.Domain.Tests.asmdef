@@ -31,6 +31,9 @@
   "defineConstraints": [
     "UNITY_INCLUDE_TESTS"
   ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
   "versionDefines": [],
   "noEngineReferences": true
 }
