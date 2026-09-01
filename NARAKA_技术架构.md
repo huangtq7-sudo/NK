@@ -1,7 +1,7 @@
 # 《NARAKA》技术架构基线
 
-版本：2.2
-更新日期：2026-08-31
+版本：2.3
+更新日期：2026-09-01
 状态：实施权威摘要
 详细来源：`outputs/naraka_design_v2/NARAKA_TDD_技术设计文档_MVC_v2.0.docx`
 
@@ -154,7 +154,7 @@
 - 配置采用 `Excel → Luban校验 → 生成两端C#/二进制 → 差异与签名 → 灰度 → 全量/回滚`。
 - 版本分为ClientVersion、CodeHotfixVersion、ResourceVersion、ConfigVersion和ProtocolVersion。
 - P0使用Host的`GET /bootstrap/config-version`返回ConfigVersion、客户端最低/最高版本和ProtocolVersion；客户端Bootstrap MVC必须在注册或登录前完成兼容性检查，失败时保持Account入口阻塞并允许重试。
-- 版本预检不进入冻结的`LegacyNetworkV1`传输实现：本机开发允许loopback HTTP，远端地址必须使用HTTPS。P0端点只提供兼容性元数据，不替代P5正式Manifest的签名、SHA-256、A/B缓存和KnownGood回滚机制。
+- 版本预检不进入冻结的`LegacyNetworkV1`传输实现：本机开发允许loopback HTTP，直接远端地址必须使用HTTPS；单开发者云端环境允许按ADR-0006用加密SSH隧道把云端loopback映射为本机loopback，但不得直接公开HTTP端口。P0端点只提供兼容性元数据，不替代P5正式Manifest的签名、SHA-256、A/B缓存和KnownGood回滚机制。
 - Manifest使用签名和SHA-256校验，客户端保留A/B缓存和KnownGood版本。
 - FileSystemWatcher只允许开发环境，不作为生产配置热更方案。
 - XNB属于XNA内容格式，不作为Unity项目的运行时数据方案。
@@ -174,7 +174,8 @@
 - 基础框架：.NET Generic Host、Microsoft DI、SqlSugar、MySQL、FluentValidation、FluentMigrator、Quartz.NET和Polly。
 - Redis/Tair用于会话、在线状态和短期锁；RocketMQ只用于审计、统计、邮件和非实时通知，不进入实时路径。
 - log4net负责基础日志，OpenTelemetry提供Trace/Metrics，并接入Prometheus/Grafana或阿里云SLS/ARMS。
-- Docker镜像部署至阿里云ECS或ACK；首发规模较小时优先ECS+容器，达到容量证据后再采用ACK。
+- 当前单开发者云端环境按ADR-0006部署：.NET 10自包含`win-x64` Host与MySQL 5.7.26同机运行，数据库、Bootstrap和LegacyNetworkV1均只监听loopback，本地Unity通过SSH隧道访问。
+- 当前开发主机通过Windows服务和计划任务开机启动，不引入容器、Redis、MQ或额外监控平台。正式发布前再依据容量、安全与运维证据决定独立数据库、TLS入口、容器或ACK，不能把当前单机拓扑视为生产基线。
 
 ## 13. 数据库与事务
 

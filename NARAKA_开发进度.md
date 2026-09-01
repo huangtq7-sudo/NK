@@ -1,8 +1,8 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.5
+版本：1.6
 更新日期：2026-09-01
-当前阶段：P0工程基础已关闭，等待用户指定下一阶段
+当前阶段：P0工程基础与云端开发环境闭环均已完成，等待用户许可下一开发项
 
 ## 1. 当前状态
 
@@ -13,7 +13,7 @@
 - 英雄、技能、武器、10类怪物、任务六章、物品、经济、宠物、天气和多人移动规则已经具备首版数值基线。
 - 地图美术和正式空间布局暂不设计，等待用户提供地图素材。
 - 正式Unity工程位于`E:\NK项目\NK`，版本锁定为`2021.3.45f2c1`；P0客户端和服务端骨架已经建立。
-- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；P0最终本机验收、服务端GitHub工作流和Unity自托管冷启动工作流均已通过，测试Artifact正常上传，P0已经正式关闭。P1和云端部署均未开始，等待用户明确指定下一项任务。
+- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；P0最终本机验收、服务端GitHub工作流和Unity自托管冷启动工作流均已通过，测试Artifact正常上传，P0已经正式关闭。阿里云Windows Host与同机MySQL开发环境也已部署并通过正式Unity客户端闭环验收；P1尚未开始。
 
 ## 2. 已有成果
 
@@ -22,11 +22,11 @@
 - `outputs/naraka_design_v2/NARAKA_GDD_游戏设计文档_v2.0.docx`
 - `outputs/naraka_design_v2/NARAKA_TDD_技术设计文档_MVC_v2.0.docx`
 - `outputs/naraka_design_v2/NARAKA_开发任务与模块依赖_v2.0.xlsx`
-- `docs/NARAKA/NARAKA_完整玩法设计.md`
-- `docs/NARAKA/NARAKA_技术架构.md`
-- `docs/NARAKA/NARAKA_开发规范.md`
-- `docs/NARAKA/NARAKA_开发进度.md`
-- `docs/NARAKA/NARAKA_待确认问题.md`
+- `NARAKA_完整玩法设计.md`
+- `NARAKA_技术架构.md`
+- `NARAKA_开发规范.md`
+- `NARAKA_开发进度.md`
+- `NARAKA_待确认问题.md`
 
 ### UI与背景资源
 
@@ -80,9 +80,20 @@
 
 待完成：
 
-- 无。P0已关闭；开始P1或云端部署前必须先取得用户许可。
+- 无。P0已关闭；开始P1前必须先取得用户许可。
 
 退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。以上本机与远端退出条件均已满足。
+
+### 阿里云开发环境：已完成基础部署与客户端验收
+
+- 新加坡Windows Server 2022轻量主机已运行MySQL 5.7.26和.NET 10自包含Host；未安装容器、Redis、MQ或其他非必要服务。
+- MySQL服务`NarakaMySQL57`与Host计划任务`NarakaServerHost`均已配置开机启动，并通过重启后复验。
+- MySQL、Bootstrap HTTP和LegacyNetworkV1分别只监听`127.0.0.1:3306`、`127.0.0.1:5222`和`127.0.0.1:8011`，没有直接开放数据库或游戏端口。
+- 本地正式Unity工程通过SSH隧道完成版本预检、真实注册、真实登录与空大厅跳转；健康检查返回`MySQL reachable`，版本值保持`p0-config-1`、`0.1`至`0.1`和`LegacyNetworkV1`。
+- 迁移`0001_p0_identity.sql`的dry-run、首次应用和重复应用均成功，核对3张P0表与迁移记录。
+- 当前只作为单开发者环境，不代表生产可用；阿里云侧防火墙规则、正式TLS/域名、多环境隔离、备份监控和容量方案留到发布准备阶段。
+- 无敏感信息运维说明见`Docs/Deployment/aliyun-windows-development.md`，部署决策见ADR-0006。
+- 已建立DeepSeek草案、Claude仓库复核和Codex集成守门的三模型流程，见`Docs/AI/three-model-collaboration.md`。
 
 ### P1 战斗垂直切片：未开始
 
@@ -128,22 +139,24 @@
 
 ## 4. 下一步
 
-P0已经关闭。下一步等待用户明确选择并许可：
+P0与云端开发环境闭环均已完成。下一步等待用户明确选择并许可：
 
-1. 进入P1战斗垂直切片；或
-2. 准备阿里云Windows Host与云端MySQL部署。
+1. 按路线图进入P1战斗垂直切片；或
+2. 先指定一个边界清晰的UI页面，由DeepSeek提供草案与手工挂载说明、Claude复核实现、Codex执行集成门禁；正式大厅经济UI仍属于P4。
 
-在取得许可前不继续开发或云端操作。
+在取得许可前不继续开发、数据清理或云端变更。
 
 ## 5. 新对话续接提示词
 
 在新的Codex对话中打开同一个项目目录，然后发送：
 
-> 请先完整读取 `docs/NARAKA/` 下的五份项目文档，以及 `outputs/naraka_design_v2/` 下的GDD、TDD和任务表。以Markdown文档中的2.1纠错规则为最高优先级，继续开发Unity 2021.3 LTS + URP的《NARAKA》。客户端业务必须严格采用模块化MVC，网络传输层暂不修改。开始前先汇总当前阶段、已完成内容、下一项任务和发现的冲突，不要重新设计已经确认的玩法。
+> 请先完整读取项目根目录五份`NARAKA_*.md`权威文档、`Docs/ADR/`全部已接受ADR和`Server/README.md`。以用户指定的Markdown 2.1纠错规则和权威Markdown纠错结论为最高优先级；只有本轮涉及玩法、完整架构或任务表冲突时才读取`outputs/naraka_design_v2/`中的GDD、TDD和任务表，冲突内容失效。继续开发Unity 2021.3.45f2c1 LTS + URP 12.1.15的《NARAKA》，客户端业务严格采用模块化MVC，LegacyNetworkV1保持冻结。开始前先汇总当前Git状态、阶段、已完成内容、本轮范围和冲突，不要重新设计已确认玩法。
 
 如果只想继续某个模块，在上述文字后追加：
 
 > 本轮只继续【模块名称】，完成代码、Unity配置、测试和进度文档更新；不要扩大到其他阶段。
+
+Claude与DeepSeek的完整提示词分别见`Docs/AI/CLAUDE_PROJECT_PROMPT.md`和`Docs/AI/DEEPSEEK_UI_PROMPT.md`。
 
 ## 6. 每轮结束要求
 

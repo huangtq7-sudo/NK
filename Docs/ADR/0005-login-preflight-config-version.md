@@ -11,7 +11,7 @@ P0退出条件要求客户端启动后先检查版本，再允许注册、登录
 
 服务端Host提供`GET /bootstrap/config-version`，返回ConfigVersion、MinimumClientVersion、MaximumClientVersion和ProtocolVersion。客户端以独立Bootstrap模块化MVC完成获取与纯Model兼容性判断，通过`IStartupReadiness`阻塞Account Controller，只有检查通过后才允许注册和登录。
 
-本机开发只接受loopback HTTP地址，远端Bootstrap地址必须使用HTTPS。该端点仅承担P0兼容性预检，不替代P5正式配置发布中的签名、SHA-256、A/B缓存与KnownGood回滚。
+本机开发只接受loopback HTTP地址，直接暴露给远端客户端的Bootstrap地址必须使用HTTPS。单开发者云端环境可以按ADR-0006通过加密SSH隧道把云端loopback端口映射为本机loopback；该例外不允许直接公开HTTP端口。该端点仅承担P0兼容性预检，不替代P5正式配置发布中的签名、SHA-256、A/B缓存与KnownGood回滚。
 
 跨模块的`AccountAuthenticatedEvent`由MessagePipe实现的`IDomainEventBus`传递；持续展示状态通过R3实现的`ReactiveState<T>`发布。View仍只依赖既有只读状态接口，顶层架构保持模块化MVC。
 

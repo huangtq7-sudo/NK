@@ -8,6 +8,8 @@ Formal development workspace for the Unity 2021.3 LTS + URP game client and the 
 - `Server/`: modular-monolith server and tests.
 - `Shared/`: generated protocol/config contracts shared by build tooling.
 - `Tools/`: repository automation.
+- `Docs/Deployment/`: secret-free deployment and operations records.
+- `Docs/AI/`: multi-model collaboration rules and reusable prompts.
 - Root `NARAKA_*.md` files: current project design and engineering baselines.
 
 The client business layer must remain modular MVC. The legacy network transport protocol and runtime behavior are frozen behind adapter interfaces.
