@@ -3,10 +3,10 @@
 ## CI门禁
 
 - `Server CI`在GitHub托管的Windows Runner上恢复、Release构建并运行全部.NET测试项目，同时把NuGet直接和传递依赖漏洞警告`NU1901`至`NU1904`视为错误。
-- `Unity Client CI`在安装并激活Unity `2021.3.45f2c1`的Windows自托管Runner上依次运行EditMode和PlayMode测试。
+- `Unity Client CI`在安装并激活Unity `2021.3.45f2c1`的Windows自托管Runner上先以独立进程导入并编译项目，再以单独进程依次运行EditMode和PlayMode测试。
 - 两条工作流在影响各自代码的`main`推送、以`main`为目标的Pull Request和手动触发时运行。
 - 基础CI不读取`.env`，不连接MySQL，不启用Unity到Host/MySQL的真实注册登录冒烟。
-- 测试XML、TRX和Unity日志作为GitHub Actions Artifact保留14天。
+- 测试XML、TRX、Unity预热日志和测试日志作为GitHub Actions Artifact保留14天。
 
 ## Unity自托管Runner
 
@@ -28,7 +28,7 @@ Unity中国版`2021.3.45f2c1`不能由公共Runner稳定、精确地还原，因
 
 服务端脚本要求`global.json`指定的.NET SDK；优先使用`-DotNetPath`、`DOTNET_EXE`或PATH中的`dotnet`，开发工作区最后回退到忽略提交的`.tools/dotnet/dotnet.exe`。
 
-Unity脚本优先使用`-UnityEditorPath`或`UNITY_EDITOR_PATH`，当前开发机最后回退到固定基线路径。脚本在运行测试前校验编辑器版本，并检查测试结果中至少存在一项测试且没有失败或不确定项。EditMode中由环境控制的真实联网测试允许按设计跳过。
+Unity脚本优先使用`-UnityEditorPath`或`UNITY_EDITOR_PATH`，当前开发机最后回退到固定基线路径。脚本在运行测试前校验编辑器版本，然后通过独立Unity进程完成首次导入/编译；预热必须在超时内以0退出、生成`warmup.log`且日志中没有C#编译错误，测试进程才会启动。随后脚本检查测试结果中至少存在一项测试且没有失败或不确定项。EditMode中由环境控制的真实联网测试允许按设计跳过。
 
 ## P0边界
 

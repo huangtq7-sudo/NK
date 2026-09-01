@@ -1,8 +1,8 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.3
-更新日期：2026-08-31
-当前阶段：P0工程基础进行中
+版本：1.4
+更新日期：2026-09-01
+当前阶段：P0工程基础本机验收完成，待GitHub集中同步与远端复验
 
 ## 1. 当前状态
 
@@ -13,7 +13,7 @@
 - 英雄、技能、武器、10类怪物、任务六章、物品、经济、宠物、天气和多人移动规则已经具备首版数值基线。
 - 地图美术和正式空间布局暂不设计，等待用户提供地图素材。
 - 正式Unity工程位于`E:\NK项目\NK`，版本锁定为`2021.3.45f2c1`；P0客户端和服务端骨架已经建立。
-- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；两套CI入口已经本机实跑通过，尚待首轮GitHub远端结果和P0最终验收，因此P0仍未关闭。
+- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；P0最终本机验收已经通过。服务端GitHub工作流首轮已通过，Unity自托管Runner已配置；Unity冷启动测试发现修复与最终文档尚待集中推送并完成远端复验，因此P0尚未正式关闭，也未进入P1。
 
 ## 2. 已有成果
 
@@ -44,7 +44,7 @@
 
 ## 3. 路线图状态
 
-### P0 基础：进行中
+### P0 基础：本机验收完成，待远端复验
 
 已完成：
 
@@ -54,10 +54,10 @@
 - 建立MVC接口、`INetworkFacade`、`MockNetworkFacade`和`LegacyNetworkAdapter`边界；MessagePipe/R3实现位于Infrastructure/Application接缝后，未改变既有业务接口或网络传输层。
 - 建立VContainer Composition Root、URP自动配置工具并写入启动场景。
 - 建立.NET 10 LTS模块化单体服务端Solution、健康端点、模块清单、LegacyNetworkV1边界和架构测试。
-- Unity批处理配置返回码0；Unity EditMode回归14项通过、0失败、1项真实联网测试按环境条件默认跳过，PlayMode启动场景测试1/1通过；此前单独启用的Unity→Host→MySQL真实注册登录冒烟1/1通过并已删除测试账号。
+- Unity批处理配置返回码0；从不含`Library`的隔离检出执行独立导入/编译预热后，Unity EditMode回归14项通过、0失败、1项真实联网测试按环境条件默认跳过，PlayMode启动场景测试1/1通过；单独启用Unity→Host→MySQL真实注册登录冒烟后EditMode 15/15通过，并确认删除1行随机测试账号。
 - 服务端Release测试构建通过，架构测试4/4、Application测试7/7、LegacyNetworkV1测试21/21、Infrastructure测试10/10通过，共42项、0失败；NuGet直接和传递依赖漏洞审计为0。
 - 已建立GitHub Actions基础CI：服务端使用GitHub托管Windows Runner执行固定.NET 10.0.400 SDK、NuGet漏洞门禁、Release构建和四个测试程序集；Unity客户端使用安装并激活`2021.3.45f2c1`的受信任Windows自托管Runner执行EditMode和PlayMode，并拒绝在外部Fork PR上运行。
-- 已建立`Tools/CI/Invoke-ServerTests.ps1`和`Tools/CI/Invoke-UnityTests.ps1`作为本机与CI统一入口；本机实跑结果为服务端42/42、Unity EditMode 14通过/0失败/1按环境跳过、PlayMode 1/1。基础CI不读取`.env`、不连接MySQL，也不启用真实登录冒烟。
+- 已建立`Tools/CI/Invoke-ServerTests.ps1`和`Tools/CI/Invoke-UnityTests.ps1`作为本机与CI统一入口；Unity入口先以独立进程完成首次导入/编译，检查退出码和C#编译日志，再以单独进程运行测试，避免干净`Library`首次导入时测试发现为0。本机实跑结果为服务端42/42、Unity EditMode 14通过/0失败/1按环境跳过、PlayMode 1/1。基础CI不读取`.env`、不连接MySQL，也不启用真实登录冒烟。
 - 已配置仓库级Git提交者身份与GitHub `origin`，P0可验证基线已推送至远程`main`分支。
 - 已完成旧客户端与SimpleServer只读审计，保存源文件SHA-256清单、线格式说明和5条旧可执行文件生成的Golden向量。
 - 已建立.NET 10字节兼容的旧AES与组帧/拆帧实现，确认响应协议目录漂移、心跳间隔冲突和公网会话安全阻断项。
@@ -75,12 +75,13 @@
 - 已接入官方MessagePipe 1.8.2与R3 1.3.1：跨模块认证完成事件使用MessagePipe，Account/Lobby/Bootstrap的连续展示状态使用R3；View仍只取得现有`IReadOnlyState<T>`接口。
 - 已建立Bootstrap模块化MVC、`UnityConfigVersionGateway`和服务端`GET /bootstrap/config-version`；客户端启动后先核对ClientVersion、ConfigVersion与ProtocolVersion，未通过时禁止注册和登录，并提供重试提示。
 - 本机Host的版本端点已返回`p0-config-1`、客户端范围`0.1`至`0.1`及`LegacyNetworkV1`，真实HTTP响应已完成冒烟核对。
+- 2026-09-01已完成P0最终本机联合验收：服务端Release构建0警告/0错误、自动化42/42；数据库迁移dry-run与幂等应用通过，核对3张P0表和唯一`0001`记录；`/health/live`与`/health/ready`均返回200，数据库为`MySQL reachable`，8011端口实际监听；版本端点四项匹配；Unity真实Socket注册登录通过且测试账号已清理；验收Host随后停止并释放5222/8011端口。
 
 待完成：
 
-- 推送CI基线并确认GitHub首轮服务端与Unity自托管工作流结果；随后执行P0最终本机验收并关闭P0。
+- 经用户许可，将P0本地提交集中推送至GitHub，确认Unity自托管工作流在干净checkout中得到EditMode 15项（14通过、1跳过）和PlayMode 1/1，并正常上传XML与日志；远端通过后正式关闭P0。
 
-退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。
+退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。本机退出条件已满足，当前只剩GitHub远端复验。
 
 ### P1 战斗垂直切片：未开始
 
@@ -128,9 +129,9 @@
 
 继续P0，按以下顺序推进：
 
-1. 确认GitHub首轮服务端与Unity自托管CI结果。
-2. 执行P0最终本机验收并关闭P0。
-3. P0关闭后，再准备阿里云Windows Host与云端MySQL部署。
+1. 征得用户许可后，将当前P0本地提交集中推送至GitHub。
+2. 确认Unity自托管CI的干净checkout测试与Artifact上传结果；通过后正式关闭P0。
+3. P0关闭后先征得用户许可，再选择进入P1或准备阿里云Windows Host与云端MySQL部署。
 
 ## 5. 新对话续接提示词
 
