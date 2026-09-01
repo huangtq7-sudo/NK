@@ -1,8 +1,8 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.4
+版本：1.5
 更新日期：2026-09-01
-当前阶段：P0工程基础本机验收完成，待GitHub集中同步与远端复验
+当前阶段：P0工程基础已关闭，等待用户指定下一阶段
 
 ## 1. 当前状态
 
@@ -13,7 +13,7 @@
 - 英雄、技能、武器、10类怪物、任务六章、物品、经济、宠物、天气和多人移动规则已经具备首版数值基线。
 - 地图美术和正式空间布局暂不设计，等待用户提供地图素材。
 - 正式Unity工程位于`E:\NK项目\NK`，版本锁定为`2021.3.45f2c1`；P0客户端和服务端骨架已经建立。
-- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；P0最终本机验收已经通过。服务端GitHub工作流首轮已通过，Unity自托管Runner已配置；Unity冷启动测试发现修复与最终文档尚待集中推送并完成远端复验，因此P0尚未正式关闭，也未进入P1。
+- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；P0最终本机验收、服务端GitHub工作流和Unity自托管冷启动工作流均已通过，测试Artifact正常上传，P0已经正式关闭。P1和云端部署均未开始，等待用户明确指定下一项任务。
 
 ## 2. 已有成果
 
@@ -44,7 +44,7 @@
 
 ## 3. 路线图状态
 
-### P0 基础：本机验收完成，待远端复验
+### P0 基础：已完成
 
 已完成：
 
@@ -76,12 +76,13 @@
 - 已建立Bootstrap模块化MVC、`UnityConfigVersionGateway`和服务端`GET /bootstrap/config-version`；客户端启动后先核对ClientVersion、ConfigVersion与ProtocolVersion，未通过时禁止注册和登录，并提供重试提示。
 - 本机Host的版本端点已返回`p0-config-1`、客户端范围`0.1`至`0.1`及`LegacyNetworkV1`，真实HTTP响应已完成冒烟核对。
 - 2026-09-01已完成P0最终本机联合验收：服务端Release构建0警告/0错误、自动化42/42；数据库迁移dry-run与幂等应用通过，核对3张P0表和唯一`0001`记录；`/health/live`与`/health/ready`均返回200，数据库为`MySQL reachable`，8011端口实际监听；版本端点四项匹配；Unity真实Socket注册登录通过且测试账号已清理；验收Host随后停止并释放5222/8011端口。
+- 2026-09-01最终远端门禁通过：GitHub Server CI运行`33459456358`成功；Unity自托管运行`33461381291`在干净`Library`上完成独立预热、EditMode 14通过/1跳过/0失败和PlayMode 1/1，预热与测试步骤成功，`unity-test-results` Artifact正常上传。
 
 待完成：
 
-- 经用户许可，将P0本地提交集中推送至GitHub，确认Unity自托管工作流在干净checkout中得到EditMode 15项（14通过、1跳过）和PlayMode 1/1，并正常上传XML与日志；远端通过后正式关闭P0。
+- 无。P0已关闭；开始P1或云端部署前必须先取得用户许可。
 
-退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。本机退出条件已满足，当前只剩GitHub远端复验。
+退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。以上本机与远端退出条件均已满足。
 
 ### P1 战斗垂直切片：未开始
 
@@ -127,11 +128,12 @@
 
 ## 4. 下一步
 
-继续P0，按以下顺序推进：
+P0已经关闭。下一步等待用户明确选择并许可：
 
-1. 征得用户许可后，将当前P0本地提交集中推送至GitHub。
-2. 确认Unity自托管CI的干净checkout测试与Artifact上传结果；通过后正式关闭P0。
-3. P0关闭后先征得用户许可，再选择进入P1或准备阿里云Windows Host与云端MySQL部署。
+1. 进入P1战斗垂直切片；或
+2. 准备阿里云Windows Host与云端MySQL部署。
+
+在取得许可前不继续开发或云端操作。
 
 ## 5. 新对话续接提示词
 

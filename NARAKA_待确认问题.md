@@ -1,6 +1,6 @@
 # 《NARAKA》待确认问题与决策记录
 
-版本：1.4
+版本：1.5
 更新日期：2026-09-01
 说明：本文件只保存尚未确认、需要外部素材/权限或会影响实施的事项。已确认玩法不得重新列为问题。
 
@@ -84,10 +84,10 @@
 
 ### Q-015 Unity CI自托管Runner
 
-- 状态：Runner配置和本机冷启动验收已完成，Unity修复待集中推送与GitHub远端复验。
-- 已完成：受信任Runner`NARAKA-Unity-Windows`已使用`self-hosted`、`Windows`、`X64`和`unity-2021.3.45f2c1`标签注册，仓库变量`NARAKA_UNITY_EDITOR_PATH`已设置，并建立当前Unity授权用户登录时启动的计划任务；服务端首轮GitHub工作流已通过。
+- 状态：已关闭。
+- 已完成：受信任Runner`NARAKA-Unity-Windows`已使用`self-hosted`、`Windows`、`X64`和`unity-2021.3.45f2c1`标签注册，仓库变量`NARAKA_UNITY_EDITOR_PATH`已设置，并建立当前Unity授权用户登录时启动的计划任务；系统级PowerShell 7已安装并进入PATH。服务端最终GitHub工作流运行`33459456358`通过。
 - Unity处理：首轮远端Unity检出曾因网络失败；再次运行后在干净`Library`中出现EditMode `total=0`。已为EditMode程序集补充`TestAssemblies`标记，并按既定条件在统一脚本中加入独立导入/编译预热；从新的干净本地检出验证为预热退出码0且无C#编译错误、EditMode 14通过/1跳过/0失败、PlayMode 1/1，XML和三类日志均正常生成。
-- 需要：集中推送本地修复和P0文档，确认GitHub Unity工作流得到相同测试计数并上传Artifact。`ambiguous HEAD`暂按次要Runner临时checkout问题记录；只有持续出现时才检查Runner临时目录，不操作正式项目仓库。
+- 远端结果：Unity运行`33461381291`在干净`Library`上完成预热与测试，EditMode 14通过/1跳过/0失败、PlayMode 1/1，`unity-test-results` Artifact成功上传。此前的网络连接失败和计划任务PATH缺少`pwsh`均属于Runner环境问题，已排除；`ambiguous HEAD`未在最终运行中复现。
 - 安全规则：不在外部Fork PR上执行自托管任务，不向CI注入`.env`、MySQL连接串或真实登录测试凭据。
 
 ## 4. 玩法中暂未最终绑定的内容

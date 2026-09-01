@@ -15,7 +15,8 @@ Unity中国版`2021.3.45f2c1`不能由公共Runner稳定、精确地还原，因
 1. GitHub Actions Runner版本不低于`2.327.1`，并具有`self-hosted`、`Windows`、`X64`和`unity-2021.3.45f2c1`标签。
 2. Unity编辑器已经在Runner服务账号下激活，版本必须为`2021.3.45f2c1`。
 3. 仓库变量`NARAKA_UNITY_EDITOR_PATH`指向该机器上的`Unity.exe`，例如`E:\2021.3.45f2c1\Editor\Unity.exe`。
-4. Runner只用于受信任代码。工作流拒绝在外部Fork Pull Request中运行自托管任务；公开仓库不应允许不可信代码进入该Runner。
+4. 系统级PowerShell 7已经安装，`pwsh`能够从Runner计划任务或服务的PATH直接解析；不得依赖Codex、IDE或某个交互式终端临时注入的工具路径。
+5. Runner只用于受信任代码。工作流拒绝在外部Fork Pull Request中运行自托管任务；公开仓库不应允许不可信代码进入该Runner。
 
 ## 本机入口
 
