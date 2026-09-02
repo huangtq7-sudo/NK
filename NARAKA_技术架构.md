@@ -1,7 +1,7 @@
 # 《NARAKA》技术架构基线
 
-版本：2.3
-更新日期：2026-09-01
+版本：2.4
+更新日期：2026-09-02
 状态：实施权威摘要
 详细来源：`outputs/naraka_design_v2/NARAKA_TDD_技术设计文档_MVC_v2.0.docx`
 
@@ -174,8 +174,8 @@
 - 基础框架：.NET Generic Host、Microsoft DI、SqlSugar、MySQL、FluentValidation、FluentMigrator、Quartz.NET和Polly。
 - Redis/Tair用于会话、在线状态和短期锁；RocketMQ只用于审计、统计、邮件和非实时通知，不进入实时路径。
 - log4net负责基础日志，OpenTelemetry提供Trace/Metrics，并接入Prometheus/Grafana或阿里云SLS/ARMS。
-- 当前单开发者云端环境按ADR-0006部署：.NET 10自包含`win-x64` Host与MySQL 5.7.26同机运行，数据库、Bootstrap和LegacyNetworkV1均只监听loopback，本地Unity通过SSH隧道访问。
-- 当前开发主机通过Windows服务和计划任务开机启动，不引入容器、Redis、MQ或额外监控平台。正式发布前再依据容量、安全与运维证据决定独立数据库、TLS入口、容器或ACK，不能把当前单机拓扑视为生产基线。
+- 当前单开发者云端环境按ADR-0006部署：Windows Server 2016 Datacenter上由.NET 10自包含`win-x64` Host与MySQL 5.7.26同机运行，数据库、Bootstrap和LegacyNetworkV1均只监听loopback，本地Unity通过手动启动的密钥SSH隧道访问。
+- MySQL与`sshd`使用Windows服务自动启动，Host使用SYSTEM开机计划任务；本地隧道任务不设置触发器或自动重试，由开发者按需手动启动和停止。云端不引入Visual Studio、容器、Redis、MQ或额外监控平台。正式发布前再依据容量、安全与运维证据决定独立数据库、TLS入口、容器或ACK，不能把当前单机拓扑视为生产基线。
 
 ## 13. 数据库与事务
 

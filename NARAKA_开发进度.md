@@ -1,8 +1,8 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.6
-更新日期：2026-09-01
-当前阶段：P0工程基础与云端开发环境闭环均已完成，等待用户许可下一开发项
+版本：1.7
+更新日期：2026-09-02
+当前阶段：P0工程基础与Windows Server 2016云端开发环境闭环均已完成；下一候选项为正式登录界面View升级，尚未开始实现
 
 ## 1. 当前状态
 
@@ -13,7 +13,7 @@
 - 英雄、技能、武器、10类怪物、任务六章、物品、经济、宠物、天气和多人移动规则已经具备首版数值基线。
 - 地图美术和正式空间布局暂不设计，等待用户提供地图素材。
 - 正式Unity工程位于`E:\NK项目\NK`，版本锁定为`2021.3.45f2c1`；P0客户端和服务端骨架已经建立。
-- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；P0最终本机验收、服务端GitHub工作流和Unity自托管冷启动工作流均已通过，测试Artifact正常上传，P0已经正式关闭。阿里云Windows Host与同机MySQL开发环境也已部署并通过正式Unity客户端闭环验收；P1尚未开始。
+- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；P0最终本机验收、服务端GitHub工作流和Unity自托管冷启动工作流均已通过，测试Artifact正常上传，P0已经正式关闭。阿里云Windows Server 2016 Host与同机MySQL开发环境也已部署并通过手动SSH隧道的客户端闭环验收；P1与正式UI实现均尚未开始。
 
 ## 2. 已有成果
 
@@ -84,13 +84,15 @@
 
 退出条件：客户端能够启动、检查版本、登录并进入空大厅；服务端和MySQL完成健康检查。以上本机与远端退出条件均已满足。
 
-### 阿里云开发环境：已完成基础部署与客户端验收
+### 阿里云开发环境：已完成Windows Server 2016重建与在线验收
 
-- 新加坡Windows Server 2022轻量主机已运行MySQL 5.7.26和.NET 10自包含Host；未安装容器、Redis、MQ或其他非必要服务。
-- MySQL服务`NarakaMySQL57`与Host计划任务`NarakaServerHost`均已配置开机启动，并通过重启后复验。
+- 新加坡Windows Server 2016 Datacenter轻量主机已运行MySQL 5.7.26和.NET 10自包含Host；未安装Visual Studio、容器、Redis、MQ或其他非必要服务。
+- MySQL服务`NarakaMySQL57`、OpenSSH服务`sshd`与Host计划任务`NarakaServerHost`均已配置云端开机启动。Windows Server 2016重装后的最终重启复验由用户明确免除，不能描述为已实际执行。
 - MySQL、Bootstrap HTTP和LegacyNetworkV1分别只监听`127.0.0.1:3306`、`127.0.0.1:5222`和`127.0.0.1:8011`，没有直接开放数据库或游戏端口。
-- 本地正式Unity工程通过SSH隧道完成版本预检、真实注册、真实登录与空大厅跳转；健康检查返回`MySQL reachable`，版本值保持`p0-config-1`、`0.1`至`0.1`和`LegacyNetworkV1`。
+- Windows防火墙仅允许公网TCP 3389和22；SSH只允许专用公钥，禁止密码与交互Shell，并把端口转发双重限制为云端loopback的5222与8011。
+- 本地`NarakaCloudTunnel`已改为无触发器、无自动重试的按需任务，通过桌面快捷方式手动启动和停止。本地正式Unity工程通过该隧道完成版本预检、真实注册、真实登录与空大厅跳转；健康检查返回`MySQL reachable`，版本值保持`p0-config-1`、`0.1`至`0.1`和`LegacyNetworkV1`。
 - 迁移`0001_p0_identity.sql`的dry-run、首次应用和重复应用均成功，核对3张P0表与迁移记录。
+- 云端安装HeidiSQL 12.21 Portable供RDP会话中手动查看数据库，PowerShell ISE与HeidiSQL均不自动启动；用完必须关闭GUI并注销RDP以释放2 GiB主机内存。
 - 当前只作为单开发者环境，不代表生产可用；阿里云侧防火墙规则、正式TLS/域名、多环境隔离、备份监控和容量方案留到发布准备阶段。
 - 无敏感信息运维说明见`Docs/Deployment/aliyun-windows-development.md`，部署决策见ADR-0006。
 - 已建立DeepSeek草案、Claude仓库复核和Codex集成守门的三模型流程，见`Docs/AI/three-model-collaboration.md`。
@@ -142,7 +144,7 @@
 P0与云端开发环境闭环均已完成。下一步等待用户明确选择并许可：
 
 1. 按路线图进入P1战斗垂直切片；或
-2. 先指定一个边界清晰的UI页面，由DeepSeek提供草案与手工挂载说明、Claude复核实现、Codex执行集成门禁；正式大厅经济UI仍属于P4。
+2. 先执行正式登录界面View升级：DeepSeek按`Docs/AI/DEEPSEEK_UI_PROMPT.md`只提供第一阶段草案和逐步手工挂载说明，Claude按`Docs/AI/CLAUDE_PROJECT_PROMPT.md`读取真实仓库后复核、实现和运行验证，Codex执行架构与交付门禁。该任务只能替换P0功能登录页的表现，不得重写Account/Bootstrap业务、网络、服务端或数据库；正式大厅经济UI仍属于P4。
 
 在取得许可前不继续开发、数据清理或云端变更。
 

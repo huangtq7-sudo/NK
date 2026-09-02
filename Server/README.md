@@ -21,6 +21,6 @@ The local P0 defaults are `ConfigVersion=p0-config-1`, `MinimumClientVersion=0.1
 
 ## Development cloud deployment
 
-The validated development topology runs the self-contained Windows Host and MySQL 5.7.26 on one Windows Server. MySQL, bootstrap HTTP, and `LegacyNetworkV1` remain bound to loopback; the Unity client reaches ports 5222 and 8011 through SSH local forwarding. This topology is not a production deployment.
+The validated development topology runs the self-contained Windows Host and MySQL 5.7.26 on one Windows Server 2016 Datacenter host. MySQL, bootstrap HTTP, and `LegacyNetworkV1` remain bound to loopback; the Unity client reaches ports 5222 and 8011 through a manually started, key-only SSH local forward. The cloud Host and database do not depend on the local tunnel and continue running when the developer PC is offline. This topology is not a production deployment.
 
 The secret-free operations and acceptance record is in `Docs/Deployment/aliyun-windows-development.md`.
