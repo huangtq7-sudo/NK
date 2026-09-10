@@ -53,7 +53,9 @@ await using (var tableCommand = new MySqlCommand(
     "'account_inventory', 'account_equipment', 'account_shop_purchases', 'account_weapons', " +
     "'account_gacha', 'gacha_orders', 'gacha_order_results', " +
     "'account_signin', 'account_signin_claims', 'account_reward_claims', " +
-    "'account_achievements', 'account_achievement_state', 'account_reddot')",
+    "'account_achievements', 'account_achievement_state', 'account_reddot', " +
+    "'account_friends', 'account_friend_requests', 'account_blocks', " +
+    "'chat_conversations', 'chat_messages', 'chat_read_positions')",
     connection))
 {
     var tableCount = Convert.ToInt32(await tableCommand.ExecuteScalarAsync());
@@ -69,7 +71,7 @@ await using (var versionCommand = new MySqlCommand(
     connection))
 {
     var versionCount = Convert.ToInt32(await versionCommand.ExecuteScalarAsync());
-    if (versionCount != 8)
+    if (versionCount != 9)
     {
         Console.Error.WriteLine("Schema verification failed: migrations 0001-0009 are not all recorded.");
         return 5;

@@ -23,7 +23,7 @@ Running Naraka.Server.ArchitectureTests.
 Running Naraka.Server.Application.Tests.
 Running Naraka.Server.LegacyNetworkV1.Tests.
 Running Naraka.Server.Infrastructure.Tests.
-Server CI passed: total=352, executed=352, passed=352, failed=0.
+Server CI passed: total=354, executed=354, passed=354, failed=0.
 ```
 
 分项：ConfigCompiler 20、ArchitectureTests 4、Application 217、LegacyNetworkV1 56、Infrastructure 55。

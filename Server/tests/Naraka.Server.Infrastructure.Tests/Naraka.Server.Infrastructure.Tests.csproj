@@ -24,6 +24,9 @@
 
   <ItemGroup>
     <None Include="..\..\migrations\*.sql" Link="Migrations\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\tools\Naraka.Server.DatabaseMigrator\Program.cs"
+          Link="MigratorSource\Program.cs"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

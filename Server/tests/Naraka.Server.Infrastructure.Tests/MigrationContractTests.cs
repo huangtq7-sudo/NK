@@ -587,3 +587,45 @@ public sealed class SocialMigrationContractTests
         Assert.Equal(7, statements.Length);
     }
 }
+
+/// <summary>
+/// 迁移器最终验收必须覆盖全部迁移实际创建的表和版本记录。
+/// 这项源码契约防止“迁移已经成功，但遗漏清单导致部署被误判失败”的回归。
+/// </summary>
+public sealed class DatabaseMigratorVerificationContractTests
+{
+    private static readonly string MigratorSource = File.ReadAllText(
+        Path.Combine(AppContext.BaseDirectory, "MigratorSource", "Program.cs"));
+
+    [Fact]
+    public void FinalVerificationIncludesAllTwentySevenTables()
+    {
+        foreach (var table in new[]
+                 {
+                     "schema_migrations", "accounts", "player_profiles", "account_progression",
+                     "account_profile", "account_grants", "currency_ledger", "idempotency_records",
+                     "account_inventory", "account_equipment", "account_shop_purchases", "account_weapons",
+                     "account_gacha", "gacha_orders", "gacha_order_results",
+                     "account_signin", "account_signin_claims", "account_reward_claims",
+                     "account_achievements", "account_achievement_state", "account_reddot",
+                     "account_friends", "account_friend_requests", "account_blocks",
+                     "chat_conversations", "chat_messages", "chat_read_positions"
+                 })
+        {
+            Assert.Contains("'" + table + "'", MigratorSource, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("tableCount != 27", MigratorSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FinalVerificationRequiresAllNineMigrationVersions()
+    {
+        for (var version = 1; version <= 9; version++)
+        {
+            Assert.Contains($"'{version:0000}'", MigratorSource, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("versionCount != 9", MigratorSource, StringComparison.Ordinal);
+    }
+}
