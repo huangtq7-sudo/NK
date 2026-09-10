@@ -1,0 +1,19 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Account/View/UI/AccountLogin.uss?fileID=7433441132597879392&amp;guid=d08b23697b247d445ab2074cacef4d74&amp;type=3#AccountLogin" />
+    <ui:VisualElement name="AccountScreen" class="account-screen" style="font-size: 20px;">
+        <ui:VisualElement name="AccountBackground" picking-mode="Ignore" class="account-background" />
+        <ui:VisualElement name="AccountPanel" class="account-panel">
+            <ui:Label name="AccountBrandSubtitle" text="登录游戏" picking-mode="Ignore" class="account-panel__subtitle" />
+            <ui:VisualElement name="AccountBrandRule" picking-mode="Ignore" class="account-panel__rule" />
+            <ui:Label name="UsernameCaption" text="账号" picking-mode="Ignore" class="account-field__caption" style="font-size: 20px;" />
+            <ui:TextField name="UsernameField" class="account-field" />
+            <ui:Label name="PasswordCaption" text="密码" picking-mode="Ignore" class="account-field__caption" style="font-size: 20px;" />
+            <ui:TextField name="PasswordField" password="true" mask-character="*" class="account-field" />
+            <ui:VisualElement name="AccountActions" class="account-actions">
+                <ui:Button name="RegisterButton" text="注册" class="account-button account-button--secondary" />
+                <ui:Button name="LoginButton" text="登录" enable-rich-text="false" class="account-button account-button--primary" />
+            </ui:VisualElement>
+            <ui:Label name="AccountStatusLabel" picking-mode="Ignore" class="account-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

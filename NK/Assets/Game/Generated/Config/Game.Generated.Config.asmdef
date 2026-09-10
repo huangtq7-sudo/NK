@@ -1,0 +1,11 @@
+{
+  "name": "Game.Generated.Config",
+  "rootNamespace": "Naraka.Config",
+  "references": [],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

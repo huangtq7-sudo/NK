@@ -1,0 +1,49 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Shop/View/UI/ShopPanel.uss?fileID=7433441132597879392&amp;guid=d8ee0f65866cdb847affbe0491663258&amp;type=3#ShopPanel" />
+    <ui:VisualElement name="ShopScreen" class="shop-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_shop_v1.png?fileID=2800000&amp;guid=3c98272edf09e954f9cb23351032c423&amp;type=3#ui_fullscreen_shop_v1&quot;);">
+        <ui:VisualElement name="ShopDim" class="shop-dim" />
+        <ui:VisualElement name="ShopPanel" class="shop-panel">
+            <ui:Button name="ShopCloseButton" tooltip="关闭" class="shop-close" />
+            <ui:VisualElement name="ShopCategoryBar" class="shop-category-bar">
+                <ui:Button name="ShopCategoryAll" text="全部" class="shop-category" />
+                <ui:Button name="ShopCategorySoulstone" text="魂玉" class="shop-category" />
+                <ui:Button name="ShopCategoryMaterial" text="材料" class="shop-category" />
+                <ui:Button name="ShopCategorySpecial" text="特殊" class="shop-category" />
+                <ui:Button name="ShopCategoryConsumable" text="消耗" class="shop-category" />
+                <ui:Button name="ShopCategoryArmor" text="护甲" class="shop-category" />
+            </ui:VisualElement>
+            <ui:VisualElement name="ShopBody" class="shop-body">
+                <ui:ScrollView name="ShopScroll" class="shop-scroll">
+                    <ui:VisualElement name="ShopList" class="shop-list" />
+                </ui:ScrollView>
+                <ui:VisualElement name="ShopDetail" class="shop-detail">
+                    <ui:VisualElement name="ShopDetailIcon" picking-mode="Ignore" class="shop-detail-icon" />
+                    <ui:Label name="ShopDetailName" picking-mode="Ignore" class="shop-detail-name" />
+                    <ui:Label name="ShopDetailQuality" picking-mode="Ignore" class="shop-detail-line" />
+                    <ui:Label name="ShopDetailStack" picking-mode="Ignore" class="shop-detail-line" />
+                    <ui:Label name="ShopDetailOwned" picking-mode="Ignore" class="shop-detail-line" />
+                    <ui:Label name="ShopDetailLimit" picking-mode="Ignore" class="shop-detail-line" />
+                    <ui:Label name="ShopDetailDescription" picking-mode="Ignore" class="shop-detail-text" />
+                    <ui:Button name="ShopBuyButton" text="购买" class="shop-action" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="ShopPurchaseDialog" class="shop-dialog">
+                <ui:VisualElement name="ShopDialogBox" class="shop-dialog-box">
+                    <ui:Label name="ShopDialogTitle" picking-mode="Ignore" class="shop-dialog-title" />
+                    <ui:VisualElement name="ShopQuantityRow" class="shop-quantity-row">
+                        <ui:Button name="ShopQuantityMinus" text="-" class="shop-quantity-step" />
+                        <ui:SliderInt name="ShopQuantitySlider" low-value="1" high-value="99" value="1" class="shop-quantity-slider" />
+                        <ui:Button name="ShopQuantityPlus" text="+" class="shop-quantity-step" />
+                        <ui:Label name="ShopQuantityLabel" picking-mode="Ignore" class="shop-quantity-value" />
+                    </ui:VisualElement>
+                    <ui:Label name="ShopTotalPriceLabel" picking-mode="Ignore" class="shop-total-price" />
+                    <ui:VisualElement name="ShopDialogActions" class="shop-dialog-actions">
+                        <ui:Button name="ShopDialogConfirm" text="确认" class="shop-action" />
+                        <ui:Button name="ShopDialogCancel" text="取消" class="shop-action" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="ShopStatusLabel" picking-mode="Ignore" class="shop-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

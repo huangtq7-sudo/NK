@@ -1,0 +1,198 @@
+/* 外观面板（头像 / 头像框）。仅使用 Unity 2021.3 UI Toolkit 支持的 USS 属性。
+   掉落回弹由 LobbyAppearanceView 通过 experimental.animation + Easing.OutBack 驱动，
+   不在 USS 里写 transition，因为 2021.3 的 ease-out-back 关键字支持无法在此工程离线确认。 */
+
+.appearance-screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 半透明遮罩同时承担“挡住下层大厅点击”的职责。 */
+.appearance-dim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(4, 6, 10, 0.62);
+}
+
+.appearance-window {
+    width: 1100px;
+    height: 800px;
+    justify-content: center;
+    align-items: center;
+}
+
+.appearance-panel {
+    width: 1100px;
+    height: 800px;
+    background-image: url("../../../../Art/UI/Material/core_panel_large.png");
+    -unity-background-scale-mode: scale-to-fit;
+    padding-left: 155px;
+    padding-right: 155px;
+    padding-top: 170px;
+    padding-bottom: 170px;
+}
+
+.appearance-close {
+    position: absolute;
+    right: 62px;
+    top: 58px;
+    width: 48px;
+    height: 48px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../../../../Art/UI/Button/ui_button_close_v1_transparent_256x256.png");
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.appearance-close:hover {
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0.97;
+}
+
+.appearance-close:active {
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0.9;
+}
+
+.appearance-body {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.appearance-side {
+    width: 190px;
+    flex-direction: column;
+    margin-right: 28px;
+}
+
+.appearance-tab {
+    height: 66px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 14px;
+    font-size: 24px;
+    letter-spacing: 4px;
+    color: rgb(190, 178, 156);
+    background-color: rgba(10, 8, 20, 0.5);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(200, 168, 110, 0.3);
+    border-right-color: rgba(200, 168, 110, 0.3);
+    border-top-color: rgba(200, 168, 110, 0.3);
+    border-bottom-color: rgba(200, 168, 110, 0.3);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    -unity-text-align: middle-center;
+}
+
+.appearance-tab:hover {
+    background-color: rgba(200, 168, 110, 0.2);
+}
+
+.appearance-tab--active {
+    color: rgb(244, 232, 206);
+    background-color: rgba(200, 168, 110, 0.34);
+    border-left-color: rgb(200, 168, 110);
+    border-right-color: rgb(200, 168, 110);
+    border-top-color: rgb(200, 168, 110);
+    border-bottom-color: rgb(200, 168, 110);
+}
+
+.appearance-content {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.appearance-title {
+    font-size: 26px;
+    letter-spacing: 6px;
+    color: rgb(217, 180, 95);
+    margin-bottom: 16px;
+    -unity-text-align: middle-left;
+}
+
+/* 外观不可更换时的原因说明。有原因才显示，正常状态下不占位置。 */
+.appearance-status {
+    font-size: 18px;
+    color: rgb(228, 168, 148);
+    margin-bottom: 12px;
+    white-space: normal;
+}
+
+.appearance-scroll {
+    flex-grow: 1;
+}
+
+.appearance-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+/* 单元格由 LobbyAppearanceView 在运行时按序列化目录生成。 */
+.appearance-cell {
+    width: 116px;
+    height: 116px;
+    margin-left: 0;
+    margin-right: 14px;
+    margin-top: 0;
+    margin-bottom: 14px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(10, 8, 20, 0.45);
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgba(200, 168, 110, 0.22);
+    border-right-color: rgba(200, 168, 110, 0.22);
+    border-top-color: rgba(200, 168, 110, 0.22);
+    border-bottom-color: rgba(200, 168, 110, 0.22);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.appearance-cell:hover {
+    background-color: rgba(200, 168, 110, 0.2);
+    border-left-color: rgba(200, 168, 110, 0.7);
+    border-right-color: rgba(200, 168, 110, 0.7);
+    border-top-color: rgba(200, 168, 110, 0.7);
+    border-bottom-color: rgba(200, 168, 110, 0.7);
+}
+
+.appearance-cell--selected {
+    background-color: rgba(200, 168, 110, 0.3);
+    border-left-color: rgb(217, 180, 95);
+    border-right-color: rgb(217, 180, 95);
+    border-top-color: rgb(217, 180, 95);
+    border-bottom-color: rgb(217, 180, 95);
+}

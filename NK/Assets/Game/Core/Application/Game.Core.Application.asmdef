@@ -3,7 +3,8 @@
   "rootNamespace": "Naraka.Core.Application",
   "references": [
     "Game.Core.Domain",
-    "UniTask"
+    "UniTask",
+    "Game.Generated.Config"
   ],
   "autoReferenced": true,
   "overrideReferences": false,

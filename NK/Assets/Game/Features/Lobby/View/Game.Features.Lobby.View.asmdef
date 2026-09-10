@@ -4,7 +4,10 @@
   "references": [
     "Game.Core.Application",
     "Game.Features.Lobby.Controller",
-    "VContainer"
+    "VContainer",
+    "UniTask",
+    "Game.Features.Lobby.Model",
+    "Game.Generated.Config"
   ],
   "autoReferenced": true,
   "overrideReferences": false,

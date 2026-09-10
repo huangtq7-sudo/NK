@@ -16,12 +16,17 @@ namespace Naraka.Features.Bootstrap.Controller
     {
         private readonly IConfigVersionGateway _gateway;
         private readonly ConfigVersionModel _model;
+        private readonly ServerCapabilityRegistry _capabilities;
         private readonly ReactiveState<ConfigVersionPresentationState> _state;
 
-        public ConfigVersionController(IConfigVersionGateway gateway, ConfigVersionModel model)
+        public ConfigVersionController(
+            IConfigVersionGateway gateway,
+            ConfigVersionModel model,
+            ServerCapabilityRegistry capabilities)
         {
             _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
             _model = model ?? throw new ArgumentNullException(nameof(model));
+            _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
             _state = new ReactiveState<ConfigVersionPresentationState>(
                 new ConfigVersionPresentationState(
                     ConfigVersionPhase.Pending,
@@ -53,6 +58,10 @@ namespace Naraka.Features.Bootstrap.Controller
                 string.Empty,
                 "正在检查客户端与配置版本…"));
 
+            // 重新预检可能指向另一台服务器，先清空上一次的能力集合，
+            // 否则失败重试期间仍会按旧服务器的能力放行业务请求。
+            _capabilities.Reset();
+
             try
             {
                 var manifest = await _gateway.GetRequiredVersionAsync(cancellationToken);
@@ -60,6 +69,8 @@ namespace Naraka.Features.Bootstrap.Controller
                 var compatibility = _model.Evaluate(manifest);
                 if (compatibility.IsCompatible)
                 {
+                    // 只有兼容性通过才记录能力：不兼容时客户端根本不该进入业务流程。
+                    _capabilities.Resolve(manifest.ServerCapabilities);
                     Publish(new ConfigVersionPresentationState(
                         ConfigVersionPhase.Ready,
                         _model.ConfigVersion,

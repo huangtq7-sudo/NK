@@ -1,0 +1,7 @@
+﻿Tier,Capacity,ExpandCurrencyId,ExpandPrice
+0,60,Copper,0
+1,80,Copper,2000
+2,100,Copper,5000
+3,120,Silk,3000
+4,140,Silk,6000
+5,160,Silk,12000

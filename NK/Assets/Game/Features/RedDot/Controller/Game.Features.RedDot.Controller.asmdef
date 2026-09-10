@@ -1,0 +1,15 @@
+{
+  "name": "Game.Features.RedDot.Controller",
+  "rootNamespace": "Naraka.Features.RedDot.Controller",
+  "references": [
+    "Game.Core.Application",
+    "UniTask",
+    "Game.Generated.Config"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

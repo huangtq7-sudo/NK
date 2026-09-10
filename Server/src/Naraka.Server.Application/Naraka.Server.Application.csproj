@@ -4,6 +4,21 @@
     <ProjectReference Include="..\Naraka.Server.Domain\Naraka.Server.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 与 Unity 客户端共享同一份配置模型源文件；Unity 副本由配置编译器镜像生成。 -->
+    <Compile Include="..\..\..\Shared\Config\NarakaConfigModels.cs"
+             Link="Config\NarakaConfigModels.cs" />
+    <Compile Include="..\..\..\Shared\Config\NarakaServerCapabilities.cs"
+             Link="Config\NarakaServerCapabilities.cs" />
+    <!-- 规范配置生成物随服务端一起发布，运行时从输出目录的 Config/ 读取。 -->
+    <Content Include="..\..\..\Shared\Generated\Config\naraka-config.json"
+             Link="Config\naraka-config.json"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\..\Shared\Generated\Config\manifest.json"
+             Link="Config\manifest.json"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

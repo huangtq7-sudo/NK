@@ -1,0 +1,459 @@
+/* 商店界面。只使用 Unity 2021.3 支持的 USS 属性；
+   选择器统一以 shop- 前缀限定，不污染同一个 UIDocument 下的其它面板。
+   与仓库共用同一套视觉语言，但类名完全独立，改一处不会意外影响另一处。 */
+
+.shop-screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.shop-dim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(4, 6, 10, 0.66);
+}
+
+.shop-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.shop-close {
+    position: absolute;
+    right: 96px;
+    top: 56px;
+    width: 56px;
+    height: 56px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../../../../Art/UI/Button/ui_button_close_v1_transparent_256x256.png");
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.shop-close:hover {
+    opacity: 0.82;
+}
+
+.shop-category-bar {
+    position: absolute;
+    left: 140px;
+    top: 130px;
+    flex-direction: row;
+}
+
+.shop-category {
+    width: 132px;
+    height: 56px;
+    margin-right: 12px;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: rgb(206, 198, 180);
+    background-color: rgba(20, 24, 32, 0.62);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(150, 130, 80, 0.45);
+    border-right-color: rgba(150, 130, 80, 0.45);
+    border-top-color: rgba(150, 130, 80, 0.45);
+    border-bottom-color: rgba(150, 130, 80, 0.45);
+}
+
+.shop-category:hover {
+    background-color: rgba(46, 52, 66, 0.72);
+}
+
+.shop-category--active {
+    color: rgb(30, 26, 18);
+    background-color: rgb(206, 172, 96);
+}
+
+.shop-body {
+    position: absolute;
+    left: 140px;
+    right: 140px;
+    top: 208px;
+    bottom: 120px;
+    flex-direction: row;
+}
+
+.shop-left {
+    flex-grow: 1;
+    margin-right: 32px;
+}
+
+.shop-scroll {
+    flex-grow: 1;
+}
+
+.shop-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.shop-cell {
+    width: 108px;
+    height: 108px;
+    margin-right: 12px;
+    margin-bottom: 12px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(18, 22, 30, 0.72);
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgba(150, 130, 80, 0.42);
+    border-right-color: rgba(150, 130, 80, 0.42);
+    border-top-color: rgba(150, 130, 80, 0.42);
+    border-bottom-color: rgba(150, 130, 80, 0.42);
+}
+
+.shop-cell--selected {
+    border-left-color: rgb(228, 196, 110);
+    border-right-color: rgb(228, 196, 110);
+    border-top-color: rgb(228, 196, 110);
+    border-bottom-color: rgb(228, 196, 110);
+}
+
+/* 数量显示在物品图标右上角。 */
+.shop-cell-quantity {
+    position: absolute;
+    right: 6px;
+    top: 4px;
+    font-size: 20px;
+    color: rgb(244, 240, 230);
+    -unity-text-align: upper-right;
+    -unity-font-style: bold;
+}
+
+/* 装备中的物品左上角加一个角标，避免玩家误以为可以随手卖掉。 */
+.shop-cell-equipped {
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    font-size: 18px;
+    color: rgb(150, 220, 170);
+}
+
+.shop-footer {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.shop-capacity {
+    flex-grow: 1;
+    font-size: 22px;
+    color: rgb(206, 200, 186);
+}
+
+.shop-right {
+    width: 480px;
+    background-color: rgba(12, 15, 22, 0.68);
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 24px;
+    padding-bottom: 24px;
+}
+
+.shop-detail-icon {
+    width: 168px;
+    height: 168px;
+    -unity-background-scale-mode: scale-to-fit;
+    margin-bottom: 16px;
+}
+
+.shop-detail-name {
+    font-size: 30px;
+    color: rgb(228, 205, 150);
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+.shop-detail-line {
+    font-size: 20px;
+    color: rgb(206, 200, 186);
+    margin-bottom: 8px;
+}
+
+.shop-detail-text {
+    font-size: 19px;
+    color: rgb(196, 194, 188);
+    white-space: normal;
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.shop-equip-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.shop-equip-slot {
+    width: 76px;
+    height: 76px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 16px;
+    color: rgb(180, 176, 166);
+    background-color: rgba(24, 28, 36, 0.8);
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(150, 130, 80, 0.5);
+    border-right-color: rgba(150, 130, 80, 0.5);
+    border-top-color: rgba(150, 130, 80, 0.5);
+    border-bottom-color: rgba(150, 130, 80, 0.5);
+}
+
+.shop-detail-actions {
+    flex-direction: row;
+}
+
+.shop-action {
+    height: 56px;
+    min-width: 132px;
+    margin-right: 12px;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: rgb(28, 24, 18);
+    background-color: rgb(206, 172, 96);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.shop-action:hover {
+    background-color: rgb(224, 192, 118);
+}
+
+.shop-action:disabled {
+    background-color: rgba(120, 116, 106, 0.75);
+    color: rgba(238, 234, 226, 0.7);
+}
+
+.shop-action--danger {
+    background-color: rgb(178, 92, 84);
+    color: rgb(248, 238, 232);
+}
+
+.shop-action--danger:hover {
+    background-color: rgb(198, 108, 98);
+}
+
+/* 丢弃与售卖的二次确认。默认隐藏，由 View 控制显示。 */
+.shop-confirm {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 6, 10, 0.72);
+}
+
+.shop-confirm-box {
+    width: 640px;
+    background-color: rgb(20, 24, 32);
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-top: 36px;
+    padding-bottom: 36px;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(150, 130, 80);
+    border-right-color: rgb(150, 130, 80);
+    border-top-color: rgb(150, 130, 80);
+    border-bottom-color: rgb(150, 130, 80);
+}
+
+.shop-confirm-message {
+    font-size: 24px;
+    color: rgb(228, 222, 208);
+    white-space: normal;
+    margin-bottom: 28px;
+}
+
+.shop-confirm-actions {
+    flex-direction: row;
+    justify-content: center;
+}
+
+.shop-status {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 60px;
+    font-size: 24px;
+    color: rgb(226, 138, 128);
+    -unity-text-align: middle-center;
+}
+
+
+/* 商品列表：一行一个商品，左侧图标、中间名称、右侧价格。 */
+.shop-list {
+    flex-direction: column;
+}
+
+.shop-row {
+    flex-direction: row;
+    align-items: center;
+    height: 96px;
+    margin-bottom: 10px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgba(18, 22, 30, 0.72);
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgba(150, 130, 80, 0.42);
+    border-right-color: rgba(150, 130, 80, 0.42);
+    border-top-color: rgba(150, 130, 80, 0.42);
+    border-bottom-color: rgba(150, 130, 80, 0.42);
+}
+
+.shop-row--selected {
+    border-left-color: rgb(228, 196, 110);
+    border-right-color: rgb(228, 196, 110);
+    border-top-color: rgb(228, 196, 110);
+    border-bottom-color: rgb(228, 196, 110);
+}
+
+.shop-row-icon {
+    width: 72px;
+    height: 72px;
+    -unity-background-scale-mode: scale-to-fit;
+    margin-right: 16px;
+}
+
+.shop-row-name {
+    flex-grow: 1;
+    font-size: 24px;
+    color: rgb(224, 218, 204);
+}
+
+.shop-row-price {
+    font-size: 22px;
+    color: rgb(226, 200, 130);
+    -unity-text-align: middle-right;
+}
+
+.shop-row-limit {
+    width: 200px;
+    font-size: 19px;
+    color: rgb(176, 172, 162);
+    -unity-text-align: middle-right;
+}
+
+.shop-quantity-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.shop-quantity-step {
+    width: 64px;
+    height: 56px;
+    font-size: 28px;
+    color: rgb(28, 24, 18);
+    background-color: rgb(206, 172, 96);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.shop-quantity-slider {
+    flex-grow: 1;
+    margin-left: 16px;
+    margin-right: 16px;
+}
+
+.shop-quantity-value {
+    width: 96px;
+    font-size: 26px;
+    color: rgb(236, 230, 216);
+    -unity-text-align: middle-center;
+}
+
+.shop-dialog-title {
+    font-size: 26px;
+    color: rgb(228, 205, 150);
+    margin-bottom: 24px;
+}
+
+.shop-total-price {
+    font-size: 26px;
+    color: rgb(226, 200, 130);
+    margin-bottom: 28px;
+}
+
+.shop-dialog {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 6, 10, 0.72);
+}
+
+.shop-dialog-box {
+    width: 720px;
+    background-color: rgb(20, 24, 32);
+    padding-left: 44px;
+    padding-right: 44px;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(150, 130, 80);
+    border-right-color: rgb(150, 130, 80);
+    border-top-color: rgb(150, 130, 80);
+    border-bottom-color: rgb(150, 130, 80);
+}
+
+.shop-dialog-actions {
+    flex-direction: row;
+    justify-content: center;
+}

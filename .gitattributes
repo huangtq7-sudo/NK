@@ -9,6 +9,8 @@
 *.unity text eol=lf
 *.prefab text eol=lf
 *.asset text eol=lf
+*.uxml text eol=lf
+*.uss text eol=lf
 *.meta text eol=lf
 # Unity-generated .meta files and vendored upstream packages may preserve harmless
 # trailing spaces; exclude them from first-party whitespace diagnostics.
@@ -25,3 +27,7 @@ NK/Packages/com.cysharp.r3/** -whitespace
 *.mp3 binary
 *.mp4 binary
 *.unitypackage binary
+
+# P1-owned Unity UI bitmaps are required to reproduce the current layouts but are too large
+# for ordinary Git history. Their Unity .meta files remain normal text.
+NK/Assets/Game/Art/**/*.png filter=lfs diff=lfs merge=lfs -text

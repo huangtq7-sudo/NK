@@ -1,0 +1,17 @@
+{
+  "name": "Game.Features.Inventory.Controller",
+  "rootNamespace": "Naraka.Features.Inventory.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Inventory.Model",
+    "Game.Features.Lobby.Controller",
+    "Game.Generated.Config",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

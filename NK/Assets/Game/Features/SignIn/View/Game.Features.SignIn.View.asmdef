@@ -1,0 +1,17 @@
+{
+  "name": "Game.Features.SignIn.View",
+  "rootNamespace": "Naraka.Features.SignIn.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.SignIn.Controller",
+    "Game.Generated.Config",
+    "UniTask",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

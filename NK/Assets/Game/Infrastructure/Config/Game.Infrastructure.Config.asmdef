@@ -4,7 +4,9 @@
   "references": [
     "Game.Features.Bootstrap.Controller",
     "Game.Features.Bootstrap.Model",
-    "UniTask"
+    "UniTask",
+    "Game.Core.Application",
+    "Game.Generated.Config"
   ],
   "autoReferenced": true,
   "overrideReferences": false,

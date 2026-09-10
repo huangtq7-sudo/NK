@@ -15,7 +15,21 @@
     "MessagePipe",
     "MessagePipe.VContainer",
     "UniTask",
-    "VContainer"
+    "VContainer",
+    "Game.Features.Loading.Controller",
+    "Game.Generated.Config",
+    "Game.Features.Loadout.Controller",
+    "Game.Features.Inventory.Controller",
+    "Game.Features.Inventory.Model",
+    "Game.Features.Shop.Controller",
+    "Game.Features.Forge.Controller",
+    "Game.Features.Gacha.Controller",
+    "Game.Features.SignIn.Controller",
+    "Game.Features.Achievement.Controller",
+    "Game.Features.RedDot.Controller",
+    "Game.Features.Social.Controller",
+    "Game.Features.Lobby.View",
+    "Game.Infrastructure.Config"
   ],
   "includePlatforms": [
     "Editor"
@@ -35,5 +49,5 @@
     "TestAssemblies"
   ],
   "versionDefines": [],
-  "noEngineReferences": true
+  "noEngineReferences": false
 }

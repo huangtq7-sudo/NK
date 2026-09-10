@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="LoadingScreen.uss" />
+    <ui:VisualElement name="LoadingScreen" class="loading-screen">
+        <ui:VisualElement name="LoadingBackground" class="loading-background" picking-mode="Ignore" />
+        <ui:VisualElement name="LoadingBarFrame" class="loading-bar-frame" picking-mode="Ignore">
+            <ui:VisualElement name="LoadingBarTrack" class="loading-bar-track" picking-mode="Ignore">
+                <ui:VisualElement name="LoadingBarFill" class="loading-bar-fill" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:Label name="LoadingPercentLabel" text="0%" class="loading-percent" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

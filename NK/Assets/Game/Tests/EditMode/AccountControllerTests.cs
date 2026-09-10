@@ -71,7 +71,17 @@ namespace Naraka.P0.Tests
         [Test]
         public void LobbyBecomesVisibleOnlyAfterControllerEntry()
         {
-            var controller = new LobbyController(new LobbyModel());
+            LobbyAccountSnapshot.TryCreate(1, 0, 0, 0, out var startingSnapshot);
+            var controller = new LobbyController(
+                new LobbyModel(),
+                new FakeLobbySceneGateway(),
+                "Map1",
+                new FakeLobbyAccountGateway
+                {
+                    Result = LobbyAccountSummaryResult.Success(startingSnapshot)
+                },
+                new FakeLobbyProfileGateway(),
+                LobbyTestCapabilities.Full());
 
             Assert.That(controller.Current.IsVisible, Is.False);
             controller.Enter("player-one", 42);

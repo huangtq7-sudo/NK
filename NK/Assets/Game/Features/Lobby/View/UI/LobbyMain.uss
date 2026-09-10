@@ -1,0 +1,394 @@
+/* 大厅界面样式。仅使用 Unity 2021.3 UI Toolkit 支持的 USS 属性：
+   不使用 radial-gradient、@media、background-size，也不在 USS 里写 picking-mode
+   （picking-mode 是 UXML 属性）。PanelSettings 已按 1920x1080 做 Scale With Screen Size，
+   分辨率适配由缩放完成，不需要断点。 */
+
+.lobby-screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.lobby-background {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgb(10, 8, 20);
+    background-image: url("../../../../Art/UI/Backgrounds/Lobby_Animate.png");
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.character-stage {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+}
+
+.stage-placeholder {
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.16);
+    -unity-text-align: middle-center;
+}
+
+.currency-bar {
+    position: absolute;
+    left: 40px;
+    top: 28px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.currency-item {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 24px;
+}
+
+.currency-icon {
+    width: 80px;
+    height: 80px;
+    margin-right: 8px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.currency-icon--copper {
+    background-image: url("../../../../Art/UI/Material/currency_copper.png");
+}
+
+.currency-icon--silk {
+    background-image: url("../../../../Art/UI/Material/currency_silk.png");
+}
+
+.currency-icon--gold {
+    background-image: url("../../../../Art/UI/Material/currency_gold.png");
+}
+
+.currency-amount {
+    font-size: 18px;
+    color: rgb(212, 197, 160);
+    -unity-text-align: middle-left;
+    min-width: 44px;
+}
+
+.top-nav-bar {
+    position: absolute;
+    right: 40px;
+    top: 28px;
+    flex-direction: row;
+}
+
+.right-quick-bar {
+    position: absolute;
+    right: 40px;
+    top: 160px;
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.nav-btn {
+    width: 120px;
+    height: 120px;
+    margin-left: 12px;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.nav-btn:hover {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.nav-btn:active {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.nav-btn--hero {
+    background-image: url("../../../../Art/UI/Button/nav_hero.png");
+}
+
+.nav-btn--hero:hover {
+    background-image: url("../../../../Art/UI/Button/nav_hero_selected.png");
+}
+
+.nav-btn--weapon {
+    background-image: url("../../../../Art/UI/Button/nav_weapon.png");
+}
+
+.nav-btn--weapon:hover {
+    background-image: url("../../../../Art/UI/Button/nav_weapon_selected.png");
+}
+
+.nav-btn--forge {
+    background-image: url("../../../../Art/UI/Button/nav_forge.png");
+}
+
+.nav-btn--forge:hover {
+    background-image: url("../../../../Art/UI/Button/nav_forge_selected.png");
+}
+
+.nav-btn--shop {
+    background-image: url("../../../../Art/UI/Button/nav_shop.png");
+}
+
+.nav-btn--shop:hover {
+    background-image: url("../../../../Art/UI/Button/nav_shop_selected.png");
+}
+
+.nav-btn--inventory {
+    background-image: url("../../../../Art/UI/Button/nav_warehouse.png");
+}
+
+.nav-btn--inventory:hover {
+    background-image: url("../../../../Art/UI/Button/nav_warehouse_selected.png");
+}
+
+.quick-btn {
+    width: 120px;
+    height: 120px;
+    margin-left: 12px;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 12px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.quick-btn:hover {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.quick-btn:active {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.quick-btn--checkin {
+    background-image: url("../../../../Art/UI/Button/nav_signin.png");
+}
+
+.quick-btn--checkin:hover {
+    background-image: url("../../../../Art/UI/Button/nav_signin_selected.png");
+}
+
+.quick-btn--draw {
+    background-image: url("../../../../Art/UI/Button/nav_gacha.png");
+}
+
+.quick-btn--draw:hover {
+    background-image: url("../../../../Art/UI/Button/nav_gacha_selected.png");
+}
+
+.quick-btn--reward {
+    background-image: url("../../../../Art/UI/Button/nav_achievement.png");
+}
+
+.quick-btn--reward:hover {
+    background-image: url("../../../../Art/UI/Button/nav_achievement_selected.png");
+}
+
+.quick-btn--friends {
+    background-image: url("../../../../Art/UI/Button/nav_friends.png");
+}
+
+.quick-btn--friends:hover {
+    background-image: url("../../../../Art/UI/Button/nav_friends_selected.png");
+}
+
+.quick-btn--chat {
+    background-image: url("../../../../Art/UI/Button/nav_chat.png");
+}
+
+.quick-btn--chat:hover {
+    background-image: url("../../../../Art/UI/Button/nav_chat_selected.png");
+}
+
+.profile-panel {
+    position: absolute;
+    left: 40px;
+    bottom: 40px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.avatar-button {
+    width: 100px;
+    height: 100px;
+    margin-left: 0;
+    margin-right: 16px;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* 头像图本身是圆形透明角，用图片染色做悬停反馈，避免方形底色在四角露出来。 */
+.avatar-button:hover {
+    -unity-background-image-tint-color: rgb(255, 236, 198);
+}
+
+.avatar-button:active {
+    -unity-background-image-tint-color: rgb(198, 178, 148);
+}
+
+/* 头像框覆盖在头像之上，向四周外扩以露出装饰边。 */
+.avatar-frame {
+    position: absolute;
+    left: -34px;
+    right: -34px;
+    top: -34px;
+    bottom: -34px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.profile-text {
+    flex-direction: column;
+    justify-content: center;
+}
+
+.player-name {
+    font-size: 20px;
+    color: rgb(240, 232, 216);
+    margin-bottom: 2px;
+    -unity-text-align: middle-left;
+}
+
+.player-level {
+    font-size: 20px;
+    color: rgb(168, 152, 128);
+    -unity-text-align: middle-left;
+}
+
+.player-account-id {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.3);
+    -unity-text-align: middle-left;
+}
+
+.start-area {
+    position: absolute;
+    right: 48px;
+    bottom: 40px;
+}
+
+.btn-start-game {
+    width: 400px;
+    height: 120px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 40px;
+    letter-spacing: 10px;
+    color: rgb(240, 232, 216);
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../../../../Art/UI/Button/ui_button_main_normal.png");
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    -unity-text-align: middle-center;
+}
+
+.btn-start-game:hover {
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../../../../Art/UI/Button/ui_button_main_selected.png");
+}
+
+.btn-start-game:active {
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../../../../Art/UI/Button/ui_button_main_pressed.png");
+}
+
+.btn-start-game--loading {
+    color: rgb(168, 152, 128);
+}
+
+.lobby-status {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 116px;
+    font-size: 16px;
+    color: rgb(200, 176, 144);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    padding-left: 40px;
+    padding-right: 40px;
+}
+
+/* 红点角标。由 RedDot 模块独立控制：没有可领取、未读或新增内容时永远不显示。
+   好友的在线绿点/离线灰点不属于红点系统，不使用这个类。 */
+.reddot-badge {
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    width: 20px;
+    height: 20px;
+    background-color: rgb(214, 62, 54);
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(28, 24, 22);
+    border-right-color: rgb(28, 24, 22);
+    border-top-color: rgb(28, 24, 22);
+    border-bottom-color: rgb(28, 24, 22);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}

@@ -1,0 +1,28 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Achievement/View/UI/AchievementPanel.uss?fileID=7433441132597879392&amp;guid=71f2bff25431d6a48ab439e9e1a2330d&amp;type=3#AchievementPanel" />
+    <ui:VisualElement name="AchievementScreen" class="achv-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_achievement_rewards_v1.png?fileID=2800000&amp;guid=257f59102eaa0c8469c97a57431a558d&amp;type=3#ui_fullscreen_achievement_rewards_v1&quot;);">
+        <ui:VisualElement name="AchievementDim" class="achv-dim" />
+        <ui:VisualElement name="AchievementPanel" class="achv-panel">
+            <ui:Button name="AchievementCloseButton" tooltip="关闭" class="achv-close" />
+            <ui:VisualElement name="AchievementTabs" class="achv-tabs">
+                <ui:Button name="AchievementTabAccountLevel" text="账号等级奖励" class="achv-tab" />
+                <ui:Button name="AchievementTabAchievement" text="成就" class="achv-tab" />
+            </ui:VisualElement>
+            <ui:VisualElement name="AchievementSummary" class="achv-summary">
+                <ui:Label name="AchievementAccountLabel" picking-mode="Ignore" class="achv-summary-line" />
+                <ui:Label name="AchievementXpLabel" picking-mode="Ignore" class="achv-summary-line" />
+            </ui:VisualElement>
+            <ui:VisualElement name="AchievementCategories" class="achv-categories">
+                <ui:Button name="AchievementCategoryAdventure" text="冒险历程" class="achv-category" />
+                <ui:Button name="AchievementCategoryBattle" text="战斗大师" class="achv-category" />
+                <ui:Button name="AchievementCategoryForge" text="锻造大师" class="achv-category" />
+                <ui:Button name="AchievementCategoryWealth" text="财富积累" class="achv-category" />
+            </ui:VisualElement>
+            <ui:ScrollView name="AchievementScroll" class="achv-scroll">
+                <ui:VisualElement name="AchievementList" class="achv-list" />
+            </ui:ScrollView>
+            <ui:Label name="AchievementEmptyLabel" text="暂无数据。" picking-mode="Ignore" class="achv-empty" />
+            <ui:Label name="AchievementStatusLabel" picking-mode="Ignore" class="achv-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

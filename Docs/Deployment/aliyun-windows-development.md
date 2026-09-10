@@ -1,6 +1,6 @@
 # 阿里云Windows开发环境部署与运维
 
-状态：2026-09-02已按Windows Server 2016重装后的实际环境完成在线验收
+状态：2026-09-07已完成P1A Host、迁移0002与真实客户端登录验收
 适用范围：单一开发者从本地使用云端Host和MySQL，不对外提供游戏服务
 
 ## 1. 当前已验收拓扑
@@ -14,7 +14,7 @@
 | 本地Unity | 正式工程`E:\NK项目\NK` | 手动启动SSH本地端口转发后访问本机`127.0.0.1:5222/8011` |
 | 数据库GUI | HeidiSQL 12.21 Portable，仅在云端RDP会话中手动打开 | 只连接`127.0.0.1:3306`，不得对外开放数据库端口 |
 
-当前Host部署目录为`C:\NarakaDeploy\cloud-82c02c7\host`，MySQL程序位于`C:\Naraka\mysql-5.7.26-winx64`，HeidiSQL位于`C:\NarakaTools\HeidiSQL-12.21`。这些路径不是配置或密钥；后续发布可以使用新的版本目录并保留可回滚的上一版。
+当前活动Host部署目录仍为`C:\NarakaDeploy\cloud-82c02c7\host`，其中二进制已经替换为2026-09-07验收的P1A resilience Host；上一版保存在`C:\NarakaDeploy\cloud-82c02c7\host-p0-backup-before-p1a-20260907`。MySQL程序位于`C:\Naraka\mysql-5.7.26-winx64`，HeidiSQL位于`C:\NarakaTools\HeidiSQL-12.21`。这些路径不是配置或密钥；后续发布继续保留至少一个可回滚版本。
 
 云端PowerShell ISE已经安装但不会自动启动。云主机不安装Visual Studio、Unity、容器、Redis、MQ或其他非必要服务，以控制2 GiB主机的内存占用。
 
@@ -123,6 +123,11 @@ Invoke-RestMethod -Uri 'http://127.0.0.1:5222/bootstrap/config-version'
 - 本地临时隧道与最终按需任务均验证5222、8011、Bootstrap、数据库和LegacyNetworkV1可达。
 - 本地曾验证循环启动器能在受控终止SSH后约41秒恢复，但用户随后明确改为手动任务；当前事实以无触发器的按需任务为准。
 - Windows Server 2016重装后的最终云端/本地重启验收由用户明确免除，并按用户决定视为完成；不得将其描述为实际执行过的重启测试。
+- 2026-09-07 P1A DatabaseMigrator包SHA-256：`D059D617C4154FB008677F81DD95058EABAFA05D071BF136DCCBC60A383C79DB`；Host包SHA-256：`8C7713D5BC77B21CF30A6688CC8D2FA40E93812DD133D60DCD90D3BFCBA46B7B`。
+- 迁移`0002_p1_account_progression.sql`的dry-run、首次执行与重复执行均为0；已验证4张表、`0001`与`0002`记录以及账号进度回填。
+- P1A替换后Host进程数为1，工作集约54.1 MiB；`live`、`ready`、MySQL、5222、8011与3306均通过，云端可用内存由替换前582 MiB稳定在替换后496 MiB。
+- 当前客户端已完成真实登录、进入大厅与再次登录，旧P0 Host因未知P1消息退出的问题不再复现。连接级异常现在只关闭目标连接并记录原因，不再关闭监听器或整个Host。
+- 当前Bootstrap仍返回`p0-config-1`。这不影响已经配套验收的当前客户端与Host，但无法区分P0/P1应用契约；下一次新增业务消息的集中发布前必须同步提升版本门禁。
 
 ## 7. 当前限制与后续门禁
 
@@ -133,3 +138,5 @@ Invoke-RestMethod -Uri 'http://127.0.0.1:5222/bootstrap/config-version'
 - 本轮验收账号是否仍在`NK`库中应以数据库实际查询为准；删除属于数据变更，必须由用户明确许可后使用只针对目标测试账号的命令执行。
 - 本地自动隧道已经取消。开始Unity联调前必须人工启动，断网恢复后也必须人工停止并重新启动。
 - 每次升级必须单独核对构建来源与SHA-256，先执行迁移dry-run，再做健康检查和Unity闭环验收；不得直接覆盖唯一可用版本。
+- 云端发布按完整大类功能集中进行，不按单个大厅按钮、UI修改或普通客户端修复频繁部署。正式流程与脚本见`Docs/Deployment/server-release-process.md`和ADR-0008。
+- 当前P1A部署包是过渡期工作区产物；下一次集中发布必须来自干净Git提交并由发布清单绑定提交、测试证据、迁移和包哈希。

@@ -1,0 +1,235 @@
+/* 抽奖界面。只使用 Unity 2021.3 支持的 USS 属性；
+   选择器统一以 gacha- 前缀限定，不污染同一个 UIDocument 下的其它面板。 */
+
+.gacha-screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.gacha-dim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(4, 6, 10, 0.66);
+}
+
+.gacha-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.gacha-close {
+    position: absolute;
+    right: 96px;
+    top: 56px;
+    width: 56px;
+    height: 56px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../../../../Art/UI/Button/ui_button_close_v1_transparent_256x256.png");
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.gacha-close:hover {
+    opacity: 0.82;
+}
+
+.gacha-stage {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 150px;
+    align-items: center;
+}
+
+.gacha-pool-name {
+    font-size: 48px;
+    letter-spacing: 10px;
+    color: rgb(228, 205, 150);
+    -unity-font-style: bold;
+    margin-bottom: 20px;
+}
+
+.gacha-pity {
+    font-size: 28px;
+    color: rgb(226, 200, 130);
+    margin-bottom: 10px;
+}
+
+.gacha-total {
+    font-size: 22px;
+    color: rgb(196, 194, 188);
+}
+
+/* 有未确认结果时才显示，提醒玩家上一次的奖励还没看过。 */
+.gacha-pending {
+    font-size: 24px;
+    color: rgb(168, 208, 176);
+    margin-top: 16px;
+}
+
+.gacha-preview {
+    position: absolute;
+    right: 140px;
+    top: 340px;
+    bottom: 260px;
+    width: 520px;
+    background-color: rgba(12, 15, 22, 0.68);
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.gacha-preview-title {
+    font-size: 26px;
+    color: rgb(228, 205, 150);
+    margin-bottom: 16px;
+}
+
+.gacha-preview-scroll {
+    flex-grow: 1;
+}
+
+.gacha-preview-list {
+    flex-direction: column;
+}
+
+.gacha-preview-entry {
+    font-size: 20px;
+    color: rgb(206, 200, 186);
+    margin-bottom: 8px;
+}
+
+.gacha-actions {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 120px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.gacha-action {
+    height: 84px;
+    min-width: 240px;
+    margin-left: 16px;
+    margin-right: 8px;
+    font-size: 30px;
+    letter-spacing: 6px;
+    color: rgb(28, 24, 18);
+    background-color: rgb(206, 172, 96);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.gacha-action:hover {
+    background-color: rgb(224, 192, 118);
+}
+
+.gacha-action:disabled {
+    background-color: rgba(120, 116, 106, 0.75);
+    color: rgba(238, 234, 226, 0.7);
+}
+
+.gacha-price {
+    font-size: 22px;
+    color: rgb(226, 200, 130);
+    margin-right: 32px;
+}
+
+.gacha-result {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 6, 10, 0.78);
+}
+
+.gacha-result-box {
+    width: 900px;
+    background-color: rgb(20, 24, 32);
+    padding-left: 48px;
+    padding-right: 48px;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(150, 130, 80);
+    border-right-color: rgb(150, 130, 80);
+    border-top-color: rgb(150, 130, 80);
+    border-bottom-color: rgb(150, 130, 80);
+}
+
+.gacha-result-title {
+    font-size: 30px;
+    color: rgb(228, 205, 150);
+    margin-bottom: 24px;
+}
+
+.gacha-result-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+}
+
+.gacha-result-card {
+    width: 156px;
+    height: 200px;
+    margin-right: 12px;
+    margin-bottom: 12px;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 8px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.gacha-result-card-label {
+    font-size: 18px;
+    color: rgb(244, 240, 230);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.gacha-result-actions {
+    flex-direction: row;
+    justify-content: center;
+}
+
+.gacha-status {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 56px;
+    font-size: 24px;
+    color: rgb(226, 138, 128);
+    -unity-text-align: middle-center;
+}

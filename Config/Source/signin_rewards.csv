@@ -1,0 +1,8 @@
+﻿Day,RewardId,RewardKind,ItemId,ItemAmount,CurrencyId,CurrencyAmount
+1,signin_day_1,Currency,,0,Copper,300
+2,signin_day_2,Item,consumable_blood_pack,3,,0
+3,signin_day_3,Item,mat_forge_stone,5,,0
+4,signin_day_4,Currency,,0,Silk,150
+5,signin_day_5,Item,consumable_armor_medicine,3,,0
+6,signin_day_6,Item,mat_alloy_advanced,3,,0
+7,signin_day_7,Currency,,0,Gold,200

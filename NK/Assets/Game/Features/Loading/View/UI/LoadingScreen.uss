@@ -1,0 +1,60 @@
+/* 登录到大厅之间的异步加载界面。仅使用 Unity 2021.3 支持的 USS 属性。
+   进度条轨道的百分比来自对 hud_remote_nameplate.png 的实测：
+   内框 x 174..1873、y 296..416（整图 2048x683），换算后左右各约 8.5%、上 43.3%、下 39.1%，
+   这里各向内收 1% 左右，让填充条落在描边内侧而不是压在描边上。 */
+
+.loading-screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.loading-background {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgb(8, 11, 17);
+    background-image: url("../../../../Art/UI/Backgrounds/async_loading_background_1920x1080.png");
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+/* 800x267 与 2048x683 同为 3:1，因此轨道百分比可以直接对应到原图坐标。 */
+.loading-bar-frame {
+    width: 800px;
+    height: 267px;
+    background-image: url("../../../../Art/UI/Material/hud_remote_nameplate.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.loading-bar-track {
+    position: absolute;
+    left: 13%;
+    right: 13%;
+    top: 44.5%;
+    bottom: 40%;
+    overflow: hidden;
+    flex-direction: row;
+}
+
+.loading-bar-fill {
+    width: 0;
+    height: 100%;
+    background-image: url("../../../../Art/UI/Material/bar_fill_armor.png");
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.loading-percent {
+    margin-top: -70px;
+    margin-bottom: 96px;
+    font-size: 26px;
+    letter-spacing: 4px;
+    color: rgb(217, 197, 150);
+    -unity-text-align: middle-center;
+}

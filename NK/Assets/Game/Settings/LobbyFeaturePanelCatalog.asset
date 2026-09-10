@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4792c36d65ae384fac8adfcb29f4f70, type: 3}
+  m_Name: LobbyFeaturePanelCatalog
+  m_EditorClassIdentifier: 
+  backgrounds:
+  - {fileID: 2800000, guid: 6241c64ca3648354185e7c5c634bd265, type: 3}
+  - {fileID: 2800000, guid: f2af8d91b82b4e14fab31f73616b4461, type: 3}
+  - {fileID: 2800000, guid: 85d39fa2a0d7f954692d4f63fe8e5b39, type: 3}
+  - {fileID: 2800000, guid: a8a11841ea2aedd49a2e932bf8a2b6c3, type: 3}
+  - {fileID: 2800000, guid: 943a4a5ac24d7d147a280648b8bb17dc, type: 3}
+  - {fileID: 2800000, guid: 695292b0e904fa146b53b7b4c66eb0c7, type: 3}
+  - {fileID: 2800000, guid: 1b4e0c5599bd97341acbe1dff5b2172e, type: 3}
+  - {fileID: 2800000, guid: 8c71bd3f65a4d514590b3149b8b391dc, type: 3}
+  - {fileID: 2800000, guid: ee8f65be8d7b52649bc26c4f3701f062, type: 3}
+  - {fileID: 2800000, guid: 5fed4727fcbab2940b08b427474e8c4d, type: 3}

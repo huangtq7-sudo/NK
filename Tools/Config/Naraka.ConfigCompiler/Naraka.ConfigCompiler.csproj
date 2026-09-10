@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Naraka.ConfigCompiler</RootNamespace>
+    <AssemblyName>Naraka.ConfigCompiler</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <Deterministic>true</Deterministic>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 唯一权威的共享配置模型。服务端与 Unity 客户端编译同一份源文件。 -->
+    <Compile Include="..\..\..\Shared\Config\NarakaConfigModels.cs"
+             Link="Shared\NarakaConfigModels.cs" />
+  </ItemGroup>
+
+</Project>

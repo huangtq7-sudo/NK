@@ -1,0 +1,81 @@
+{
+  "SchemaVersion": "1.0.0",
+  "ConfigVersion": "p1-config-5e52cf730692",
+  "ContentSha256": "5e52cf73069228292ede7b8944d424f92752989d0bf6b7085ecb3fda875a377d",
+  "CatalogSha256": "33e22a00de3f0f7f8df79c619b9325d420a96fbf377dfb24889bcb7dc9299fb4",
+  "Generator": "Naraka.ConfigCompiler",
+  "Sources": [
+    {
+      "FileName": "account_level_rewards.csv",
+      "Sha256": "71f68581d3e1dcd28b83cb268486270a1d434439e98f16f6409b77f3dc355cee"
+    },
+    {
+      "FileName": "achievements.csv",
+      "Sha256": "aafacf18ee79ee9469da71582cfaec33d7bc4fbacaf9660fdc7c889dae929612"
+    },
+    {
+      "FileName": "avatar_frames.csv",
+      "Sha256": "ef89563fc7128a422ba125437622cf31efd0f350d1ce7f5fd5026862741142b6"
+    },
+    {
+      "FileName": "avatars.csv",
+      "Sha256": "f3773cf55292af1a942219c3cad1fbdf6b45ebbaacfc1e411e586fb69af866fb"
+    },
+    {
+      "FileName": "currencies.csv",
+      "Sha256": "4b579bcdeaed07c266f6d8d450f91f9e8c2f7a857a27e4e33b6b4128ad4dc020"
+    },
+    {
+      "FileName": "forge_recipes.csv",
+      "Sha256": "c99b66d10946ef82bcd957b0681d7ce9950651354012295a99ddecdc3fecbf1c"
+    },
+    {
+      "FileName": "gacha_entries.csv",
+      "Sha256": "0fc79558fcc3c6faf0b8c98d238118661e826f02897080af58a7b8d68c5fab66"
+    },
+    {
+      "FileName": "gacha_pools.csv",
+      "Sha256": "0053cde15375fa1875d0371e7db8b191268ddccc88677be34ce2a94bdb168dae"
+    },
+    {
+      "FileName": "hero_skills.csv",
+      "Sha256": "e010802bdd2d6689cf8e307aaad87b23c0532bb1e2050eebf3c67d0d7b213a58"
+    },
+    {
+      "FileName": "heroes.csv",
+      "Sha256": "3ed46bc0f7bbf567f7e22ec6be4210d9c499686d991f7321b29909a2de3e0a8b"
+    },
+    {
+      "FileName": "inventory_capacity.csv",
+      "Sha256": "6d14ffef8dad89937ed8db1b534f7196d0e3749ad18298b467297ab7c53051b5"
+    },
+    {
+      "FileName": "items.csv",
+      "Sha256": "ce5b4b33f21f4448b39f919fa438feca296f60bfe9dd884fcc6bdb781e6ac53c"
+    },
+    {
+      "FileName": "pets.csv",
+      "Sha256": "e5531464401f96ae011bec4473961f1c23ff486ff73b8c7abff69a837f2782c0"
+    },
+    {
+      "FileName": "shop_products.csv",
+      "Sha256": "46e01b3f2d4e3d022235bd44a79a4800b52b4831bcf3ecd6e81526f4955cbcc7"
+    },
+    {
+      "FileName": "signin_milestones.csv",
+      "Sha256": "178895efab1e207694f8f82f46843ea9a96cb931de6e317125597678e9243a2c"
+    },
+    {
+      "FileName": "signin_rewards.csv",
+      "Sha256": "0fadb6aa86d2a8f6a9835dee3825d02a5907cb69a582bdf0017a4d06fcf6865b"
+    },
+    {
+      "FileName": "weapon_levels.csv",
+      "Sha256": "e5177b66ef5e8f2cb5774156c6f41e2ecc9c41ccc1942d9e3961c1a4e0b15b45"
+    },
+    {
+      "FileName": "weapons.csv",
+      "Sha256": "c45a3fb5d86a642266e9f9047802e2d3d95665b881a59b27647ea447e2e54615"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+﻿MilestoneDays,RewardId,RewardKind,ItemId,ItemAmount,CurrencyId,CurrencyAmount
+3,signin_milestone_3,Item,special_makeup_card,1,,0
+5,signin_milestone_5,Currency,,0,Silk,400
+7,signin_milestone_7,Item,mat_dragon_scale,2,,0

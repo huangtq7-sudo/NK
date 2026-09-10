@@ -94,7 +94,22 @@ Invoke-DotNet -Arguments @(
     "--nologo"
 )
 
+# 配置生成物必须与 CSV 源表一致。生成物过期时服务端与客户端会加载不同的价格与概率，
+# 而这种偏差在运行时几乎无法察觉，所以放在测试之前作为硬门禁。
+Write-Host "Verifying that the generated configuration matches Config/Source."
+Invoke-DotNet -Arguments @(
+    "run",
+    "--project", (Join-Path $repositoryRoot "Tools\Config\Naraka.ConfigCompiler\Naraka.ConfigCompiler.csproj"),
+    "--configuration", $Configuration,
+    "--no-build",
+    "--no-restore",
+    "--",
+    "--repo", $repositoryRoot,
+    "--check"
+)
+
 $testProjects = @(
+    "Tools\Config\Naraka.ConfigCompiler.Tests\Naraka.ConfigCompiler.Tests.csproj",
     "Server\tests\Naraka.Server.ArchitectureTests\Naraka.Server.ArchitectureTests.csproj",
     "Server\tests\Naraka.Server.Application.Tests\Naraka.Server.Application.Tests.csproj",
     "Server\tests\Naraka.Server.LegacyNetworkV1.Tests\Naraka.Server.LegacyNetworkV1.Tests.csproj",

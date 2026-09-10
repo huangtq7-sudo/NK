@@ -17,7 +17,7 @@ The legacy source remains read-only at `D:\培训项目\7.21net\SimpleServer`. T
 
 `GET /bootstrap/config-version` exposes the compatibility metadata required before account registration or login. Values are configured under `Naraka:Bootstrap` and the Host refuses to start if a value is empty, longer than 64 characters, or if the client-version range is invalid.
 
-The local P0 defaults are `ConfigVersion=p0-config-1`, `MinimumClientVersion=0.1`, `MaximumClientVersion=0.1`, and `ProtocolVersion=LegacyNetworkV1`. This endpoint does not change the frozen socket transport. Direct remote clients must use HTTPS; the single-developer cloud environment instead forwards the loopback endpoint through an encrypted SSH tunnel as defined by ADR-0006.
+The P0 baseline used `ConfigVersion=p0-config-1`. The complete P1 release uses `ConfigVersion=p1-config-1`, `MinimumClientVersion=0.1`, `MaximumClientVersion=0.1`, and `ProtocolVersion=LegacyNetworkV1`. This endpoint does not change the frozen socket transport. Direct remote clients must use HTTPS; the single-developer cloud environment instead forwards the loopback endpoint through an encrypted SSH tunnel as defined by ADR-0006.
 
 ## Development cloud deployment
 

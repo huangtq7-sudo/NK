@@ -1,0 +1,38 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Gacha/View/UI/GachaPanel.uss?fileID=7433441132597879392&amp;guid=1a053c0694d083941a35fd94f283935a&amp;type=3#GachaPanel" />
+    <ui:VisualElement name="GachaScreen" class="gacha-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_gacha_v1.png?fileID=2800000&amp;guid=24c12cd28ab73104aa76237cd6b34c1b&amp;type=3#ui_fullscreen_gacha_v1&quot;);">
+        <ui:VisualElement name="GachaDim" class="gacha-dim" />
+        <ui:VisualElement name="GachaPanel" class="gacha-panel">
+            <ui:Button name="GachaCloseButton" tooltip="关闭" class="gacha-close" />
+            <ui:VisualElement name="GachaStage" class="gacha-stage">
+                <ui:Label name="GachaPoolNameLabel" picking-mode="Ignore" class="gacha-pool-name" />
+                <ui:Label name="GachaPityLabel" picking-mode="Ignore" class="gacha-pity" />
+                <ui:Label name="GachaTotalPullsLabel" picking-mode="Ignore" class="gacha-total" />
+                <ui:Label name="GachaPendingNoticeLabel" picking-mode="Ignore" class="gacha-pending" />
+            </ui:VisualElement>
+            <ui:VisualElement name="GachaPreview" class="gacha-preview">
+                <ui:Label name="GachaPreviewTitle" text="奖励预览" picking-mode="Ignore" class="gacha-preview-title" />
+                <ui:ScrollView name="GachaPreviewScroll" class="gacha-preview-scroll">
+                    <ui:VisualElement name="GachaPreviewList" class="gacha-preview-list" />
+                </ui:ScrollView>
+            </ui:VisualElement>
+            <ui:VisualElement name="GachaActions" class="gacha-actions">
+                <ui:Button name="GachaPullOnceButton" class="gacha-action" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Material/icon_gacha_single_draw_v1_512x512.png?fileID=2800000&amp;guid=409af0aa2878911418b058c0a4a16dad&amp;type=3#icon_gacha_single_draw_v1_512x512&quot;);" />
+                <ui:Label name="GachaSinglePriceLabel" picking-mode="Ignore" class="gacha-price" />
+                <ui:Button name="GachaPullTenButton" class="gacha-action" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Material/icon_gacha_ten_draw_v1_512x512.png?fileID=2800000&amp;guid=271cdcb06201d6844a341d4b57cb5a95&amp;type=3#icon_gacha_ten_draw_v1_512x512&quot;);" />
+                <ui:Label name="GachaTenPriceLabel" picking-mode="Ignore" class="gacha-price" />
+            </ui:VisualElement>
+            <ui:VisualElement name="GachaResultOverlay" class="gacha-result">
+                <ui:VisualElement name="GachaResultBox" class="gacha-result-box">
+                    <ui:Label name="GachaResultTitle" picking-mode="Ignore" class="gacha-result-title" />
+                    <ui:VisualElement name="GachaResultList" class="gacha-result-list" />
+                    <ui:VisualElement name="GachaResultActions" class="gacha-result-actions">
+                        <ui:Button name="GachaSkipButton" text="跳过动画" class="gacha-action" />
+                        <ui:Button name="GachaConfirmButton" text="确认" class="gacha-action" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="GachaStatusLabel" picking-mode="Ignore" class="gacha-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

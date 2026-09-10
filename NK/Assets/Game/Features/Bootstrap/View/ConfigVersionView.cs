@@ -21,6 +21,7 @@ namespace Naraka.Features.Bootstrap.View
         private VisualElement _overlay;
         private Label _status;
         private Button _retry;
+        private bool _overlayVisible = true;
 
         [Inject]
         public void Construct(ConfigVersionController controller)
@@ -41,9 +42,13 @@ namespace Naraka.Features.Bootstrap.View
                 return;
             }
 
-            _overlay.style.display = state.Phase == ConfigVersionPhase.Ready
-                ? DisplayStyle.None
-                : DisplayStyle.Flex;
+            _overlayVisible = state.Phase != ConfigVersionPhase.Ready;
+            _overlay.style.display = _overlayVisible ? DisplayStyle.Flex : DisplayStyle.None;
+            if (_overlayVisible)
+            {
+                KeepOverlayOnTop();
+            }
+
             _status.text = state.Message;
             _retry.style.display = state.Phase == ConfigVersionPhase.Blocked
                 ? DisplayStyle.Flex
@@ -111,6 +116,18 @@ namespace Naraka.Features.Bootstrap.View
 
             _overlay.Add(card);
             root.Add(_overlay);
+
+            // 其他View在各自的Start中向同一个root追加元素，追加顺序取决于组件顺序。
+            // 版本预检覆盖层必须始终位于登录界面之上，因此在本帧所有Start完成后再确认一次层级。
+            _overlay.schedule.Execute(KeepOverlayOnTop);
+        }
+
+        private void KeepOverlayOnTop()
+        {
+            if (_overlay != null && _overlayVisible)
+            {
+                _overlay.BringToFront();
+            }
         }
 
         private async UniTaskVoid RetryAsync()

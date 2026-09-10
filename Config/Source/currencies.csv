@@ -1,0 +1,4 @@
+﻿CurrencyId,DisplayName,SortOrder,StarterGrant,IconKey,Description
+Copper,铜币,1,1000,currency_copper,基础流通货币。用于药水、传送符与基础材料等基础用品。
+Silk,幻丝,2,1000,currency_silk,高级代币。用于限定物品、稀有材料、锻造石与后期强化内容。
+Gold,金币,3,1000,currency_gold,核心稀有货币。用于抽奖与特殊物品。

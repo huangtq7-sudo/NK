@@ -1,0 +1,280 @@
+/* 英雄与兵器面板共用的样式。
+   只使用 Unity 2021.3 支持的 USS 属性：不使用 @media、radial-gradient 或 background-size，
+   分辨率适配交给 PanelSettings 的 Scale With Screen Size。
+   选择器统一以 hero- / weapon- 前缀限定，不污染同一个 UIDocument 下的其它面板。 */
+
+.hero-screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+/* 遮罩同时挡住下层大厅的点击。 */
+.hero-dim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(4, 6, 10, 0.66);
+}
+
+.hero-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    flex-direction: row;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.hero-close {
+    position: absolute;
+    right: 96px;
+    top: 56px;
+    width: 56px;
+    height: 56px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../../../../Art/UI/Button/ui_button_close_v1_transparent_256x256.png");
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.hero-close:hover {
+    opacity: 0.82;
+}
+
+.hero-left {
+    position: absolute;
+    left: 120px;
+    top: 150px;
+    width: 760px;
+    height: 800px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hero-name {
+    font-size: 46px;
+    letter-spacing: 6px;
+    color: rgb(228, 205, 150);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+}
+
+.hero-preview-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 560px;
+}
+
+.hero-arrow {
+    width: 72px;
+    height: 120px;
+    font-size: 44px;
+    color: rgb(228, 205, 150);
+    background-color: rgba(20, 24, 32, 0.55);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(196, 164, 96, 0.5);
+    border-right-color: rgba(196, 164, 96, 0.5);
+    border-top-color: rgba(196, 164, 96, 0.5);
+    border-bottom-color: rgba(196, 164, 96, 0.5);
+}
+
+.hero-arrow:hover {
+    background-color: rgba(46, 52, 66, 0.72);
+}
+
+.hero-arrow:disabled {
+    opacity: 0.35;
+}
+
+.hero-preview {
+    width: 520px;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-portrait {
+    width: 420px;
+    height: 420px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* 正式人物模型尚未确定，这里只保留锚点，不导入或生成任何未知模型。 */
+.hero-model-anchor {
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.weapon-icon {
+    width: 360px;
+    height: 360px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.hero-equip {
+    width: 300px;
+    height: 84px;
+    font-size: 30px;
+    letter-spacing: 6px;
+    color: rgb(28, 24, 18);
+    background-color: rgb(206, 172, 96);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.hero-equip:hover {
+    background-color: rgb(224, 192, 118);
+}
+
+.hero-equip:disabled {
+    background-color: rgba(120, 116, 106, 0.75);
+    color: rgba(238, 234, 226, 0.7);
+}
+
+.hero-right {
+    position: absolute;
+    right: 120px;
+    top: 150px;
+    width: 820px;
+    height: 800px;
+}
+
+.hero-title {
+    font-size: 30px;
+    letter-spacing: 4px;
+    color: rgb(196, 164, 96);
+    margin-bottom: 12px;
+}
+
+.hero-background {
+    font-size: 22px;
+    color: rgb(214, 214, 210);
+    white-space: normal;
+    margin-bottom: 20px;
+}
+
+.hero-stats-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.hero-stat {
+    font-size: 22px;
+    color: rgb(206, 200, 186);
+    margin-right: 28px;
+    margin-bottom: 8px;
+}
+
+.hero-skill-bar {
+    flex-direction: row;
+    margin-bottom: 20px;
+}
+
+.hero-skill-button {
+    width: 108px;
+    height: 108px;
+    margin-right: 18px;
+    background-color: rgba(20, 24, 32, 0.6);
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgba(150, 130, 80, 0.5);
+    border-right-color: rgba(150, 130, 80, 0.5);
+    border-top-color: rgba(150, 130, 80, 0.5);
+    border-bottom-color: rgba(150, 130, 80, 0.5);
+}
+
+.hero-skill-button--selected {
+    border-left-color: rgb(228, 196, 110);
+    border-right-color: rgb(228, 196, 110);
+    border-top-color: rgb(228, 196, 110);
+    border-bottom-color: rgb(228, 196, 110);
+}
+
+.hero-skill-detail {
+    flex-grow: 1;
+    background-color: rgba(12, 15, 22, 0.68);
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.hero-skill-name {
+    font-size: 28px;
+    color: rgb(228, 205, 150);
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+.hero-skill-cooldown {
+    font-size: 20px;
+    color: rgb(168, 196, 210);
+    margin-bottom: 12px;
+}
+
+.hero-skill-text {
+    font-size: 20px;
+    color: rgb(212, 210, 204);
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.weapon-stats {
+    background-color: rgba(12, 15, 22, 0.68);
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.weapon-stat {
+    font-size: 24px;
+    color: rgb(214, 210, 200);
+    margin-bottom: 12px;
+}
+
+.weapon-note {
+    font-size: 20px;
+    color: rgb(168, 164, 154);
+    white-space: normal;
+}
+
+.hero-status {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 70px;
+    font-size: 24px;
+    color: rgb(226, 138, 128);
+    -unity-text-align: middle-center;
+}

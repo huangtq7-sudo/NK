@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Lobby/View/UI/LobbyFeaturePanel.uss?fileID=7433441132597879392&amp;guid=35b2fcca794d19548819c5450f87e874&amp;type=3#LobbyFeaturePanel" />
+    <ui:VisualElement name="FeatureScreen" class="feature-screen">
+        <ui:VisualElement name="FeatureDim" class="feature-dim" />
+        <ui:VisualElement name="FeatureWindow" class="feature-window">
+            <ui:VisualElement name="FeaturePanel" class="feature-panel">
+                <ui:Button name="FeatureCloseButton" tooltip="关闭" class="feature-close" style="width: 120px; height: 120px; right: 80px;" />
+                <ui:Label name="FeatureTitle" picking-mode="Ignore" class="feature-title" />
+                <ui:Label name="FeatureMessage" picking-mode="Ignore" class="feature-message" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,17 @@
+{
+  "name": "Game.Features.Social.View",
+  "rootNamespace": "Naraka.Features.Social.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Social.Controller",
+    "Game.Generated.Config",
+    "UniTask",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

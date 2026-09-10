@@ -1,0 +1,17 @@
+{
+  "name": "Game.Features.Loadout.Controller",
+  "rootNamespace": "Naraka.Features.Loadout.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Lobby.Controller",
+    "Game.Features.Lobby.Model",
+    "Game.Generated.Config",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

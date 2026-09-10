@@ -3,7 +3,9 @@
   "rootNamespace": "Naraka.Features.Lobby.Controller",
   "references": [
     "Game.Core.Application",
-    "Game.Features.Lobby.Model"
+    "Game.Features.Lobby.Model",
+    "UniTask",
+    "Game.Generated.Config"
   ],
   "autoReferenced": true,
   "overrideReferences": false,

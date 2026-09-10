@@ -1,0 +1,39 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Loadout/View/UI/HeroPanel.uss?fileID=7433441132597879392&amp;guid=7cb22efe55d5d324684984c7002fc7ae&amp;type=3#HeroPanel" />
+    <ui:VisualElement name="HeroScreen" class="hero-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_hero_rough_v1.png?fileID=2800000&amp;guid=01b8d8ed5d864ae488bd36da5d28fbb2&amp;type=3#ui_fullscreen_hero_rough_v1&quot;);">
+        <ui:VisualElement name="HeroDim" class="hero-dim" />
+        <ui:VisualElement name="HeroPanel" class="hero-panel">
+            <ui:Button name="HeroCloseButton" tooltip="关闭" class="hero-close" />
+            <ui:VisualElement name="HeroLeft" class="hero-left">
+                <ui:Label name="HeroNameLabel" picking-mode="Ignore" class="hero-name" />
+                <ui:VisualElement name="HeroPreviewRow" class="hero-preview-row">
+                    <ui:Button name="HeroPreviousButton" tooltip="上一个英雄" class="hero-arrow" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Material/icon_arrow_left_v1_512x512.png?fileID=2800000&amp;guid=87d12193a4e279840adca034ae468fe3&amp;type=3#icon_arrow_left_v1_512x512&quot;);" />
+                    <ui:VisualElement name="HeroPreview" picking-mode="Ignore" class="hero-preview">
+                        <ui:VisualElement name="HeroPortrait" picking-mode="Ignore" class="hero-portrait" />
+                        <ui:VisualElement name="HeroModelAnchor" picking-mode="Ignore" class="hero-model-anchor" />
+                    </ui:VisualElement>
+                    <ui:Button name="HeroNextButton" tooltip="下一个英雄" class="hero-arrow" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Material/icon_arrow_right_v1_512x512.png?fileID=2800000&amp;guid=43f057be57d93cf46968300d29bdca24&amp;type=3#icon_arrow_right_v1_512x512&quot;);" />
+                </ui:VisualElement>
+                <ui:Button name="HeroEquipButton" text="选择" class="hero-equip" />
+            </ui:VisualElement>
+            <ui:VisualElement name="HeroRight" class="hero-right">
+                <ui:Label name="HeroTitleLabel" picking-mode="Ignore" class="hero-title" />
+                <ui:Label name="HeroBackgroundLabel" picking-mode="Ignore" class="hero-background" />
+                <ui:VisualElement name="HeroStatsRow" picking-mode="Ignore" class="hero-stats-row">
+                    <ui:Label name="HeroHealthLabel" picking-mode="Ignore" class="hero-stat" />
+                    <ui:Label name="HeroAttackLabel" picking-mode="Ignore" class="hero-stat" />
+                    <ui:Label name="HeroDefenseLabel" picking-mode="Ignore" class="hero-stat" />
+                    <ui:Label name="HeroSpeedLabel" picking-mode="Ignore" class="hero-stat" />
+                </ui:VisualElement>
+                <ui:VisualElement name="HeroSkillBar" class="hero-skill-bar" />
+                <ui:VisualElement name="HeroSkillDetail" picking-mode="Ignore" class="hero-skill-detail">
+                    <ui:Label name="HeroSkillNameLabel" picking-mode="Ignore" class="hero-skill-name" />
+                    <ui:Label name="HeroSkillCooldownLabel" picking-mode="Ignore" class="hero-skill-cooldown" />
+                    <ui:Label name="HeroSkillDescriptionLabel" picking-mode="Ignore" class="hero-skill-text" />
+                    <ui:Label name="HeroSkillEffectLabel" picking-mode="Ignore" class="hero-skill-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="HeroStatusLabel" picking-mode="Ignore" class="hero-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

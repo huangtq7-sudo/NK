@@ -1,0 +1,17 @@
+{
+  "name": "Game.Features.Achievement.View",
+  "rootNamespace": "Naraka.Features.Achievement.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Achievement.Controller",
+    "Game.Generated.Config",
+    "UniTask",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

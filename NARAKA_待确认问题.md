@@ -1,7 +1,7 @@
 # 《NARAKA》待确认问题与决策记录
 
-版本：1.7
-更新日期：2026-09-02
+版本：1.10
+更新日期：2026-09-08
 说明：本文件只保存尚未确认、需要外部素材/权限或会影响实施的事项。已确认玩法不得重新列为问题。
 
 ## 1. 开始P0前需要确认
@@ -101,6 +101,15 @@
 - 约束：同一时间只有一个模型修改同一工作区或同一组文件；模型输出不是项目事实，只有进入当前仓库并通过实际验证的结果才能记为完成。
 - 执行入口：`Docs/AI/three-model-collaboration.md`及其中链接的两份可复制提示词。
 
+### Q-017 Windows独立播放器构建被R3依赖阻断
+
+- 状态：待确认，本轮发现，未修复。
+- 现象：以`-buildWindows64Player`构建Windows独立播放器失败，报`The Assembly System.Runtime.CompilerServices.Unsafe is referenced by R3 ('Assets/Plugins/R3/R3.dll'). But the dll is not allowed to be included or could not be found.`，构建结果为Failure、退出码1。
+- 范围：与本轮登录界面无关；Editor导入、EditMode与PlayMode均正常，只有独立播放器构建路径受影响。P0从未把独立播放器构建列入退出条件，因此不属于回归。
+- 影响：在修复前无法用已构建客户端做人工验收或发布验证，人工Play Mode验收只能在Unity编辑器内进行。
+- 后续需要：确认按ADR-0003的内嵌包基线补齐`System.Runtime.CompilerServices.Unsafe`托管DLL及其导入平台设置，或改用其他受支持的引入方式；修复必须单独提交并重新执行Unity编译与测试。
+- 附带记录：该次失败的构建尝试曾把`NK/ProjectSettings/UnityConnectSettings.asset`的`m_Enabled`改为1，已在本轮还原为0。
+
 ## 4. 玩法中暂未最终绑定的内容
 
 ### Q-012 正式任务对白和NPC表现
@@ -119,7 +128,12 @@
 
 - 状态：图片和背景动画已生成，Unity绑定未完成。
 - 待做：确定每张图片对应的Screen/Popup/Atom，检查透明边缘、九宫格、Pixels Per Unit、压缩格式和Addressables Label。
-- 当前处理：P0建立自动导入与校验工具，P4完成全部界面绑定。
+- 当前处理：P0建立自动导入与校验工具；大厅相关界面按新路线图在P1逐模块绑定，Unity手工布局、素材与Inspector挂载由用户负责。
+- 登录界面现状：正式登录界面已改为`AccountLogin.uxml`/`AccountLogin.uss`，登录静态背景已导入为`NK/Assets/Game/Art/UI/Backgrounds/AccountLoginBackground.png`，运行时代码不包含任何绝对素材路径。占位分层已删除。
+- 登录背景待办：`AccountLoginBackground.png.meta`目前仍是Unity默认导入设置，需要在编辑器执行`NARAKA/Setup/Reimport UI Backgrounds`让`UiBackgroundTextureImporter`生效后复核；接入背景后的Unity编译与测试尚未运行。
+- 登录标题：背景图顶部已烘焙NARAKA大标题，卡片内不再重复显示标题。`login_title_NARAKA_overlay.png`（1920×1080、带Alpha）暂未使用，若将来需要标题与背景分离再评估。
+- 动态背景：`login_fog_light_only_loop_30s_1080p.mp4`（19.3 MB）与`lobby_fog_light_cloth_loop_30s_1080p.mp4`按当前决定不入库，`.gitignore`已排除`Assets/Game/Art/UI/Backgrounds/`下的`*.mp4`及其`*.meta`。是否接入动态背景、以及大体积二进制是否改用Git LFS，留待用户确认；P1大厅还涉及视频、加载图和大量UI切图，提交前必须统一决定许可与大文件策略。
+- 大厅与加载图：相关素材已经出现在当前未提交工作区，不再按旧路线图笼统归为P4；最终绑定随P1大厅和后续P2/P3场景需求分别验收，且由用户完成Unity手工操作。
 
 ## 5. 已关闭的重要冲突
 
@@ -151,3 +165,47 @@
 - 决策：客户端启动后通过独立Bootstrap端点核对ClientVersion、ConfigVersion和ProtocolVersion；检查成功前禁止注册和登录，失败后允许用户重试。
 - 说明：该HTTP预检不修改冻结的`LegacyNetworkV1`传输层。本机开发只允许loopback HTTP，远端必须使用HTTPS；P5再补齐正式配置Manifest签名、哈希校验、A/B缓存与回滚。
 - 执行结果：客户端Bootstrap模块化MVC、服务端`GET /bootstrap/config-version`、UI阻塞提示及自动化测试已经完成，无新增待确认项。
+
+### D-007 大厅与账号长期系统前置到P1
+
+- 决策：已关闭。2026-09-07用户确认把原P4大厅经济整体前置为新P1；原P1战斗垂直切片、原P2远征闭环、原P3内容系统依次顺延为P2、P3、P4，P5和P6保持不变。
+- 范围：P1按P1.0至P1.9分批完成账号快照、货币、英雄/兵器/宠物选择、仓库、商店、锻造、抽奖、签到、账号等级奖励、红点、好友和聊天入口的真实功能，不能以静态占位或本地假数据宣称完成。
+- 社交最小范围：好友申请、接受、拒绝、删除、屏蔽、在线状态和一对一文字聊天；世界频道、群聊、语音与文件传输不在P1。
+- 边界：战斗仍从P2开始，远征/地图闭环仍在P3；P1的开始游戏按钮只负责验证进入后续场景的边界。
+
+### D-008 P1业务消息扩展不解冻LegacyNetworkV1传输层
+
+- 决策：已关闭。采用ADR-0007：保留握手、AES/KDF、帧、Protobuf编码机制、心跳、Socket和线程模型，只在客户端/服务端适配边界增加成对业务契约、类型注册与路由映射。
+- 约束：既有协议名、协议号和字段不可修改或复用；写请求必须具备RequestId或OrderId，身份来自认证会话，账号资产和业务结果由服务端权威判定。
+- 验证：每组新增消息必须有兼容、序列化、路由、认证、超时/取消、幂等和端到端测试。任何需要修改冻结传输机制的实现都必须暂停并另行取得授权。
+
+### D-009 P1玩法基线修正
+
+- 决策：已关闭。2026-09-08用户确认三种货币（铜币/幻丝/金币，各1000初始，"金砖"不得出现）、全部仓库物品统一堆叠（取消"实例物品"概念）、锻造材料足够必定成功且服务端零随机、抽奖五档品质白/蓝/紫/金/红且20抽保底出红、签到每周期一次补签、成就经验与账号经验完全独立。
+- 记录：见 [ADR-0009](Docs/ADR/0009-p1-gameplay-baseline-corrections.md)，冲突条目已同步回`NARAKA_完整玩法设计.md`。
+
+### D-010 配置管线改用CSV源表加本地编译器
+
+- 决策：已关闭。Luban不纳入本项目；配置源为`Config/Source/`下的UTF-8 BOM CSV，由`Tools/Config/Naraka.ConfigCompiler`编译成双端共享的规范化JSON。
+- 理由：Unity运行时不该读xlsx，云主机按ADR-0008不安装构建工具，双端必须消费同一份生成物。
+- 记录：见 [ADR-0010](Docs/ADR/0010-csv-config-pipeline.md)。
+
+### D-011 初始货币与已部署迁移的冲突
+
+- 决策：已关闭。不修改已部署的`0001`/`0002`迁移，也不依赖列默认值；改为新增`account_grants`与`currency_ledger`，登录时在一个事务里幂等**累加**发放StarterGrant。
+- 说明：规则是"这个账号有没有领过"，不是"余额是不是0"，因此花光了的老账号不会被补满，重复登录也不会重复发放。
+- 记录：见 [ADR-0011](Docs/ADR/0011-starter-grant-and-currency-ledger.md)。
+
+### D-012 旧云端兼容与红点聚合
+
+- 决策：已关闭。Bootstrap新增可选`serverCapabilities`字段；当Bootstrap版本门禁匹配但Host不返回它时，客户端退回P1.1-A兼容集合，其余入口显示"服务器功能尚未升级"且不发送未知协议。完整P1的`p1-config-1`门禁会先拒绝旧`p0-config-1`云端。Host只声明自己真正实现的能力。
+- 红点：路径前缀树 + `Version`/`SeenVersion`，业务模块经MessagePipe发布来源事件，界面只订阅只读状态；好友在线绿点/灰点不属于红点系统。
+- 记录：见 [ADR-0012](Docs/ADR/0012-red-dot-prefix-tree-and-server-capabilities.md)。
+
+## 5. 当前待确认
+
+- **P1界面视觉人工验收**：十个界面的自动化测试已全部通过，但布局、字号、素材位置与动画节奏需要用户在Unity Play Mode人工确认。
+- **P1云端批量部署授权**：本地实现已完成，`Docs/Deployment/p1-cloud-batched-release-checklist.md`列出了部署前需要完成的步骤。部署本身需要用户单独授权。
+- **真实Host端到端冒烟**：需要用户启动Host与MySQL并授权后才能执行。
+- **抽奖红色卡背素材**：暂用玄夜卡背，等待正式素材。
+- **角色模型**：英雄界面目前只有`HeroModelAnchor`，正式模型到位后再接入。

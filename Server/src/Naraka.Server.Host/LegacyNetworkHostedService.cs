@@ -19,6 +19,21 @@ public sealed class LegacyNetworkHostedService(
 
         var port = section.GetValue("ListenPort", 8011);
         logger.LogInformation("LegacyNetworkV1 starting on {Address}:{Port}", address, port);
-        await transport.RunAsync(address, port, stoppingToken);
+
+        try
+        {
+            await transport.RunAsync(address, port, stoppingToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Only a listener fault reaches this point; connection faults are isolated in the
+            // transport. The host stops after this, so the reason has to be in the log file.
+            logger.LogCritical(
+                exception,
+                "LegacyNetworkV1 listener stopped on {Address}:{Port}. The host is shutting down.",
+                address,
+                port);
+            throw;
+        }
     }
 }

@@ -1,0 +1,51 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Lobby/View/UI/LobbyMain.uss?fileID=7433441132597879392&amp;guid=f995e8db8cc4a7147a4bd76656b5d07c&amp;type=3#LobbyMain" />
+    <ui:VisualElement name="LobbyScreen" class="lobby-screen">
+        <ui:VisualElement name="LobbyBackground" picking-mode="Ignore" class="lobby-background" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/Lobby_Animate.png?fileID=2800000&amp;guid=8a2f6db98771dd84c826a9efe0651250&amp;type=3#Lobby_Animate&quot;);" />
+        <ui:VisualElement name="CharacterStage" picking-mode="Ignore" class="character-stage">
+            <ui:Label name="CharacterStagePlaceholder" text="角色模型展示区域" picking-mode="Ignore" class="stage-placeholder" />
+        </ui:VisualElement>
+        <ui:VisualElement name="CurrencyBar" picking-mode="Ignore" class="currency-bar">
+            <ui:VisualElement picking-mode="Ignore" class="currency-item">
+                <ui:VisualElement picking-mode="Ignore" class="currency-icon currency-icon--copper" />
+                <ui:Label name="CopperCurrencyAmount" text="--" picking-mode="Ignore" class="currency-amount" />
+            </ui:VisualElement>
+            <ui:VisualElement picking-mode="Ignore" class="currency-item">
+                <ui:VisualElement picking-mode="Ignore" class="currency-icon currency-icon--silk" />
+                <ui:Label name="SilkCurrencyAmount" text="--" picking-mode="Ignore" class="currency-amount" />
+            </ui:VisualElement>
+            <ui:VisualElement picking-mode="Ignore" class="currency-item">
+                <ui:VisualElement picking-mode="Ignore" class="currency-icon currency-icon--gold" />
+                <ui:Label name="GoldCurrencyAmount" text="--" picking-mode="Ignore" class="currency-amount" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="TopNavigationBar" class="top-nav-bar">
+            <ui:Button name="HeroButton" tooltip="英雄" class="nav-btn nav-btn--hero" />
+            <ui:Button name="WeaponButton" tooltip="兵器" class="nav-btn nav-btn--weapon" />
+            <ui:Button name="ForgeButton" tooltip="锻造" class="nav-btn nav-btn--forge" />
+            <ui:Button name="ShopButton" tooltip="商店" class="nav-btn nav-btn--shop" />
+            <ui:Button name="InventoryButton" tooltip="仓库" class="nav-btn nav-btn--inventory" />
+        </ui:VisualElement>
+        <ui:VisualElement name="RightQuickBar" class="right-quick-bar">
+            <ui:Button name="CheckInButton" tooltip="签到" class="quick-btn quick-btn--checkin" />
+            <ui:Button name="DrawButton" tooltip="抽奖" class="quick-btn quick-btn--draw" />
+            <ui:Button name="AccountLevelRewardButton" tooltip="等级奖励" class="quick-btn quick-btn--reward" />
+            <ui:Button name="FriendsButton" tooltip="好友" class="quick-btn quick-btn--friends" />
+            <ui:Button name="ChatButton" tooltip="聊天" class="quick-btn quick-btn--chat" />
+        </ui:VisualElement>
+        <ui:VisualElement name="PlayerProfilePanel" class="profile-panel">
+            <ui:Button name="PlayerAvatarButton" tooltip="更换头像与头像框" class="avatar-button">
+                <ui:VisualElement name="PlayerAvatarFrame" picking-mode="Ignore" class="avatar-frame" />
+            </ui:Button>
+            <ui:VisualElement name="PlayerProfileText" picking-mode="Ignore" class="profile-text">
+                <ui:Label name="PlayerNameLabel" picking-mode="Ignore" class="player-name" />
+                <ui:Label name="PlayerLevelLabel" text="Lv.--" picking-mode="Ignore" class="player-level" />
+                <ui:Label name="PlayerAccountIdLabel" picking-mode="Ignore" class="player-account-id" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="StartGameArea" class="start-area">
+            <ui:Button name="StartGameButton" text="开始游戏" class="btn-start-game" />
+        </ui:VisualElement>
+        <ui:Label name="LobbyStatusLabel" picking-mode="Ignore" class="lobby-status" />
+    </ui:VisualElement>
+</ui:UXML>

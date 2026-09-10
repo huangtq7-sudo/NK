@@ -1,0 +1,3 @@
+﻿HeroId,DisplayName,Title,SortOrder,Health,Attack,Defense,Stamina,MoveSpeed,PortraitKey,Background
+hero_gu_chenyue,顾沉岳,镇锋,1,1000,100,80,60,5.0,hero_portrait_gu_chenyue,出身镇北军的重锋战将。以正面压制、反击与破韧见长，擅长在敌阵中央硬撼强敌。
+hero_pei_xingzhou,裴行舟,流影,2,1000,90,65,60,5.5,hero_portrait_pei_xingzhou,行走江湖的浪客剑侠。以位移、群体控制与机动见长，擅长游走切入与牵制。

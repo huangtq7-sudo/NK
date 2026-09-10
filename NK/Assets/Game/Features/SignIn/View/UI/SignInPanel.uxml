@@ -1,0 +1,25 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/SignIn/View/UI/SignInPanel.uss?fileID=7433441132597879392&amp;guid=0c94808a69d702f498348af6cbee78f3&amp;type=3#SignInPanel" />
+    <ui:VisualElement name="SignInScreen" class="signin-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_checkin_v1.png?fileID=2800000&amp;guid=b29ff1a3ed739c440b73c9f64f364f62&amp;type=3#ui_fullscreen_checkin_v1&quot;);">
+        <ui:VisualElement name="SignInDim" class="signin-dim" />
+        <ui:VisualElement name="SignInPanel" class="signin-panel">
+            <ui:Button name="SignInCloseButton" tooltip="关闭" class="signin-close" />
+            <ui:VisualElement name="SignInHeader" class="signin-header">
+                <ui:Label name="SignInTitleLabel" text="每日签到" picking-mode="Ignore" class="signin-title" />
+                <ui:Label name="SignInStreakLabel" picking-mode="Ignore" class="signin-streak" />
+                <ui:Label name="SignInMakeupCardLabel" picking-mode="Ignore" class="signin-makeup-card" />
+            </ui:VisualElement>
+            <ui:VisualElement name="SignInDayGrid" class="signin-day-grid" />
+            <ui:VisualElement name="SignInMilestones" class="signin-milestones">
+                <ui:Label name="SignInMilestoneTitle" text="连续签到奖励" picking-mode="Ignore" class="signin-milestone-title" />
+                <ui:VisualElement name="SignInMilestoneList" class="signin-milestone-list" />
+            </ui:VisualElement>
+            <ui:VisualElement name="SignInActions" class="signin-actions">
+                <ui:Button name="SignInClaimButton" text="签到" class="signin-action" />
+                <ui:Button name="SignInMakeupButton" text="补签" class="signin-action" />
+            </ui:VisualElement>
+            <ui:Label name="SignInEmptyLabel" text="签到数据暂不可用。" picking-mode="Ignore" class="signin-empty" />
+            <ui:Label name="SignInStatusLabel" picking-mode="Ignore" class="signin-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

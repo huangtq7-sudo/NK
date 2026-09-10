@@ -1,0 +1,3 @@
+﻿WeaponId,DisplayName,SortOrder,MaxLevel,IconKey,Description
+weapon_longsword,长剑,1,20,nav_weapon,双手长剑。攻击范围与削韧更强，动作稳重，适合正面压制。
+weapon_tachi,太刀,2,20,nav_weapon,单手太刀。攻击速度约快15%，位移与转向更灵活，适合游走切入。

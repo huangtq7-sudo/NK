@@ -1,0 +1,16 @@
+{
+  "name": "Game.Features.RedDot.View",
+  "rootNamespace": "Naraka.Features.RedDot.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.RedDot.Controller",
+    "UniTask",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -1,0 +1,5 @@
+﻿SkillId,HeroId,SlotKey,DisplayName,SortOrder,CooldownSeconds,DamageMultiplier,RangeMeters,IconKey,Description,EffectSummary
+skill_gu_f_shock_mountain,hero_gu_chenyue,F,震岳斩,1,15,1.2,4.0,skill_gu_f_shock_mountain,向前方120度扇形范围内劈出一记沉重斩击。,造成1.2倍伤害并附带高额破韧。释放期间为霸体但仍会受到伤害。
+skill_gu_v_prison_breaker,hero_gu_chenyue,V,破军镇狱,2,40,2.5,6.0,skill_gu_v_prison_breaker,以自身为中心镇压周身6米范围。,造成2.5倍伤害。击倒普通怪、大幅削减精英与首领韧性并压低飞行怪。
+skill_pei_f_shadow_dash,hero_pei_xingzhou,F,掠影,1,15,0.9,6.0,skill_pei_f_shadow_dash,向前突进6米并在路径上留下残影。,路径造成0.9倍伤害。前半段短暂无敌，可穿过普通怪但不能穿墙或首领。
+skill_pei_v_wind_binding,hero_pei_xingzhou,V,风缚阵,2,40,1.5,7.0,skill_pei_v_wind_binding,在7米范围内布下持续4秒的缚风阵。,初始造成1.5倍伤害并每秒造成0.25倍伤害。牵引普通怪、减速精英与首领并压低飞行怪。

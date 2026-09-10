@@ -1,0 +1,36 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Social/View/UI/SocialPanel.uss?fileID=7433441132597879392&amp;guid=6e73448d8bb6044409dd01ed76fdd3dc&amp;type=3#SocialPanel" />
+    <ui:VisualElement name="SocialScreen" class="social-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_friends_v1.png?fileID=2800000&amp;guid=70d71e8d0dab7ac41839342b650fbbda&amp;type=3#ui_fullscreen_friends_v1&quot;);">
+        <ui:VisualElement name="SocialDim" class="social-dim" />
+        <ui:VisualElement name="SocialPanel" class="social-panel">
+            <ui:Button name="SocialCloseButton" tooltip="关闭" class="social-close" />
+            <ui:VisualElement name="SocialTabs" class="social-tabs">
+                <ui:Button name="SocialTabFriends" text="好友" class="social-tab" />
+                <ui:Button name="SocialTabRequests" text="申请" class="social-tab" />
+                <ui:Button name="SocialTabChat" text="聊天" class="social-tab" />
+                <ui:Button name="SocialTabBlocked" text="黑名单" class="social-tab" />
+            </ui:VisualElement>
+            <ui:VisualElement name="SocialSearchRow" class="social-search-row">
+                <ui:TextField name="SocialSearchField" max-length="64" class="social-search-field" />
+                <ui:Button name="SocialSearchButton" text="搜索" class="social-search-button" />
+                <ui:Label name="SocialSearchResultLabel" picking-mode="Ignore" class="social-search-result" />
+                <ui:Button name="SocialSearchAddButton" text="申请好友" class="social-search-add" />
+            </ui:VisualElement>
+            <ui:ScrollView name="SocialListScroll" class="social-list-scroll">
+                <ui:VisualElement name="SocialList" class="social-list" />
+            </ui:ScrollView>
+            <ui:VisualElement name="SocialChat" class="social-chat">
+                <ui:Label name="SocialChatPeerLabel" picking-mode="Ignore" class="social-chat-peer" />
+                <ui:ScrollView name="SocialChatScroll" class="social-chat-scroll">
+                    <ui:VisualElement name="SocialChatMessages" class="social-chat-messages" />
+                </ui:ScrollView>
+                <ui:VisualElement name="SocialChatInputRow" class="social-chat-input-row">
+                    <ui:TextField name="SocialChatInput" max-length="512" class="social-chat-input" />
+                    <ui:Button name="SocialChatSendButton" text="发送" class="social-chat-send" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="SocialEmptyLabel" picking-mode="Ignore" class="social-empty" />
+            <ui:Label name="SocialStatusLabel" picking-mode="Ignore" class="social-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

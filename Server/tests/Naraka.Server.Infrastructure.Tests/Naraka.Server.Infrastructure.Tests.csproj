@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\migrations\0001_p0_identity.sql" Link="Migrations\0001_p0_identity.sql" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\migrations\*.sql" Link="Migrations\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

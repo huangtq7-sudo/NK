@@ -121,6 +121,52 @@ namespace Naraka.Infrastructure.Network
                 case "MsgPing": return typeof(LegacyMsgPing);
                 case "MsgRegister": return typeof(LegacyMsgRegister);
                 case "MsgLogin": return typeof(LegacyMsgLogin);
+                case "MsgLobbyAccountSummaryResponse":
+                    return typeof(LegacyMsgLobbyAccountSummaryResponse);
+                case "MsgLobbyProfileResponse":
+                    return typeof(LegacyMsgLobbyProfileResponse);
+                case "MsgLobbySetAppearanceResponse":
+                    return typeof(LegacyMsgLobbySetAppearanceResponse);
+                case "MsgLobbySetLoadoutResponse":
+                    return typeof(LegacyMsgLobbySetLoadoutResponse);
+                case "MsgLobbyInventoryResponse":
+                    return typeof(LegacyMsgLobbyInventoryResponse);
+                case "MsgLobbyInventoryMutateResponse":
+                    return typeof(LegacyMsgLobbyInventoryMutateResponse);
+                case "MsgLobbyShopResponse":
+                    return typeof(LegacyMsgLobbyShopResponse);
+                case "MsgLobbyShopPurchaseResponse":
+                    return typeof(LegacyMsgLobbyShopPurchaseResponse);
+                case "MsgLobbyForgeResponse":
+                    return typeof(LegacyMsgLobbyForgeResponse);
+                case "MsgLobbyForgeUpgradeResponse":
+                    return typeof(LegacyMsgLobbyForgeUpgradeResponse);
+                case "MsgLobbyGachaResponse":
+                    return typeof(LegacyMsgLobbyGachaResponse);
+                case "MsgLobbyGachaPullResponse":
+                    return typeof(LegacyMsgLobbyGachaPullResponse);
+                case "MsgLobbyGachaAcknowledgeResponse":
+                    return typeof(LegacyMsgLobbyGachaAcknowledgeResponse);
+                case "MsgLobbySignInResponse":
+                    return typeof(LegacyMsgLobbySignInResponse);
+                case "MsgLobbySignInClaimResponse":
+                    return typeof(LegacyMsgLobbySignInClaimResponse);
+                case "MsgLobbyAchievementResponse":
+                    return typeof(LegacyMsgLobbyAchievementResponse);
+                case "MsgLobbyAchievementClaimResponse":
+                    return typeof(LegacyMsgLobbyAchievementClaimResponse);
+                case "MsgLobbyRedDotResponse":
+                    return typeof(LegacyMsgLobbyRedDotResponse);
+                case "MsgLobbyRedDotSeenResponse":
+                    return typeof(LegacyMsgLobbyRedDotSeenResponse);
+                case "MsgLobbySocialResponse":
+                    return typeof(LegacyMsgLobbySocialResponse);
+                case "MsgLobbySocialSearchResponse":
+                    return typeof(LegacyMsgLobbySocialSearchResponse);
+                case "MsgLobbySocialActionResponse":
+                    return typeof(LegacyMsgLobbySocialActionResponse);
+                case "MsgLobbyChatResponse":
+                    return typeof(LegacyMsgLobbyChatResponse);
                 default: throw new InvalidDataException("Unsupported legacy inbound protocol: " + protocolName + ".");
             }
         }

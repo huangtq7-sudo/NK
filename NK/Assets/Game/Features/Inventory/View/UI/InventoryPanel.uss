@@ -1,0 +1,325 @@
+/* 仓库界面。只使用 Unity 2021.3 支持的 USS 属性；
+   选择器统一以 inv- 前缀限定，不污染同一个 UIDocument 下的其它面板。 */
+
+.inv-screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.inv-dim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(4, 6, 10, 0.66);
+}
+
+.inv-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.inv-close {
+    position: absolute;
+    right: 96px;
+    top: 56px;
+    width: 56px;
+    height: 56px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../../../../Art/UI/Button/ui_button_close_v1_transparent_256x256.png");
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.inv-close:hover {
+    opacity: 0.82;
+}
+
+.inv-category-bar {
+    position: absolute;
+    left: 140px;
+    top: 130px;
+    flex-direction: row;
+}
+
+.inv-category {
+    width: 132px;
+    height: 56px;
+    margin-right: 12px;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: rgb(206, 198, 180);
+    background-color: rgba(20, 24, 32, 0.62);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(150, 130, 80, 0.45);
+    border-right-color: rgba(150, 130, 80, 0.45);
+    border-top-color: rgba(150, 130, 80, 0.45);
+    border-bottom-color: rgba(150, 130, 80, 0.45);
+}
+
+.inv-category:hover {
+    background-color: rgba(46, 52, 66, 0.72);
+}
+
+.inv-category--active {
+    color: rgb(30, 26, 18);
+    background-color: rgb(206, 172, 96);
+}
+
+.inv-body {
+    position: absolute;
+    left: 140px;
+    right: 140px;
+    top: 208px;
+    bottom: 120px;
+    flex-direction: row;
+}
+
+.inv-left {
+    flex-grow: 1;
+    margin-right: 32px;
+}
+
+.inv-scroll {
+    flex-grow: 1;
+}
+
+.inv-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.inv-cell {
+    width: 108px;
+    height: 108px;
+    margin-right: 12px;
+    margin-bottom: 12px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(18, 22, 30, 0.72);
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgba(150, 130, 80, 0.42);
+    border-right-color: rgba(150, 130, 80, 0.42);
+    border-top-color: rgba(150, 130, 80, 0.42);
+    border-bottom-color: rgba(150, 130, 80, 0.42);
+}
+
+.inv-cell--selected {
+    border-left-color: rgb(228, 196, 110);
+    border-right-color: rgb(228, 196, 110);
+    border-top-color: rgb(228, 196, 110);
+    border-bottom-color: rgb(228, 196, 110);
+}
+
+/* 数量显示在物品图标右上角。 */
+.inv-cell-quantity {
+    position: absolute;
+    right: 6px;
+    top: 4px;
+    font-size: 20px;
+    color: rgb(244, 240, 230);
+    -unity-text-align: upper-right;
+    -unity-font-style: bold;
+}
+
+/* 装备中的物品左上角加一个角标，避免玩家误以为可以随手卖掉。 */
+.inv-cell-equipped {
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    font-size: 18px;
+    color: rgb(150, 220, 170);
+}
+
+.inv-footer {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.inv-capacity {
+    flex-grow: 1;
+    font-size: 22px;
+    color: rgb(206, 200, 186);
+}
+
+.inv-right {
+    width: 480px;
+    background-color: rgba(12, 15, 22, 0.68);
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 24px;
+    padding-bottom: 24px;
+}
+
+.inv-detail-icon {
+    width: 168px;
+    height: 168px;
+    -unity-background-scale-mode: scale-to-fit;
+    margin-bottom: 16px;
+}
+
+.inv-detail-name {
+    font-size: 30px;
+    color: rgb(228, 205, 150);
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+.inv-detail-line {
+    font-size: 20px;
+    color: rgb(206, 200, 186);
+    margin-bottom: 8px;
+}
+
+.inv-detail-text {
+    font-size: 19px;
+    color: rgb(196, 194, 188);
+    white-space: normal;
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.inv-equip-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.inv-equip-slot {
+    width: 76px;
+    height: 76px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 16px;
+    color: rgb(180, 176, 166);
+    background-color: rgba(24, 28, 36, 0.8);
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(150, 130, 80, 0.5);
+    border-right-color: rgba(150, 130, 80, 0.5);
+    border-top-color: rgba(150, 130, 80, 0.5);
+    border-bottom-color: rgba(150, 130, 80, 0.5);
+}
+
+.inv-detail-actions {
+    flex-direction: row;
+}
+
+.inv-action {
+    height: 56px;
+    min-width: 132px;
+    margin-right: 12px;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: rgb(28, 24, 18);
+    background-color: rgb(206, 172, 96);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.inv-action:hover {
+    background-color: rgb(224, 192, 118);
+}
+
+.inv-action:disabled {
+    background-color: rgba(120, 116, 106, 0.75);
+    color: rgba(238, 234, 226, 0.7);
+}
+
+.inv-action--danger {
+    background-color: rgb(178, 92, 84);
+    color: rgb(248, 238, 232);
+}
+
+.inv-action--danger:hover {
+    background-color: rgb(198, 108, 98);
+}
+
+/* 丢弃与售卖的二次确认。默认隐藏，由 View 控制显示。 */
+.inv-confirm {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(4, 6, 10, 0.72);
+}
+
+.inv-confirm-box {
+    width: 640px;
+    background-color: rgb(20, 24, 32);
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-top: 36px;
+    padding-bottom: 36px;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(150, 130, 80);
+    border-right-color: rgb(150, 130, 80);
+    border-top-color: rgb(150, 130, 80);
+    border-bottom-color: rgb(150, 130, 80);
+}
+
+.inv-confirm-message {
+    font-size: 24px;
+    color: rgb(228, 222, 208);
+    white-space: normal;
+    margin-bottom: 28px;
+}
+
+.inv-confirm-actions {
+    flex-direction: row;
+    justify-content: center;
+}
+
+.inv-status {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 60px;
+    font-size: 24px;
+    color: rgb(226, 138, 128);
+    -unity-text-align: middle-center;
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Game.Features.Loading.View",
+  "rootNamespace": "Naraka.Features.Loading.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Loading.Controller",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

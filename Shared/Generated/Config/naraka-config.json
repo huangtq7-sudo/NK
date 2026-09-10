@@ -1,0 +1,2824 @@
+{
+  "SchemaVersion": "1.0.0",
+  "ConfigVersion": "p1-config-5e52cf730692",
+  "Currencies": [
+    {
+      "CurrencyId": "Copper",
+      "DisplayName": "铜币",
+      "SortOrder": 1,
+      "StarterGrant": 1000,
+      "IconKey": "currency_copper",
+      "Description": "基础流通货币。用于药水、传送符与基础材料等基础用品。"
+    },
+    {
+      "CurrencyId": "Gold",
+      "DisplayName": "金币",
+      "SortOrder": 3,
+      "StarterGrant": 1000,
+      "IconKey": "currency_gold",
+      "Description": "核心稀有货币。用于抽奖与特殊物品。"
+    },
+    {
+      "CurrencyId": "Silk",
+      "DisplayName": "幻丝",
+      "SortOrder": 2,
+      "StarterGrant": 1000,
+      "IconKey": "currency_silk",
+      "Description": "高级代币。用于限定物品、稀有材料、锻造石与后期强化内容。"
+    }
+  ],
+  "Items": [
+    {
+      "ItemId": "armor_cloth",
+      "DisplayName": "青布甲",
+      "Category": "Armor",
+      "Quality": "White",
+      "StackLimit": 20,
+      "SortOrder": 4010,
+      "IconKey": "armor_cloth",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 30,
+      "Description": "最基础的布制护甲。护甲耐久较低但轻便。"
+    },
+    {
+      "ItemId": "armor_dragon",
+      "DisplayName": "赤霄龙铠",
+      "Category": "Armor",
+      "Quality": "Gold",
+      "StackLimit": 20,
+      "SortOrder": 4040,
+      "IconKey": "armor_dragon",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 600,
+      "Description": "以赤霄鳞锻造的重铠。护甲耐久极高。"
+    },
+    {
+      "ItemId": "armor_iron",
+      "DisplayName": "玄铁重铠",
+      "Category": "Armor",
+      "Quality": "Purple",
+      "StackLimit": 20,
+      "SortOrder": 4030,
+      "IconKey": "armor_iron",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 150,
+      "Description": "厚重的玄铁全身铠。护甲耐久很高。"
+    },
+    {
+      "ItemId": "armor_ranger",
+      "DisplayName": "游侠皮甲",
+      "Category": "Armor",
+      "Quality": "Blue",
+      "StackLimit": 20,
+      "SortOrder": 4020,
+      "IconKey": "armor_ranger",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 180,
+      "Description": "经过硝制的皮质护甲。兼顾耐久与机动。"
+    },
+    {
+      "ItemId": "consumable_armor_medicine",
+      "DisplayName": "甲药",
+      "Category": "Consumable",
+      "Quality": "White",
+      "StackLimit": 99,
+      "SortOrder": 1020,
+      "IconKey": "item_armor_medicine",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 20,
+      "Description": "立即恢复250点护甲耐久。施放1.2秒，受击打断，与血包共享8秒药品冷却。"
+    },
+    {
+      "ItemId": "consumable_blood_pack",
+      "DisplayName": "血包",
+      "Category": "Consumable",
+      "Quality": "White",
+      "StackLimit": 99,
+      "SortOrder": 1010,
+      "IconKey": "item_blood_pack",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 20,
+      "Description": "立即恢复300点生命。施放1.2秒，受击打断，与甲药共享8秒药品冷却。"
+    },
+    {
+      "ItemId": "mat_alloy_advanced",
+      "DisplayName": "玄金合金",
+      "Category": "Material",
+      "Quality": "Purple",
+      "StackLimit": 999,
+      "SortOrder": 3030,
+      "IconKey": "material_alloy_advanced",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 40,
+      "Description": "高阶锻造合金。用于后期武器强化。"
+    },
+    {
+      "ItemId": "mat_bat_eye",
+      "DisplayName": "夜蝠之瞳",
+      "Category": "Material",
+      "Quality": "Blue",
+      "StackLimit": 999,
+      "SortOrder": 3160,
+      "IconKey": "material_bat_eye",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 20,
+      "Description": "独眸夜蝠留下的单眼。"
+    },
+    {
+      "ItemId": "mat_bee_stinger",
+      "DisplayName": "妖蜂针",
+      "Category": "Material",
+      "Quality": "Blue",
+      "StackLimit": 999,
+      "SortOrder": 3150,
+      "IconKey": "material_bee_stinger",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 18,
+      "Description": "金翅妖蜂折断的尾针。"
+    },
+    {
+      "ItemId": "mat_dragon_bone",
+      "DisplayName": "赤霄骨",
+      "Category": "Material",
+      "Quality": "Gold",
+      "StackLimit": 999,
+      "SortOrder": 3330,
+      "IconKey": "material_dragon_bone",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 90,
+      "Description": "赤霄炎龙的骨骼碎片。"
+    },
+    {
+      "ItemId": "mat_dragon_core",
+      "DisplayName": "赤霄龙核",
+      "Category": "Material",
+      "Quality": "Red",
+      "StackLimit": 999,
+      "SortOrder": 3340,
+      "IconKey": "material_dragon_core",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 200,
+      "Description": "赤霄炎龙体内燃烧的核心。"
+    },
+    {
+      "ItemId": "mat_dragon_scale",
+      "DisplayName": "赤霄鳞",
+      "Category": "Material",
+      "Quality": "Gold",
+      "StackLimit": 999,
+      "SortOrder": 3320,
+      "IconKey": "material_dragon_scale",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 80,
+      "Description": "赤霄炎龙剥落的赤色鳞甲。"
+    },
+    {
+      "ItemId": "mat_forge_stone",
+      "DisplayName": "锻造石",
+      "Category": "Material",
+      "Quality": "Blue",
+      "StackLimit": 999,
+      "SortOrder": 3020,
+      "IconKey": "material_ore_refined",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 30,
+      "Description": "提炼后的锻造核心材料。武器强化的主要消耗品。"
+    },
+    {
+      "ItemId": "mat_golem_stone",
+      "DisplayName": "岳心石",
+      "Category": "Material",
+      "Quality": "Purple",
+      "StackLimit": 999,
+      "SortOrder": 3210,
+      "IconKey": "material_golem_stone",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 15,
+      "Description": "镇岳石魔核心处的致密岩石。"
+    },
+    {
+      "ItemId": "mat_magma_core",
+      "DisplayName": "烬核",
+      "Category": "Material",
+      "Quality": "Purple",
+      "StackLimit": 999,
+      "SortOrder": 3220,
+      "IconKey": "material_magma_core",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 15,
+      "Description": "烬核魔爆裂后残留的余烬。"
+    },
+    {
+      "ItemId": "mat_mimic_key",
+      "DisplayName": "匣妖钥",
+      "Category": "Material",
+      "Quality": "Gold",
+      "StackLimit": 999,
+      "SortOrder": 3310,
+      "IconKey": "material_mimic_key",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 60,
+      "Description": "吞金匣妖伪装用的锁钥。"
+    },
+    {
+      "ItemId": "mat_ore_basic",
+      "DisplayName": "粗铁矿石",
+      "Category": "Material",
+      "Quality": "White",
+      "StackLimit": 999,
+      "SortOrder": 3010,
+      "IconKey": "material_ore_basic",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 5,
+      "Description": "最常见的锻造原料。"
+    },
+    {
+      "ItemId": "mat_snake_scale",
+      "DisplayName": "紫鳞",
+      "Category": "Material",
+      "Quality": "Blue",
+      "StackLimit": 999,
+      "SortOrder": 3140,
+      "IconKey": "material_snake_scale",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 18,
+      "Description": "紫鳞王蛇脱落的坚硬鳞片。"
+    },
+    {
+      "ItemId": "mat_spider_venom",
+      "DisplayName": "腐毒囊",
+      "Category": "Material",
+      "Quality": "White",
+      "StackLimit": 999,
+      "SortOrder": 3130,
+      "IconKey": "material_spider_venom",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 10,
+      "Description": "腐毒蛛体内尚未破裂的毒囊。"
+    },
+    {
+      "ItemId": "mat_treant_root",
+      "DisplayName": "古灵根须",
+      "Category": "Material",
+      "Quality": "Blue",
+      "StackLimit": 999,
+      "SortOrder": 3170,
+      "IconKey": "material_treant_root",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 22,
+      "Description": "缚根古灵断裂的根须。"
+    },
+    {
+      "ItemId": "mat_treant_seed",
+      "DisplayName": "古灵之种",
+      "Category": "Material",
+      "Quality": "Purple",
+      "StackLimit": 999,
+      "SortOrder": 3230,
+      "IconKey": "material_treant_seed",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 18,
+      "Description": "缚根古灵体内孕育的种子。"
+    },
+    {
+      "ItemId": "mat_wolf_fang",
+      "DisplayName": "妖狼獠牙",
+      "Category": "Material",
+      "Quality": "White",
+      "StackLimit": 999,
+      "SortOrder": 3110,
+      "IconKey": "material_wolf_fang",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 8,
+      "Description": "暮影妖狼掉落的锐利獠牙。"
+    },
+    {
+      "ItemId": "mat_wolf_hide",
+      "DisplayName": "妖狼皮",
+      "Category": "Material",
+      "Quality": "White",
+      "StackLimit": 999,
+      "SortOrder": 3120,
+      "IconKey": "material_wolf_hide",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 8,
+      "Description": "暮影妖狼掉落的厚实兽皮。"
+    },
+    {
+      "ItemId": "soul_bu_qu",
+      "DisplayName": "不屈",
+      "Category": "Soulstone",
+      "Quality": "Red",
+      "StackLimit": 20,
+      "SortOrder": 5410,
+      "IconKey": "souljade_bu_qu",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 1500,
+      "Description": "每次远征中致死伤害触发一次免疫并恢复少量生命。"
+    },
+    {
+      "ItemId": "soul_chuan_yun",
+      "DisplayName": "穿云",
+      "Category": "Soulstone",
+      "Quality": "Blue",
+      "StackLimit": 20,
+      "SortOrder": 5120,
+      "IconKey": "souljade_chuan_yun",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 140,
+      "Description": "提高纵击伤害。"
+    },
+    {
+      "ItemId": "soul_du_yu",
+      "DisplayName": "渡厄",
+      "Category": "Soulstone",
+      "Quality": "Purple",
+      "StackLimit": 20,
+      "SortOrder": 5260,
+      "IconKey": "souljade_du_yu",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 120,
+      "Description": "反击成功时恢复少量生命。"
+    },
+    {
+      "ItemId": "soul_feng_rui",
+      "DisplayName": "锋锐",
+      "Category": "Soulstone",
+      "Quality": "White",
+      "StackLimit": 20,
+      "SortOrder": 5010,
+      "IconKey": "souljade_feng_rui",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 50,
+      "Description": "提高攻击力。"
+    },
+    {
+      "ItemId": "soul_gu_yuan",
+      "DisplayName": "固元",
+      "Category": "Soulstone",
+      "Quality": "White",
+      "StackLimit": 20,
+      "SortOrder": 5030,
+      "IconKey": "souljade_gu_yuan",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 50,
+      "Description": "提高生命上限。"
+    },
+    {
+      "ItemId": "soul_heng_duan",
+      "DisplayName": "横断",
+      "Category": "Soulstone",
+      "Quality": "Blue",
+      "StackLimit": 20,
+      "SortOrder": 5110,
+      "IconKey": "souljade_heng_duan",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 140,
+      "Description": "提高横击伤害。"
+    },
+    {
+      "ItemId": "soul_hou_jia",
+      "DisplayName": "厚甲",
+      "Category": "Soulstone",
+      "Quality": "White",
+      "StackLimit": 20,
+      "SortOrder": 5020,
+      "IconKey": "souljade_hou_jia",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 50,
+      "Description": "提高护甲耐久上限。"
+    },
+    {
+      "ItemId": "soul_hu_xin",
+      "DisplayName": "护心",
+      "Category": "Soulstone",
+      "Quality": "Blue",
+      "StackLimit": 20,
+      "SortOrder": 5180,
+      "IconKey": "souljade_hu_xin",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 140,
+      "Description": "低生命时降低受到的伤害。"
+    },
+    {
+      "ItemId": "soul_hui_feng",
+      "DisplayName": "回风",
+      "Category": "Soulstone",
+      "Quality": "Blue",
+      "StackLimit": 20,
+      "SortOrder": 5150,
+      "IconKey": "souljade_hui_feng",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 140,
+      "Description": "降低闪避体力消耗。"
+    },
+    {
+      "ItemId": "soul_hui_xiang",
+      "DisplayName": "回响",
+      "Category": "Soulstone",
+      "Quality": "White",
+      "StackLimit": 20,
+      "SortOrder": 5060,
+      "IconKey": "souljade_hui_xiang",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 50,
+      "Description": "缩短技能冷却。"
+    },
+    {
+      "ItemId": "soul_ji_feng",
+      "DisplayName": "疾风",
+      "Category": "Soulstone",
+      "Quality": "Blue",
+      "StackLimit": 20,
+      "SortOrder": 5140,
+      "IconKey": "souljade_ji_feng",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 140,
+      "Description": "提高攻击速度。"
+    },
+    {
+      "ItemId": "soul_jia_fu",
+      "DisplayName": "甲缚",
+      "Category": "Soulstone",
+      "Quality": "Gold",
+      "StackLimit": 20,
+      "SortOrder": 5320,
+      "IconKey": "souljade_jia_fu",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 400,
+      "Description": "护甲破碎时获得短暂霸体。"
+    },
+    {
+      "ItemId": "soul_jian_ren",
+      "DisplayName": "坚韧",
+      "Category": "Soulstone",
+      "Quality": "Blue",
+      "StackLimit": 20,
+      "SortOrder": 5130,
+      "IconKey": "souljade_jian_ren",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 140,
+      "Description": "降低受到的伤害。"
+    },
+    {
+      "ItemId": "soul_jue_feng",
+      "DisplayName": "绝锋",
+      "Category": "Soulstone",
+      "Quality": "Purple",
+      "StackLimit": 20,
+      "SortOrder": 5220,
+      "IconKey": "souljade_jue_feng",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 120,
+      "Description": "提高第三段普攻伤害。"
+    },
+    {
+      "ItemId": "soul_ling_shan",
+      "DisplayName": "凌闪",
+      "Category": "Soulstone",
+      "Quality": "Purple",
+      "StackLimit": 20,
+      "SortOrder": 5250,
+      "IconKey": "souljade_ling_shan",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 120,
+      "Description": "延长闪避无敌帧。"
+    },
+    {
+      "ItemId": "soul_po_jun",
+      "DisplayName": "破军",
+      "Category": "Soulstone",
+      "Quality": "Purple",
+      "StackLimit": 20,
+      "SortOrder": 5210,
+      "IconKey": "souljade_po_jun",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 120,
+      "Description": "大幅提高破韧效率。"
+    },
+    {
+      "ItemId": "soul_qing_shen",
+      "DisplayName": "轻身",
+      "Category": "Soulstone",
+      "Quality": "White",
+      "StackLimit": 20,
+      "SortOrder": 5040,
+      "IconKey": "souljade_qing_shen",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 50,
+      "Description": "提高移动速度。"
+    },
+    {
+      "ItemId": "soul_tie_bi",
+      "DisplayName": "铁壁",
+      "Category": "Soulstone",
+      "Quality": "Purple",
+      "StackLimit": 20,
+      "SortOrder": 5230,
+      "IconKey": "souljade_tie_bi",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 120,
+      "Description": "提高霸体期间的减伤。"
+    },
+    {
+      "ItemId": "soul_xing_qi",
+      "DisplayName": "行气",
+      "Category": "Soulstone",
+      "Quality": "White",
+      "StackLimit": 20,
+      "SortOrder": 5050,
+      "IconKey": "souljade_xing_qi",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 50,
+      "Description": "加快体力恢复。"
+    },
+    {
+      "ItemId": "soul_xu_shi",
+      "DisplayName": "蓄势",
+      "Category": "Soulstone",
+      "Quality": "Blue",
+      "StackLimit": 20,
+      "SortOrder": 5170,
+      "IconKey": "souljade_xu_shi",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 140,
+      "Description": "加快蓄力速度。"
+    },
+    {
+      "ItemId": "soul_yao_yin",
+      "DisplayName": "妖引",
+      "Category": "Soulstone",
+      "Quality": "Gold",
+      "StackLimit": 20,
+      "SortOrder": 5330,
+      "IconKey": "souljade_yao_yin",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 400,
+      "Description": "击杀后短时间内提高攻击力。"
+    },
+    {
+      "ItemId": "soul_zhen_hun",
+      "DisplayName": "镇魂",
+      "Category": "Soulstone",
+      "Quality": "Purple",
+      "StackLimit": 20,
+      "SortOrder": 5240,
+      "IconKey": "souljade_zhen_hun",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 120,
+      "Description": "提高处决伤害。"
+    },
+    {
+      "ItemId": "soul_zhu_jia",
+      "DisplayName": "铸甲",
+      "Category": "Soulstone",
+      "Quality": "Blue",
+      "StackLimit": 20,
+      "SortOrder": 5160,
+      "IconKey": "souljade_zhu_jia",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 140,
+      "Description": "提高护甲恢复效率。"
+    },
+    {
+      "ItemId": "soul_zong_lie",
+      "DisplayName": "纵烈",
+      "Category": "Soulstone",
+      "Quality": "Gold",
+      "StackLimit": 20,
+      "SortOrder": 5310,
+      "IconKey": "souljade_zong_lie",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 400,
+      "Description": "对飞行怪造成额外伤害。"
+    },
+    {
+      "ItemId": "special_makeup_card",
+      "DisplayName": "补签卡",
+      "Category": "Special",
+      "Quality": "Blue",
+      "StackLimit": 99,
+      "SortOrder": 2020,
+      "IconKey": "slice15_15",
+      "SellCurrencyId": "Silk",
+      "SellPrice": 0,
+      "Description": "七日签到周期内补签一个漏签日。每个周期最多使用一张。"
+    },
+    {
+      "ItemId": "special_teleport_scroll",
+      "DisplayName": "传送符",
+      "Category": "Special",
+      "Quality": "White",
+      "StackLimit": 99,
+      "SortOrder": 2010,
+      "IconKey": "slice14_14",
+      "SellCurrencyId": "Copper",
+      "SellPrice": 15,
+      "Description": "脱战状态下可直接返回地图一重生点。"
+    }
+  ],
+  "Heroes": [
+    {
+      "HeroId": "hero_gu_chenyue",
+      "DisplayName": "顾沉岳",
+      "Title": "镇锋",
+      "SortOrder": 1,
+      "Health": 1000,
+      "Attack": 100,
+      "Defense": 80,
+      "Stamina": 60,
+      "MoveSpeed": 5,
+      "PortraitKey": "hero_portrait_gu_chenyue",
+      "Background": "出身镇北军的重锋战将。以正面压制、反击与破韧见长，擅长在敌阵中央硬撼强敌。"
+    },
+    {
+      "HeroId": "hero_pei_xingzhou",
+      "DisplayName": "裴行舟",
+      "Title": "流影",
+      "SortOrder": 2,
+      "Health": 1000,
+      "Attack": 90,
+      "Defense": 65,
+      "Stamina": 60,
+      "MoveSpeed": 5.5,
+      "PortraitKey": "hero_portrait_pei_xingzhou",
+      "Background": "行走江湖的浪客剑侠。以位移、群体控制与机动见长，擅长游走切入与牵制。"
+    }
+  ],
+  "HeroSkills": [
+    {
+      "SkillId": "skill_gu_f_shock_mountain",
+      "HeroId": "hero_gu_chenyue",
+      "SlotKey": "F",
+      "DisplayName": "震岳斩",
+      "SortOrder": 1,
+      "CooldownSeconds": 15,
+      "DamageMultiplier": 1.2,
+      "RangeMeters": 4,
+      "IconKey": "skill_gu_f_shock_mountain",
+      "Description": "向前方120度扇形范围内劈出一记沉重斩击。",
+      "EffectSummary": "造成1.2倍伤害并附带高额破韧。释放期间为霸体但仍会受到伤害。"
+    },
+    {
+      "SkillId": "skill_gu_v_prison_breaker",
+      "HeroId": "hero_gu_chenyue",
+      "SlotKey": "V",
+      "DisplayName": "破军镇狱",
+      "SortOrder": 2,
+      "CooldownSeconds": 40,
+      "DamageMultiplier": 2.5,
+      "RangeMeters": 6,
+      "IconKey": "skill_gu_v_prison_breaker",
+      "Description": "以自身为中心镇压周身6米范围。",
+      "EffectSummary": "造成2.5倍伤害。击倒普通怪、大幅削减精英与首领韧性并压低飞行怪。"
+    },
+    {
+      "SkillId": "skill_pei_f_shadow_dash",
+      "HeroId": "hero_pei_xingzhou",
+      "SlotKey": "F",
+      "DisplayName": "掠影",
+      "SortOrder": 1,
+      "CooldownSeconds": 15,
+      "DamageMultiplier": 0.9,
+      "RangeMeters": 6,
+      "IconKey": "skill_pei_f_shadow_dash",
+      "Description": "向前突进6米并在路径上留下残影。",
+      "EffectSummary": "路径造成0.9倍伤害。前半段短暂无敌，可穿过普通怪但不能穿墙或首领。"
+    },
+    {
+      "SkillId": "skill_pei_v_wind_binding",
+      "HeroId": "hero_pei_xingzhou",
+      "SlotKey": "V",
+      "DisplayName": "风缚阵",
+      "SortOrder": 2,
+      "CooldownSeconds": 40,
+      "DamageMultiplier": 1.5,
+      "RangeMeters": 7,
+      "IconKey": "skill_pei_v_wind_binding",
+      "Description": "在7米范围内布下持续4秒的缚风阵。",
+      "EffectSummary": "初始造成1.5倍伤害并每秒造成0.25倍伤害。牵引普通怪、减速精英与首领并压低飞行怪。"
+    }
+  ],
+  "Weapons": [
+    {
+      "WeaponId": "weapon_longsword",
+      "DisplayName": "长剑",
+      "SortOrder": 1,
+      "MaxLevel": 20,
+      "IconKey": "nav_weapon",
+      "Description": "双手长剑。攻击范围与削韧更强，动作稳重，适合正面压制。"
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "DisplayName": "太刀",
+      "SortOrder": 2,
+      "MaxLevel": 20,
+      "IconKey": "nav_weapon",
+      "Description": "单手太刀。攻击速度约快15%，位移与转向更灵活，适合游走切入。"
+    }
+  ],
+  "WeaponLevels": [
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 1,
+      "Attack": 120,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 2,
+      "Attack": 128,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 3,
+      "Attack": 136,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 4,
+      "Attack": 144,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 5,
+      "Attack": 152,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 6,
+      "Attack": 160,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 7,
+      "Attack": 168,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 8,
+      "Attack": 176,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 9,
+      "Attack": 184,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 10,
+      "Attack": 192,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 11,
+      "Attack": 200,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 12,
+      "Attack": 208,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 13,
+      "Attack": 216,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 14,
+      "Attack": 224,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 15,
+      "Attack": 232,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 16,
+      "Attack": 240,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 17,
+      "Attack": 248,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 18,
+      "Attack": 256,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 19,
+      "Attack": 264,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_longsword",
+      "Level": 20,
+      "Attack": 272,
+      "AttackSpeed": 1
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 1,
+      "Attack": 105,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 2,
+      "Attack": 112,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 3,
+      "Attack": 119,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 4,
+      "Attack": 126,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 5,
+      "Attack": 133,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 6,
+      "Attack": 140,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 7,
+      "Attack": 147,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 8,
+      "Attack": 154,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 9,
+      "Attack": 161,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 10,
+      "Attack": 168,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 11,
+      "Attack": 175,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 12,
+      "Attack": 182,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 13,
+      "Attack": 189,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 14,
+      "Attack": 196,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 15,
+      "Attack": 203,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 16,
+      "Attack": 210,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 17,
+      "Attack": 217,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 18,
+      "Attack": 224,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 19,
+      "Attack": 231,
+      "AttackSpeed": 1.15
+    },
+    {
+      "WeaponId": "weapon_tachi",
+      "Level": 20,
+      "Attack": 238,
+      "AttackSpeed": 1.15
+    }
+  ],
+  "ForgeRecipes": [
+    {
+      "RecipeId": "forge_ls_01_02",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 1,
+      "ToLevel": 2,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 200,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 2,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 5
+    },
+    {
+      "RecipeId": "forge_ls_02_03",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 2,
+      "ToLevel": 3,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 320,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 3,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 6
+    },
+    {
+      "RecipeId": "forge_ls_03_04",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 3,
+      "ToLevel": 4,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 440,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 3,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 7
+    },
+    {
+      "RecipeId": "forge_ls_04_05",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 4,
+      "ToLevel": 5,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 560,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 4,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 8
+    },
+    {
+      "RecipeId": "forge_ls_05_06",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 5,
+      "ToLevel": 6,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 680,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 4,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 9
+    },
+    {
+      "RecipeId": "forge_ls_06_07",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 6,
+      "ToLevel": 7,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 800,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 5,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 10
+    },
+    {
+      "RecipeId": "forge_ls_07_08",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 7,
+      "ToLevel": 8,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1200,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 7,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 2
+    },
+    {
+      "RecipeId": "forge_ls_08_09",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 8,
+      "ToLevel": 9,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1460,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 8,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 3
+    },
+    {
+      "RecipeId": "forge_ls_09_10",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 9,
+      "ToLevel": 10,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1720,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 9,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 4
+    },
+    {
+      "RecipeId": "forge_ls_10_11",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 10,
+      "ToLevel": 11,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1980,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 10,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 5
+    },
+    {
+      "RecipeId": "forge_ls_11_12",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 11,
+      "ToLevel": 12,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 2240,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 11,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 6
+    },
+    {
+      "RecipeId": "forge_ls_12_13",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 12,
+      "ToLevel": 13,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 2500,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 12,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 7
+    },
+    {
+      "RecipeId": "forge_ls_13_14",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 13,
+      "ToLevel": 14,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 2760,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 13,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 8
+    },
+    {
+      "RecipeId": "forge_ls_14_15",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 14,
+      "ToLevel": 15,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 400,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 15,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 1
+    },
+    {
+      "RecipeId": "forge_ls_15_16",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 15,
+      "ToLevel": 16,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 580,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 16,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 2
+    },
+    {
+      "RecipeId": "forge_ls_16_17",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 16,
+      "ToLevel": 17,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 760,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 17,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 3
+    },
+    {
+      "RecipeId": "forge_ls_17_18",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 17,
+      "ToLevel": 18,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 940,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 18,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 4
+    },
+    {
+      "RecipeId": "forge_ls_18_19",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 18,
+      "ToLevel": 19,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 1120,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 19,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 5
+    },
+    {
+      "RecipeId": "forge_ls_19_20",
+      "WeaponId": "weapon_longsword",
+      "FromLevel": 19,
+      "ToLevel": 20,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 1300,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 20,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 6
+    },
+    {
+      "RecipeId": "forge_tc_01_02",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 1,
+      "ToLevel": 2,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 200,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 2,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 5
+    },
+    {
+      "RecipeId": "forge_tc_02_03",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 2,
+      "ToLevel": 3,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 320,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 3,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 6
+    },
+    {
+      "RecipeId": "forge_tc_03_04",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 3,
+      "ToLevel": 4,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 440,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 3,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 7
+    },
+    {
+      "RecipeId": "forge_tc_04_05",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 4,
+      "ToLevel": 5,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 560,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 4,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 8
+    },
+    {
+      "RecipeId": "forge_tc_05_06",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 5,
+      "ToLevel": 6,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 680,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 4,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 9
+    },
+    {
+      "RecipeId": "forge_tc_06_07",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 6,
+      "ToLevel": 7,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 800,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 5,
+      "Material2ItemId": "mat_ore_basic",
+      "Material2Amount": 10
+    },
+    {
+      "RecipeId": "forge_tc_07_08",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 7,
+      "ToLevel": 8,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1200,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 7,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 2
+    },
+    {
+      "RecipeId": "forge_tc_08_09",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 8,
+      "ToLevel": 9,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1460,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 8,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 3
+    },
+    {
+      "RecipeId": "forge_tc_09_10",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 9,
+      "ToLevel": 10,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1720,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 9,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 4
+    },
+    {
+      "RecipeId": "forge_tc_10_11",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 10,
+      "ToLevel": 11,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1980,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 10,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 5
+    },
+    {
+      "RecipeId": "forge_tc_11_12",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 11,
+      "ToLevel": 12,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 2240,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 11,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 6
+    },
+    {
+      "RecipeId": "forge_tc_12_13",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 12,
+      "ToLevel": 13,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 2500,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 12,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 7
+    },
+    {
+      "RecipeId": "forge_tc_13_14",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 13,
+      "ToLevel": 14,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 2760,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 13,
+      "Material2ItemId": "mat_alloy_advanced",
+      "Material2Amount": 8
+    },
+    {
+      "RecipeId": "forge_tc_14_15",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 14,
+      "ToLevel": 15,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 400,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 15,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 1
+    },
+    {
+      "RecipeId": "forge_tc_15_16",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 15,
+      "ToLevel": 16,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 580,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 16,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 2
+    },
+    {
+      "RecipeId": "forge_tc_16_17",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 16,
+      "ToLevel": 17,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 760,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 17,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 3
+    },
+    {
+      "RecipeId": "forge_tc_17_18",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 17,
+      "ToLevel": 18,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 940,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 18,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 4
+    },
+    {
+      "RecipeId": "forge_tc_18_19",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 18,
+      "ToLevel": 19,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 1120,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 19,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 5
+    },
+    {
+      "RecipeId": "forge_tc_19_20",
+      "WeaponId": "weapon_tachi",
+      "FromLevel": 19,
+      "ToLevel": 20,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 1300,
+      "Material1ItemId": "mat_forge_stone",
+      "Material1Amount": 20,
+      "Material2ItemId": "mat_dragon_scale",
+      "Material2Amount": 6
+    }
+  ],
+  "ShopProducts": [
+    {
+      "ProductId": "shop_alloy_advanced",
+      "ItemId": "mat_alloy_advanced",
+      "ShopCategory": "Material",
+      "CurrencyId": "Silk",
+      "UnitPrice": 120,
+      "PurchaseLimit": 0,
+      "SortOrder": 3030,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_armor_cloth",
+      "ItemId": "armor_cloth",
+      "ShopCategory": "Armor",
+      "CurrencyId": "Copper",
+      "UnitPrice": 90,
+      "PurchaseLimit": 0,
+      "SortOrder": 4010,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_armor_dragon",
+      "ItemId": "armor_dragon",
+      "ShopCategory": "Armor",
+      "CurrencyId": "Silk",
+      "UnitPrice": 1800,
+      "PurchaseLimit": 1,
+      "SortOrder": 4040,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_armor_iron",
+      "ItemId": "armor_iron",
+      "ShopCategory": "Armor",
+      "CurrencyId": "Silk",
+      "UnitPrice": 450,
+      "PurchaseLimit": 0,
+      "SortOrder": 4030,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_armor_medicine",
+      "ItemId": "consumable_armor_medicine",
+      "ShopCategory": "Consumable",
+      "CurrencyId": "Copper",
+      "UnitPrice": 60,
+      "PurchaseLimit": 0,
+      "SortOrder": 1020,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_armor_ranger",
+      "ItemId": "armor_ranger",
+      "ShopCategory": "Armor",
+      "CurrencyId": "Copper",
+      "UnitPrice": 540,
+      "PurchaseLimit": 0,
+      "SortOrder": 4020,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_blood_pack",
+      "ItemId": "consumable_blood_pack",
+      "ShopCategory": "Consumable",
+      "CurrencyId": "Copper",
+      "UnitPrice": 60,
+      "PurchaseLimit": 0,
+      "SortOrder": 1010,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_dragon_scale",
+      "ItemId": "mat_dragon_scale",
+      "ShopCategory": "Material",
+      "CurrencyId": "Silk",
+      "UnitPrice": 240,
+      "PurchaseLimit": 10,
+      "SortOrder": 3080,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_forge_stone",
+      "ItemId": "mat_forge_stone",
+      "ShopCategory": "Material",
+      "CurrencyId": "Copper",
+      "UnitPrice": 90,
+      "PurchaseLimit": 0,
+      "SortOrder": 3020,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_golem_stone",
+      "ItemId": "mat_golem_stone",
+      "ShopCategory": "Material",
+      "CurrencyId": "Silk",
+      "UnitPrice": 45,
+      "PurchaseLimit": 0,
+      "SortOrder": 3060,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_magma_core",
+      "ItemId": "mat_magma_core",
+      "ShopCategory": "Material",
+      "CurrencyId": "Silk",
+      "UnitPrice": 45,
+      "PurchaseLimit": 0,
+      "SortOrder": 3070,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_makeup_card",
+      "ItemId": "special_makeup_card",
+      "ShopCategory": "Special",
+      "CurrencyId": "Silk",
+      "UnitPrice": 300,
+      "PurchaseLimit": 4,
+      "SortOrder": 2020,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_ore_basic",
+      "ItemId": "mat_ore_basic",
+      "ShopCategory": "Material",
+      "CurrencyId": "Copper",
+      "UnitPrice": 15,
+      "PurchaseLimit": 0,
+      "SortOrder": 3010,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_snake_scale",
+      "ItemId": "mat_snake_scale",
+      "ShopCategory": "Material",
+      "CurrencyId": "Copper",
+      "UnitPrice": 54,
+      "PurchaseLimit": 0,
+      "SortOrder": 3040,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_soul_chuan_yun",
+      "ItemId": "soul_chuan_yun",
+      "ShopCategory": "Soulstone",
+      "CurrencyId": "Copper",
+      "UnitPrice": 420,
+      "PurchaseLimit": 0,
+      "SortOrder": 5120,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_soul_feng_rui",
+      "ItemId": "soul_feng_rui",
+      "ShopCategory": "Soulstone",
+      "CurrencyId": "Copper",
+      "UnitPrice": 150,
+      "PurchaseLimit": 0,
+      "SortOrder": 5010,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_soul_gu_yuan",
+      "ItemId": "soul_gu_yuan",
+      "ShopCategory": "Soulstone",
+      "CurrencyId": "Copper",
+      "UnitPrice": 150,
+      "PurchaseLimit": 0,
+      "SortOrder": 5030,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_soul_heng_duan",
+      "ItemId": "soul_heng_duan",
+      "ShopCategory": "Soulstone",
+      "CurrencyId": "Copper",
+      "UnitPrice": 420,
+      "PurchaseLimit": 0,
+      "SortOrder": 5110,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_soul_hou_jia",
+      "ItemId": "soul_hou_jia",
+      "ShopCategory": "Soulstone",
+      "CurrencyId": "Copper",
+      "UnitPrice": 150,
+      "PurchaseLimit": 0,
+      "SortOrder": 5020,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_soul_jian_ren",
+      "ItemId": "soul_jian_ren",
+      "ShopCategory": "Soulstone",
+      "CurrencyId": "Copper",
+      "UnitPrice": 420,
+      "PurchaseLimit": 0,
+      "SortOrder": 5130,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_soul_po_jun",
+      "ItemId": "soul_po_jun",
+      "ShopCategory": "Soulstone",
+      "CurrencyId": "Silk",
+      "UnitPrice": 360,
+      "PurchaseLimit": 2,
+      "SortOrder": 5210,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_soul_tie_bi",
+      "ItemId": "soul_tie_bi",
+      "ShopCategory": "Soulstone",
+      "CurrencyId": "Silk",
+      "UnitPrice": 360,
+      "PurchaseLimit": 2,
+      "SortOrder": 5220,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_teleport_scroll",
+      "ItemId": "special_teleport_scroll",
+      "ShopCategory": "Special",
+      "CurrencyId": "Copper",
+      "UnitPrice": 45,
+      "PurchaseLimit": 0,
+      "SortOrder": 2010,
+      "IsAvailable": true
+    },
+    {
+      "ProductId": "shop_treant_root",
+      "ItemId": "mat_treant_root",
+      "ShopCategory": "Material",
+      "CurrencyId": "Copper",
+      "UnitPrice": 66,
+      "PurchaseLimit": 0,
+      "SortOrder": 3050,
+      "IsAvailable": true
+    }
+  ],
+  "GachaPools": [
+    {
+      "PoolId": "pool_standard",
+      "DisplayName": "常驻宝匣",
+      "CurrencyId": "Gold",
+      "SinglePrice": 100,
+      "TenPullPrice": 900,
+      "TenPullMinimumQuality": "Blue",
+      "PityCount": 20,
+      "PityQuality": "Red",
+      "SortOrder": 1,
+      "Description": "消耗金币抽取材料与消耗品。十连必出蓝色及以上，20抽必出红色。"
+    }
+  ],
+  "GachaEntries": [
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_alloy_advanced",
+      "ItemId": "mat_alloy_advanced",
+      "Amount": 3,
+      "Quality": "Purple",
+      "Weight": 180
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_armor_medicine",
+      "ItemId": "consumable_armor_medicine",
+      "Amount": 3,
+      "Quality": "White",
+      "Weight": 1100
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_bat_eye",
+      "ItemId": "mat_bat_eye",
+      "Amount": 4,
+      "Quality": "Blue",
+      "Weight": 480
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_bee_stinger",
+      "ItemId": "mat_bee_stinger",
+      "Amount": 4,
+      "Quality": "Blue",
+      "Weight": 520
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_blood_pack",
+      "ItemId": "consumable_blood_pack",
+      "Amount": 3,
+      "Quality": "White",
+      "Weight": 1100
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_dragon_bone",
+      "ItemId": "mat_dragon_bone",
+      "Amount": 2,
+      "Quality": "Gold",
+      "Weight": 40
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_dragon_core",
+      "ItemId": "mat_dragon_core",
+      "Amount": 1,
+      "Quality": "Red",
+      "Weight": 10
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_dragon_scale",
+      "ItemId": "mat_dragon_scale",
+      "Amount": 2,
+      "Quality": "Gold",
+      "Weight": 50
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_forge_stone",
+      "ItemId": "mat_forge_stone",
+      "Amount": 4,
+      "Quality": "Blue",
+      "Weight": 620
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_golem_stone",
+      "ItemId": "mat_golem_stone",
+      "Amount": 3,
+      "Quality": "Purple",
+      "Weight": 170
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_magma_core",
+      "ItemId": "mat_magma_core",
+      "Amount": 3,
+      "Quality": "Purple",
+      "Weight": 170
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_mimic_key",
+      "ItemId": "mat_mimic_key",
+      "Amount": 1,
+      "Quality": "Gold",
+      "Weight": 60
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_ore_basic",
+      "ItemId": "mat_ore_basic",
+      "Amount": 10,
+      "Quality": "White",
+      "Weight": 1600
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_snake_scale",
+      "ItemId": "mat_snake_scale",
+      "Amount": 4,
+      "Quality": "Blue",
+      "Weight": 520
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_spider_venom",
+      "ItemId": "mat_spider_venom",
+      "Amount": 5,
+      "Quality": "White",
+      "Weight": 1200
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_treant_root",
+      "ItemId": "mat_treant_root",
+      "Amount": 4,
+      "Quality": "Blue",
+      "Weight": 460
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_treant_seed",
+      "ItemId": "mat_treant_seed",
+      "Amount": 2,
+      "Quality": "Purple",
+      "Weight": 160
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_wolf_fang",
+      "ItemId": "mat_wolf_fang",
+      "Amount": 6,
+      "Quality": "White",
+      "Weight": 1400
+    },
+    {
+      "PoolId": "pool_standard",
+      "RewardId": "gacha_std_wolf_hide",
+      "ItemId": "mat_wolf_hide",
+      "Amount": 6,
+      "Quality": "White",
+      "Weight": 1400
+    }
+  ],
+  "SignInRewards": [
+    {
+      "Day": 1,
+      "RewardId": "signin_day_1",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 300
+    },
+    {
+      "Day": 2,
+      "RewardId": "signin_day_2",
+      "RewardKind": "Item",
+      "ItemId": "consumable_blood_pack",
+      "ItemAmount": 3,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Day": 3,
+      "RewardId": "signin_day_3",
+      "RewardKind": "Item",
+      "ItemId": "mat_forge_stone",
+      "ItemAmount": 5,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Day": 4,
+      "RewardId": "signin_day_4",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 150
+    },
+    {
+      "Day": 5,
+      "RewardId": "signin_day_5",
+      "RewardKind": "Item",
+      "ItemId": "consumable_armor_medicine",
+      "ItemAmount": 3,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Day": 6,
+      "RewardId": "signin_day_6",
+      "RewardKind": "Item",
+      "ItemId": "mat_alloy_advanced",
+      "ItemAmount": 3,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Day": 7,
+      "RewardId": "signin_day_7",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Gold",
+      "CurrencyAmount": 200
+    }
+  ],
+  "SignInMilestones": [
+    {
+      "MilestoneDays": 3,
+      "RewardId": "signin_milestone_3",
+      "RewardKind": "Item",
+      "ItemId": "special_makeup_card",
+      "ItemAmount": 1,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "MilestoneDays": 5,
+      "RewardId": "signin_milestone_5",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 400
+    },
+    {
+      "MilestoneDays": 7,
+      "RewardId": "signin_milestone_7",
+      "RewardKind": "Item",
+      "ItemId": "mat_dragon_scale",
+      "ItemAmount": 2,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    }
+  ],
+  "AccountLevelRewards": [
+    {
+      "Level": 1,
+      "XpToReach": 0,
+      "RewardId": "account_level_1",
+      "RewardKind": "None",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 2,
+      "XpToReach": 100,
+      "RewardId": "account_level_2",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 500
+    },
+    {
+      "Level": 3,
+      "XpToReach": 250,
+      "RewardId": "account_level_3",
+      "RewardKind": "Item",
+      "ItemId": "consumable_blood_pack",
+      "ItemAmount": 5,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 4,
+      "XpToReach": 450,
+      "RewardId": "account_level_4",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 200
+    },
+    {
+      "Level": 5,
+      "XpToReach": 700,
+      "RewardId": "account_level_5",
+      "RewardKind": "Item",
+      "ItemId": "mat_forge_stone",
+      "ItemAmount": 8,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 6,
+      "XpToReach": 1000,
+      "RewardId": "account_level_6",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1000
+    },
+    {
+      "Level": 7,
+      "XpToReach": 1350,
+      "RewardId": "account_level_7",
+      "RewardKind": "Item",
+      "ItemId": "consumable_armor_medicine",
+      "ItemAmount": 5,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 8,
+      "XpToReach": 1750,
+      "RewardId": "account_level_8",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 300
+    },
+    {
+      "Level": 9,
+      "XpToReach": 2200,
+      "RewardId": "account_level_9",
+      "RewardKind": "Item",
+      "ItemId": "mat_alloy_advanced",
+      "ItemAmount": 4,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 10,
+      "XpToReach": 2700,
+      "RewardId": "account_level_10",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Gold",
+      "CurrencyAmount": 300
+    },
+    {
+      "Level": 11,
+      "XpToReach": 3250,
+      "RewardId": "account_level_11",
+      "RewardKind": "None",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 12,
+      "XpToReach": 3850,
+      "RewardId": "account_level_12",
+      "RewardKind": "Item",
+      "ItemId": "special_makeup_card",
+      "ItemAmount": 1,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 13,
+      "XpToReach": 4500,
+      "RewardId": "account_level_13",
+      "RewardKind": "None",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 14,
+      "XpToReach": 5200,
+      "RewardId": "account_level_14",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 500
+    },
+    {
+      "Level": 15,
+      "XpToReach": 5950,
+      "RewardId": "account_level_15",
+      "RewardKind": "Item",
+      "ItemId": "soul_heng_duan",
+      "ItemAmount": 1,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 16,
+      "XpToReach": 6750,
+      "RewardId": "account_level_16",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 3000
+    },
+    {
+      "Level": 17,
+      "XpToReach": 7600,
+      "RewardId": "account_level_17",
+      "RewardKind": "None",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 18,
+      "XpToReach": 8500,
+      "RewardId": "account_level_18",
+      "RewardKind": "Item",
+      "ItemId": "mat_golem_stone",
+      "ItemAmount": 6,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 19,
+      "XpToReach": 9450,
+      "RewardId": "account_level_19",
+      "RewardKind": "None",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 20,
+      "XpToReach": 10450,
+      "RewardId": "account_level_20",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Gold",
+      "CurrencyAmount": 500
+    },
+    {
+      "Level": 21,
+      "XpToReach": 11500,
+      "RewardId": "account_level_21",
+      "RewardKind": "None",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 22,
+      "XpToReach": 12600,
+      "RewardId": "account_level_22",
+      "RewardKind": "Item",
+      "ItemId": "armor_iron",
+      "ItemAmount": 1,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 23,
+      "XpToReach": 13750,
+      "RewardId": "account_level_23",
+      "RewardKind": "None",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 24,
+      "XpToReach": 14950,
+      "RewardId": "account_level_24",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 900
+    },
+    {
+      "Level": 25,
+      "XpToReach": 16200,
+      "RewardId": "account_level_25",
+      "RewardKind": "Item",
+      "ItemId": "soul_po_jun",
+      "ItemAmount": 1,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 26,
+      "XpToReach": 17500,
+      "RewardId": "account_level_26",
+      "RewardKind": "Item",
+      "ItemId": "mat_dragon_scale",
+      "ItemAmount": 4,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 27,
+      "XpToReach": 18850,
+      "RewardId": "account_level_27",
+      "RewardKind": "None",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 28,
+      "XpToReach": 20250,
+      "RewardId": "account_level_28",
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Gold",
+      "CurrencyAmount": 800
+    },
+    {
+      "Level": 29,
+      "XpToReach": 21700,
+      "RewardId": "account_level_29",
+      "RewardKind": "None",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "Level": 30,
+      "XpToReach": 23200,
+      "RewardId": "account_level_30",
+      "RewardKind": "Item",
+      "ItemId": "soul_bu_qu",
+      "ItemAmount": 1,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    }
+  ],
+  "Achievements": [
+    {
+      "AchievementId": "ach_adv_avatar_change",
+      "Category": "Adventure",
+      "DisplayName": "改头换面",
+      "Description": "更换头像或头像框3次。",
+      "SortOrder": 1040,
+      "TargetProgress": 3,
+      "AchievementXp": 60,
+      "SourceEvent": "AvatarChanged",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 300
+    },
+    {
+      "AchievementId": "ach_adv_expedition_1",
+      "Category": "Adventure",
+      "DisplayName": "首次远行",
+      "Description": "完成一次远征结算。",
+      "SortOrder": 1080,
+      "TargetProgress": 1,
+      "AchievementXp": 150,
+      "SourceEvent": "ExpeditionCompleted",
+      "IsActiveInP1": false,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 300
+    },
+    {
+      "AchievementId": "ach_adv_first_chat",
+      "Category": "Adventure",
+      "DisplayName": "把酒言欢",
+      "Description": "发送第一条私聊消息。",
+      "SortOrder": 1070,
+      "TargetProgress": 1,
+      "AchievementXp": 60,
+      "SourceEvent": "ChatMessageSent",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 300
+    },
+    {
+      "AchievementId": "ach_adv_first_friend",
+      "Category": "Adventure",
+      "DisplayName": "萍水相逢",
+      "Description": "添加第一位好友。",
+      "SortOrder": 1060,
+      "TargetProgress": 1,
+      "AchievementXp": 80,
+      "SourceEvent": "FriendAdded",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 100
+    },
+    {
+      "AchievementId": "ach_adv_first_hero",
+      "Category": "Adventure",
+      "DisplayName": "初入江湖",
+      "Description": "首次选择出战英雄。",
+      "SortOrder": 1010,
+      "TargetProgress": 1,
+      "AchievementXp": 50,
+      "SourceEvent": "HeroSelected",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 200
+    },
+    {
+      "AchievementId": "ach_adv_first_pet",
+      "Category": "Adventure",
+      "DisplayName": "同行之灵",
+      "Description": "首次选择出战宠物。",
+      "SortOrder": 1030,
+      "TargetProgress": 1,
+      "AchievementXp": 50,
+      "SourceEvent": "PetSelected",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 200
+    },
+    {
+      "AchievementId": "ach_adv_first_weapon",
+      "Category": "Adventure",
+      "DisplayName": "择兵而立",
+      "Description": "首次选择出战兵器。",
+      "SortOrder": 1020,
+      "TargetProgress": 1,
+      "AchievementXp": 50,
+      "SourceEvent": "WeaponSelected",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 200
+    },
+    {
+      "AchievementId": "ach_adv_signin_7",
+      "Category": "Adventure",
+      "DisplayName": "月旦有信",
+      "Description": "累计签到7次。",
+      "SortOrder": 1050,
+      "TargetProgress": 7,
+      "AchievementXp": 120,
+      "SourceEvent": "SignInClaimed",
+      "IsActiveInP1": true,
+      "RewardKind": "Item",
+      "ItemId": "special_makeup_card",
+      "ItemAmount": 1,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "AchievementId": "ach_bat_boss_dragon",
+      "Category": "Battle",
+      "DisplayName": "屠龙之志",
+      "Description": "首次击败赤霄炎龙。",
+      "SortOrder": 2040,
+      "TargetProgress": 1,
+      "AchievementXp": 400,
+      "SourceEvent": "BossDefeated",
+      "IsActiveInP1": false,
+      "RewardKind": "Item",
+      "ItemId": "mat_dragon_core",
+      "ItemAmount": 1,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "AchievementId": "ach_bat_counter_20",
+      "Category": "Battle",
+      "DisplayName": "后发制人",
+      "Description": "累计反击成功20次。",
+      "SortOrder": 2020,
+      "TargetProgress": 20,
+      "AchievementXp": 150,
+      "SourceEvent": "CounterSuccess",
+      "IsActiveInP1": false,
+      "RewardKind": "Item",
+      "ItemId": "consumable_blood_pack",
+      "ItemAmount": 5,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "AchievementId": "ach_bat_execute_10",
+      "Category": "Battle",
+      "DisplayName": "一击必杀",
+      "Description": "累计处决成功10次。",
+      "SortOrder": 2030,
+      "TargetProgress": 10,
+      "AchievementXp": 180,
+      "SourceEvent": "ExecuteSuccess",
+      "IsActiveInP1": false,
+      "RewardKind": "Item",
+      "ItemId": "consumable_armor_medicine",
+      "ItemAmount": 5,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "AchievementId": "ach_bat_kill_100",
+      "Category": "Battle",
+      "DisplayName": "百战之始",
+      "Description": "累计击败100只怪物。",
+      "SortOrder": 2010,
+      "TargetProgress": 100,
+      "AchievementXp": 150,
+      "SourceEvent": "MonsterKilled",
+      "IsActiveInP1": false,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1500
+    },
+    {
+      "AchievementId": "ach_forge_first",
+      "Category": "Forge",
+      "DisplayName": "初试炉火",
+      "Description": "首次完成一次武器强化。",
+      "SortOrder": 3010,
+      "TargetProgress": 1,
+      "AchievementXp": 60,
+      "SourceEvent": "ForgeUpgraded",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 300
+    },
+    {
+      "AchievementId": "ach_forge_level_10",
+      "Category": "Forge",
+      "DisplayName": "炉火纯青",
+      "Description": "任意武器强化至10级。",
+      "SortOrder": 3030,
+      "TargetProgress": 10,
+      "AchievementXp": 240,
+      "SourceEvent": "ForgeWeaponLevel",
+      "IsActiveInP1": true,
+      "RewardKind": "Item",
+      "ItemId": "mat_alloy_advanced",
+      "ItemAmount": 5,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "AchievementId": "ach_forge_level_20",
+      "Category": "Forge",
+      "DisplayName": "登峰造极",
+      "Description": "任意武器强化至20级。",
+      "SortOrder": 3040,
+      "TargetProgress": 20,
+      "AchievementXp": 600,
+      "SourceEvent": "ForgeWeaponLevel",
+      "IsActiveInP1": true,
+      "RewardKind": "Item",
+      "ItemId": "mat_dragon_scale",
+      "ItemAmount": 5,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "AchievementId": "ach_forge_level_5",
+      "Category": "Forge",
+      "DisplayName": "小有所成",
+      "Description": "任意武器强化至5级。",
+      "SortOrder": 3020,
+      "TargetProgress": 5,
+      "AchievementXp": 120,
+      "SourceEvent": "ForgeWeaponLevel",
+      "IsActiveInP1": true,
+      "RewardKind": "Item",
+      "ItemId": "mat_forge_stone",
+      "ItemAmount": 5,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "AchievementId": "ach_wealth_copper_10000",
+      "Category": "Wealth",
+      "DisplayName": "铜山之富",
+      "Description": "累计消费10000铜币。",
+      "SortOrder": 4010,
+      "TargetProgress": 10000,
+      "AchievementXp": 120,
+      "SourceEvent": "CurrencySpentCopper",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Copper",
+      "CurrencyAmount": 1000
+    },
+    {
+      "AchievementId": "ach_wealth_gacha_100",
+      "Category": "Wealth",
+      "DisplayName": "匣中乾坤",
+      "Description": "累计抽奖100次。",
+      "SortOrder": 4050,
+      "TargetProgress": 100,
+      "AchievementXp": 300,
+      "SourceEvent": "GachaPulled",
+      "IsActiveInP1": true,
+      "RewardKind": "Item",
+      "ItemId": "mat_dragon_scale",
+      "ItemAmount": 3,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "AchievementId": "ach_wealth_gold_3000",
+      "Category": "Wealth",
+      "DisplayName": "一掷千金",
+      "Description": "累计消费3000金币。",
+      "SortOrder": 4030,
+      "TargetProgress": 3000,
+      "AchievementXp": 260,
+      "SourceEvent": "CurrencySpentGold",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Gold",
+      "CurrencyAmount": 300
+    },
+    {
+      "AchievementId": "ach_wealth_kinds_30",
+      "Category": "Wealth",
+      "DisplayName": "包罗万象",
+      "Description": "仓库中同时拥有30种不同物品。",
+      "SortOrder": 4060,
+      "TargetProgress": 30,
+      "AchievementXp": 200,
+      "SourceEvent": "InventoryItemKindCount",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 600
+    },
+    {
+      "AchievementId": "ach_wealth_shop_50",
+      "Category": "Wealth",
+      "DisplayName": "常客",
+      "Description": "累计在商店购买50件物品。",
+      "SortOrder": 4040,
+      "TargetProgress": 50,
+      "AchievementXp": 150,
+      "SourceEvent": "ShopPurchased",
+      "IsActiveInP1": true,
+      "RewardKind": "Item",
+      "ItemId": "special_teleport_scroll",
+      "ItemAmount": 5,
+      "CurrencyId": "",
+      "CurrencyAmount": 0
+    },
+    {
+      "AchievementId": "ach_wealth_silk_5000",
+      "Category": "Wealth",
+      "DisplayName": "幻丝千缕",
+      "Description": "累计消费5000幻丝。",
+      "SortOrder": 4020,
+      "TargetProgress": 5000,
+      "AchievementXp": 200,
+      "SourceEvent": "CurrencySpentSilk",
+      "IsActiveInP1": true,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "ItemAmount": 0,
+      "CurrencyId": "Silk",
+      "CurrencyAmount": 500
+    }
+  ],
+  "InventoryCapacities": [
+    {
+      "Tier": 0,
+      "Capacity": 60,
+      "ExpandCurrencyId": "Copper",
+      "ExpandPrice": 0
+    },
+    {
+      "Tier": 1,
+      "Capacity": 80,
+      "ExpandCurrencyId": "Copper",
+      "ExpandPrice": 2000
+    },
+    {
+      "Tier": 2,
+      "Capacity": 100,
+      "ExpandCurrencyId": "Copper",
+      "ExpandPrice": 5000
+    },
+    {
+      "Tier": 3,
+      "Capacity": 120,
+      "ExpandCurrencyId": "Silk",
+      "ExpandPrice": 3000
+    },
+    {
+      "Tier": 4,
+      "Capacity": 140,
+      "ExpandCurrencyId": "Silk",
+      "ExpandPrice": 6000
+    },
+    {
+      "Tier": 5,
+      "Capacity": 160,
+      "ExpandCurrencyId": "Silk",
+      "ExpandPrice": 12000
+    }
+  ],
+  "Avatars": [
+    {
+      "AvatarId": "avatar_01",
+      "DisplayName": "浪剑客",
+      "SortOrder": 1,
+      "IconKey": "avatar_01_wandering_swordsman_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_02",
+      "DisplayName": "刀舞者",
+      "SortOrder": 2,
+      "IconKey": "avatar_02_blade_dancer_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_03",
+      "DisplayName": "枪术宗师",
+      "SortOrder": 3,
+      "IconKey": "avatar_03_spear_master_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_04",
+      "DisplayName": "碧玉医者",
+      "SortOrder": 4,
+      "IconKey": "avatar_04_jade_healer_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_05",
+      "DisplayName": "影袭刺客",
+      "SortOrder": 5,
+      "IconKey": "avatar_05_shadow_assassin_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_06",
+      "DisplayName": "霜羽弓手",
+      "SortOrder": 6,
+      "IconKey": "avatar_06_frost_archer_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_07",
+      "DisplayName": "雷罚武僧",
+      "SortOrder": 7,
+      "IconKey": "avatar_07_thunder_monk_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_08",
+      "DisplayName": "锻炉战士",
+      "SortOrder": 8,
+      "IconKey": "avatar_08_forge_warrior_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_09",
+      "DisplayName": "荒漠赏金猎人",
+      "SortOrder": 9,
+      "IconKey": "avatar_09_desert_bounty_hunter_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_10",
+      "DisplayName": "通灵巫女",
+      "SortOrder": 10,
+      "IconKey": "avatar_10_spirit_medium_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_11",
+      "DisplayName": "护龙卫",
+      "SortOrder": 11,
+      "IconKey": "avatar_11_dragon_guard_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_12",
+      "DisplayName": "凤翎统领",
+      "SortOrder": 12,
+      "IconKey": "avatar_12_phoenix_commander_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_13",
+      "DisplayName": "白虎拳士",
+      "SortOrder": 13,
+      "IconKey": "avatar_13_white_tiger_brawler_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_14",
+      "DisplayName": "青莲书生",
+      "SortOrder": 14,
+      "IconKey": "avatar_14_lotus_scholar_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_15",
+      "DisplayName": "行吟乐师",
+      "SortOrder": 15,
+      "IconKey": "avatar_15_wandering_musician_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_16",
+      "DisplayName": "毒理炼金师",
+      "SortOrder": 16,
+      "IconKey": "avatar_16_poison_alchemist_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_17",
+      "DisplayName": "镇岳哨卫",
+      "SortOrder": 17,
+      "IconKey": "avatar_17_mountain_sentinel_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_18",
+      "DisplayName": "月下决斗者",
+      "SortOrder": 18,
+      "IconKey": "avatar_18_moonlit_duelist_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_19",
+      "DisplayName": "帝国军师",
+      "SortOrder": 19,
+      "IconKey": "avatar_19_imperial_tactician_1024x1024",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarId": "avatar_20",
+      "DisplayName": "天穹枪圣",
+      "SortOrder": 20,
+      "IconKey": "avatar_20_celestial_spear_saint_1024x1024",
+      "UnlockRule": "Default"
+    }
+  ],
+  "AvatarFrames": [
+    {
+      "AvatarFrameId": "frame_blue",
+      "DisplayName": "湛蓝框",
+      "SortOrder": 3,
+      "IconKey": "gacha_card_blue",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarFrameId": "frame_dark",
+      "DisplayName": "玄夜框",
+      "SortOrder": 6,
+      "IconKey": "gacha_card_dark",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarFrameId": "frame_gold",
+      "DisplayName": "鎏金框",
+      "SortOrder": 5,
+      "IconKey": "gacha_card_gold",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarFrameId": "frame_green",
+      "DisplayName": "青碧框",
+      "SortOrder": 2,
+      "IconKey": "gacha_card_green",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarFrameId": "frame_purple",
+      "DisplayName": "紫曜框",
+      "SortOrder": 4,
+      "IconKey": "gacha_card_purple",
+      "UnlockRule": "Default"
+    },
+    {
+      "AvatarFrameId": "frame_white",
+      "DisplayName": "素白框",
+      "SortOrder": 1,
+      "IconKey": "gacha_card_white",
+      "UnlockRule": "Default"
+    }
+  ],
+  "Pets": [
+    {
+      "PetId": "pet_lingyu",
+      "DisplayName": "灵愈",
+      "SortOrder": 1,
+      "IconKey": "pet_lingyu",
+      "DefaultOwned": true,
+      "UnlockRule": "Default",
+      "Description": "每10秒检查一次。生命未满时恢复100生命；生命已满且护甲未满时恢复100护甲。"
+    },
+    {
+      "PetId": "pet_pofeng",
+      "DisplayName": "破锋",
+      "SortOrder": 2,
+      "IconKey": "pet_pofeng",
+      "DefaultOwned": false,
+      "UnlockRule": "DefeatDragonRed",
+      "Description": "每3秒攻击8米内已与玩家交战的敌人，伤害为最终攻击力的0.35倍，可攻击飞行怪。"
+    }
+  ]
+}

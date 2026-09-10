@@ -1,4 +1,5 @@
 using Naraka.Server.Application.Accounts;
+using Naraka.Server.Infrastructure.Persistence.Lobby;
 
 namespace Naraka.Server.Infrastructure.Persistence.Accounts;
 
@@ -44,8 +45,31 @@ public sealed class SqlSugarAccountRepository(SqlSugarClientFactory factory) : I
         };
 
         using var database = factory.Create();
-        var accountId = await database.Insertable(row).ExecuteReturnBigIdentityAsync();
-        cancellationToken.ThrowIfCancellationRequested();
-        return accountId;
+        try
+        {
+            // A new account must start with its P1 progression row, otherwise the first lobby
+            // read would report NotFound. Both inserts commit together.
+            database.Ado.BeginTran();
+            var accountId = await database.Insertable(row).ExecuteReturnBigIdentityAsync();
+            var now = DateTime.UtcNow;
+            await database.Insertable(new AccountProgressionRow
+            {
+                AccountId = accountId,
+                AccountLevel = 1,
+                Copper = 0,
+                Silk = 0,
+                Gold = 0,
+                CreatedUtc = now,
+                UpdatedUtc = now
+            }).ExecuteCommandAsync();
+            database.Ado.CommitTran();
+            cancellationToken.ThrowIfCancellationRequested();
+            return accountId;
+        }
+        catch
+        {
+            database.Ado.RollbackTran();
+            throw;
+        }
     }
 }

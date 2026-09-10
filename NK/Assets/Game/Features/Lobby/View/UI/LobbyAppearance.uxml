@@ -1,0 +1,24 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Lobby/View/UI/LobbyAppearance.uss?fileID=7433441132597879392&amp;guid=3cc25c1f794c04d40813232013b4e7f6&amp;type=3#LobbyAppearance" />
+    <ui:VisualElement name="AppearanceScreen" class="appearance-screen">
+        <ui:VisualElement name="AppearanceDim" class="appearance-dim" style="top: 2px; right: 1px; left: 1px; bottom: -1px;" />
+        <ui:VisualElement name="AppearanceWindow" class="appearance-window">
+            <ui:VisualElement name="AppearancePanel" class="appearance-panel">
+                <ui:Button name="AppearanceCloseButton" tooltip="关闭" class="appearance-close" style="width: 100px; height: 100px; top: 60px; right: 60px;" />
+                <ui:VisualElement name="AppearanceBody" class="appearance-body">
+                    <ui:VisualElement name="AppearanceSide" class="appearance-side">
+                        <ui:Button name="AppearanceTabAvatar" text="头像" class="appearance-tab" />
+                        <ui:Button name="AppearanceTabFrame" text="头像框" class="appearance-tab" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AppearanceContent" class="appearance-content">
+                        <ui:Label name="AppearanceTitle" text="头像" picking-mode="Ignore" class="appearance-title" />
+                        <ui:Label name="AppearanceStatusLabel" picking-mode="Ignore" class="appearance-status" />
+                        <ui:ScrollView name="AppearanceScroll" class="appearance-scroll">
+                            <ui:VisualElement name="AppearanceGrid" class="appearance-grid" />
+                        </ui:ScrollView>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

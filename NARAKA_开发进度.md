@@ -1,8 +1,8 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.7
-更新日期：2026-09-02
-当前阶段：P0工程基础与Windows Server 2016云端开发环境闭环均已完成；下一候选项为正式登录界面View升级，尚未开始实现
+版本：1.10
+更新日期：2026-09-08
+当前阶段：P1大厅与账号长期系统的 P1.0 至 P1.9 已在本地完成实现与自动化验收；云端仍停在 P1.1-A，本轮未做任何云端变更，等待用户授权后批量部署
 
 ## 1. 当前状态
 
@@ -13,7 +13,7 @@
 - 英雄、技能、武器、10类怪物、任务六章、物品、经济、宠物、天气和多人移动规则已经具备首版数值基线。
 - 地图美术和正式空间布局暂不设计，等待用户提供地图素材。
 - 正式Unity工程位于`E:\NK项目\NK`，版本锁定为`2021.3.45f2c1`；P0客户端和服务端骨架已经建立。
-- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；P0最终本机验收、服务端GitHub工作流和Unity自托管冷启动工作流均已通过，测试Artifact正常上传，P0已经正式关闭。阿里云Windows Server 2016 Host与同机MySQL开发环境也已部署并通过手动SSH隧道的客户端闭环验收；P1与正式UI实现均尚未开始。
+- 当前已完成MySQL/SqlSugar、Argon2id账号业务、真实LegacyNetworkV1 Socket、Unity Account模块化MVC、MessagePipe/R3实现、登录前`ConfigVersion`检查、真实客户端登录冒烟、空大厅和客户端/服务端基础CI实现；P0最终本机验收、服务端GitHub工作流和Unity自托管冷启动工作流均已通过，测试Artifact正常上传，P0已经正式关闭。阿里云Windows Server 2016 Host与同机MySQL开发环境也已部署并通过手动SSH隧道的客户端闭环验收。登录界面已从程序化功能页升级为UXML/USS正式界面，Account/Bootstrap业务与网络层未改动；P1大厅与账号长期系统的顺序和边界已确认，但尚未开始正式业务实现。
 
 ## 2. 已有成果
 
@@ -77,6 +77,7 @@
 - 本机Host的版本端点已返回`p0-config-1`、客户端范围`0.1`至`0.1`及`LegacyNetworkV1`，真实HTTP响应已完成冒烟核对。
 - 2026-09-01已完成P0最终本机联合验收：服务端Release构建0警告/0错误、自动化42/42；数据库迁移dry-run与幂等应用通过，核对3张P0表和唯一`0001`记录；`/health/live`与`/health/ready`均返回200，数据库为`MySQL reachable`，8011端口实际监听；版本端点四项匹配；Unity真实Socket注册登录通过且测试账号已清理；验收Host随后停止并释放5222/8011端口。
 - 2026-09-01最终远端门禁通过：GitHub Server CI运行`33459456358`成功；Unity自托管运行`33461381291`在干净`Library`上完成独立预热、EditMode 14通过/1跳过/0失败和PlayMode 1/1，预热与测试步骤成功，`unity-test-results` Artifact正常上传。
+- 2026-09-07建立本地注释标签`p0-complete`，固定指向P0关闭提交`82c02c7debec9d399bd88df0c77c98cce491945d`（`docs: close p0 foundation`）。标签推送曾因GitHub 443连接失败而未完成；恢复网络后只需推送该标签，不把当前未提交的大厅/UI工作区混入P0归档。
 
 待完成：
 
@@ -97,7 +98,210 @@
 - 无敏感信息运维说明见`Docs/Deployment/aliyun-windows-development.md`，部署决策见ADR-0006。
 - 已建立DeepSeek草案、Claude仓库复核和Codex集成守门的三模型流程，见`Docs/AI/three-model-collaboration.md`。
 
-### P1 战斗垂直切片：未开始
+### 正式登录界面View升级：已完成实现；接入正式背景后待重新验证
+
+已完成：
+
+- 新增`NK/Assets/Game/Features/Account/View/UI/AccountLogin.uxml`与`AccountLogin.uss`，登录界面改为UXML/USS描述，只使用Unity 2021.3支持的USS属性，选择器统一以`account-`前缀限定，不影响同一UIDocument下的`ConfigVersionOverlay`与`LobbyPanel`。
+- `AccountView`改为通过序列化`VisualTreeAsset`实例化界面并按稳定元素名查询：`AccountScreen`、`AccountPanel`、`UsernameField`、`PasswordField`、`RegisterButton`、`LoginButton`、`AccountStatusLabel`；保留VContainer注入、`AccountController.RegisterAsync/LoginAsync`调用、View生命周期CancellationToken、按钮回调解除与订阅释放。
+- 保留全部既有可观察行为：忙碌时账号/密码/两个按钮同时禁用、状态标签显示`state.Message`、`state.Username`回填、认证后隐藏登录界面并清空密码。认证后同时隐藏`AccountScreen`，避免全屏背景遮挡`LobbyPanel`。
+- `ConfigVersionView`增加确定性层级处理：覆盖层可见时`BringToFront`，并在本帧所有`Start`完成后再确认一次，使覆盖层不再依赖组件添加顺序。`ConfigVersionController`与`IStartupReadiness`未改动，版本预检仍是唯一的注册/登录闸门。
+- `P0ProjectSetup`增加可重复Editor装配：自动把`AccountLogin.uxml`写入`AccountView`的`loginLayout`字段，并把`ConfigVersionView`放到组件顺序最后。启动场景仍只有一个UIDocument和一个`GameLifetimeScope`。
+- PlayMode测试从1项扩展到3项，新增登录界面稳定元素名/密码遮挡断言与覆盖层层级断言。
+
+实测结果：
+
+- Unity批处理导入退出码0，无C#编译错误；EditMode与PlayMode日志无Console异常。
+- EditMode 15项：14通过、0失败、1项真实联网冒烟按环境条件跳过。PlayMode 3项：3通过、0失败。
+- 使用临时夹具在1920×1080与1600×900两种面板尺寸下实测布局：两者逻辑坐标空间同为1920×1080，无越界、无垂直重叠，注册与登录按钮无水平重叠。该夹具为一次性验证工具，未提交仓库。
+- 注意：上述几何实测针对的是接入正式背景之前的右侧卡片布局（`x 1280–1740`、`y 260–821`）。卡片改为居中偏下后尚未重新测量。
+
+### 正式登录背景素材接入：已落盘并通过自动化，人工视觉待验收
+
+已完成：
+
+- `login_first_frame_NARAKA_1920x1080.png`已复制为`NK/Assets/Game/Art/UI/Backgrounds/AccountLoginBackground.png`（1920×1080、24bpp、2.9 MB），来源为`E:\新素材\NARAKA_UI_Full_v1\Backgrounds_v4_StableEnvironment`。
+- 新增`NK/Assets/Game/EditorTools/UiBackgroundTextureImporter.cs`：对`Assets/Game/Art/UI/Backgrounds/`下的贴图强制统一导入设置（Default、sRGB、Alpha None、无Mipmap、Clamp、Bilinear、Max Size 2048、CompressedHQ、压缩质量Best），并提供菜单`NARAKA/Setup/Reimport UI Backgrounds`强制重新导入。整屏背景按1:1显示，天空与云雾的大面积渐变需要高质量压缩以避免色带。
+- `AccountLogin.uss`的`.account-background`改为引用该底图并使用`-unity-background-scale-mode: scale-and-crop`，保留深色`background-color`作为加载失败兜底；占位分层与占位说明文本已删除。
+- 背景顶部已烘焙NARAKA大标题，因此卡片内的标题Label已移除，“登录游戏”升为卡片主标题；卡片按左右对称构图改为居中偏下，不再使用右侧压暗层。
+- 30秒循环背景视频`login_fog_light_only_loop_30s_1080p.mp4`（19.3 MB）按决定不入库；`.gitignore`已排除该目录下的`*.mp4`及其`*.meta`，避免提交出没有实际文件的引用。
+- `NK/UIElementsSchema/`为`Assets > Update UIElements Schema`生成物，已加入`.gitignore`。
+
+验证与待完成：
+
+- `AccountLoginBackground.png.meta`现已落实无Mipmap、Default平台高质量压缩、Clamp与Bilinear设置；2026-09-07统一Unity验证完成首次导入/编译预热且无C#编译错误，EditMode 35通过/1跳过/0失败、PlayMode 3/3通过。
+- 居中卡片的两分辨率几何仍未重新测量，自动化通过不能替代视觉验收。
+- 人工Play Mode视觉验收（背景观感、配色、中文字形渲染、悬停/禁用反馈、覆盖层遮挡）尚未执行。
+- 动态视频背景是否接入尚未决定。`Background.FromRenderTexture`在Unity 2021.3.45的`UnityEngine.UIElementsModule.dll`中确实存在，因此UI Toolkit可直接使用`VideoPlayer + RenderTexture`，不必按素材说明退回uGUI的`RawImage`。
+
+### 大厅主界面（DeepSeek草案修复）：已修复并通过自动化，人工视觉待验收
+
+来源：由DeepSeek生成草案后放入工作区，本轮按仓库实际内容逐项复核并修复。大厅入口已按2026-09-07确认的新路线图纳入P1；“开始游戏”到地图的正式场景与战斗内容仍分别在P3远征和P2战斗阶段实现。当前草案只是界面与导航外壳，不能视为P1业务完成。
+
+已修复的框架破坏：
+
+- `LobbyPresentationState`曾被移到无asmdef的`Features/Lobby/Presentation/`，落入`Assembly-CSharp`；已移回`Features/Lobby/Controller/`，恢复为实现`IPresentationState`的`readonly struct`。
+- `Infrastructure/Scene/`缺少asmdef，同样落入`Assembly-CSharp`；已新增`Game.Infrastructure.Scene.asmdef`并加入`Game.Boot`引用。
+- `LobbyController`曾引用`UnityEngine.Debug`，与其asmdef的`noEngineReferences: true`冲突；已移除全部引擎依赖，提示文案改用`switch`表达式，与`AccountController`保持一致，并恢复`IController`标记。
+- `GameLifetimeScope`曾向容器注册裸`string`，会命中任何类型的`string`构造参数；已改为只对`LobbyController`使用`WithParameter("mapSceneName", ...)`。
+- `LobbyView`曾使用无监管`async void`；已改为`UniTaskVoid` + `Forget()`，与`AccountView`一致。
+- `GameLifetimeScope.cs`、`LobbyController.cs`、`UnityLobbySceneGateway.cs`、`LobbyMain.uss`、`LobbyControllerTests.cs`五个文件为GBK编码，Unity按UTF-8读取会产生乱码；已全部转为UTF-8。
+
+已修复的编译与运行缺陷：
+
+- 缺失`using System.Threading`、`Naraka.Core.Application.MVC`、`Naraka.Core.Application.Presentation`、`Naraka.Infrastructure.Scene`。
+- 使用了不存在的`ReactiveState<T>.CurrentValue`（实际API为`Current`）。
+- `Game.Features.Lobby.Controller`与`Game.Features.Lobby.View`两个asmdef缺少`UniTask`引用。
+- `GameLifetimeScope`重复注册`LobbyModel`与`LobbyController`各两次。
+- `LobbyView.OnDestroy`用新建lambda解除按钮订阅，实际未解除；已改为保存委托实例。
+- `RequestFeature`连续两次基于陈旧快照`Set`，第一次写入被覆盖。
+- UXML元素名与View查询名不一致（`GachaButton`对`DrawButton`；三个货币Label重名为`amount`）；已统一为稳定元素名并由脚本核对。
+- 按钮同时带图标与`text="Button"`；已改为纯图标加`tooltip`。
+- USS使用了Unity 2021.3不支持的`radial-gradient`、`@media`、`background-size`以及USS中的`picking-mode`；已全部移除，改用`-unity-background-scale-mode`，分辨率适配交给PanelSettings的Scale With Screen Size。
+- USS定义的class大多未挂到UXML元素上；已改为UXML挂class、USS集中定义。
+- `AccountControllerTests`中既有的`new LobbyController(new LobbyModel())`因构造函数变更而无法编译；已更新为注入伪造网关。
+- `BootScenePlayModeTests`断言的`LobbyPanel`已更名为`LobbyScreen`；已同步。
+- `LobbyControllerTests`使用`UnityEngine.Time`，与测试asmdef的`noEngineReferences: true`冲突；已重写为`UniTask.ToCoroutine`形式，覆盖进入大厅、功能提示、重复请求、加载失败与取消五种情况。
+- `LobbyView.lobbyLayout`在场景中未赋值；`P0ProjectSetup`已扩展为同时装配`loginLayout`与`lobbyLayout`。
+
+验证与待完成：
+
+- 2026-09-07在当前工作区执行统一Unity脚本：独立导入/编译预热退出码0且无C#编译错误，EditMode共36项、35通过、1项真实联网测试按环境跳过、0失败，PlayMode 3/3通过。
+- `Map1`场景不存在，"开始游戏"会走到`ILobbySceneGateway`的Build Settings检查并显示"加载地图失败，请重试。"，按钮恢复可用。这是保留的兜底行为，不是缺陷修复目标。
+- 大厅正式静态底图未确定：当前`.lobby-background`暂用`async_loading_background_1920x1080.png`，正式大厅底图与30秒循环视频均未入库。
+- 货币数值与账号等级为UXML中的静态占位`--`，没有接入任何服务端数据；真实业务现已列入P1.1。
+
+### 大厅外观面板、游戏指针与视频背景：已实现，部分已由编辑器日志验证
+
+按用户明确需求实现（四个决定点已确认：外观选择不持久化、视频不入库、硬件指针、Editor按前缀扫描目录）：
+
+- 新增`LobbyAppearanceView`、`LobbyAppearance.uxml`/`.uss`与`LobbyAppearanceCatalog`（ScriptableObject，两个View共用一份贴图引用）。Controller只保存`SelectedAvatarIndex`/`SelectedFrameIndex`两个下标，贴图映射留在View，业务层不接触`Texture2D`。
+- 掉落回弹使用`experimental.animation` + `Easing.OutBack`驱动`translate`，未使用USS的`ease-out-back`关键字（该关键字在本工程无法离线确认），不引入DOTween。
+- 左下头像改为`PlayerAvatarButton`并叠加`PlayerAvatarFrame`；关闭按钮使用`00005.PNG`。
+- 新增`GameCursor`：`Cursor.SetCursor`替换硬件指针，热点`(24, 5)`由`Mouse.png`的alpha计算得出；`OnDisable`还原默认指针。`Mouse.png`由Editor工具改为`TextureImporterType.Cursor`。
+- 大厅背景接入`VideoPlayer` + `RenderTexture` + `Background.FromRenderTexture`，`isLooping`开启，仅在`prepareCompleted`后才切换背景，避免首帧显示未初始化画面；视频缺失时回退到`Lobby_Animate.png`静态图。
+- `P0ProjectSetup`扩展为一并创建/刷新外观目录、装配新组件与资源，并新增菜单`NARAKA/Setup/Rescan Appearance Catalog`。
+
+已由Unity编辑器日志验证的事实：
+
+- 全部新增与修改的C#**编译零错误**（`Editor.log`中无任何`error CS`）。
+- 运行期异常只有一类：`VContainerException: LobbyAppearanceView is not in this scene`，共5次。根因是`RegisterComponentInHierarchy`要求组件已存在于场景，而`Apply P0 Project Settings`尚未执行。已把该注册改为"缺失只报错、不阻断容器构建"，外观面板属于可选界面，不应拖垮登录与大厅。
+- `LobbyMain.uss`第170行`margin-left: 12`缺少单位，Unity整条丢弃该声明并给出导入警告；已修正为`12px`。已对全部UI的USS做同类扫描，无其他缺单位的长度值。
+- `Lobby_Animation.mp4`导入时Unity报告`Unexpected timestamp values detected`（该视频为H.264 High Profile）。这可能影响循环接缝的平滑度，尚未实测。
+
+验证与待完成：
+
+- 外观相关测试已包含在2026-09-07统一Unity验证结果中；EditMode整体35通过/1跳过/0失败，PlayMode 3/3通过。
+- 用户需执行一次`NARAKA/Setup/Apply P0 Project Settings`补齐`LobbyAppearanceView`与`GameCursor`组件及资源绑定。
+- 视频循环卡顿、掉落回弹观感、硬件指针实际显示均未做人工验收。
+
+### P1 大厅与账号长期系统：P1.0至P1.9本地实现完成，等待云端批量部署授权
+
+- P1.0：冻结需求切片，定义共享业务契约、应用消息ID、错误码、RequestId/OrderId幂等规则和数据库迁移；按ADR-0007只扩展适配器，不修改LegacyNetworkV1传输机制。
+- P1.1：账号快照、头像、账号等级、铜币/幻丝/金币余额及只读大厅展示。
+- P1.2：英雄、兵器和宠物的拥有状态、选择与装备。
+- P1.3：仓库、堆叠物品、装备方案和容量溢出处理。
+- P1.4：商店目录、限购、购买事务、货币流水和失败/重复请求恢复。
+- P1.5：锻造与武器强化的材料校验、消耗事务和结果回放。
+- P1.6：抽奖订单、20抽保底、奖励发放、断线结果恢复和重复请求幂等。
+- P1.7：签到、补签、连续奖励、账号等级奖励、成就框架与红点Version/SeenVersion。
+- P1.8：最小好友与聊天范围——好友申请、接受、拒绝、删除、屏蔽、在线状态和一对一文字聊天；不包含世界频道、群聊、语音或文件传输。
+- P1.9：十个大厅入口、账号信息、货币、异常提示、重登恢复和服务端权威联合验收；开始游戏按钮只验证进入后续场景的边界，不在P1实现战斗或远征内容。
+
+#### P1.0 共享契约与迁移：已完成并通过自动化验证
+
+- 按ADR-0007建立应用协议登记规则：既有`LegacyProtocolCatalog`（0–18）保持不变，P1消息改由新增的`ApplicationProtocolCatalog`登记，编号从19起。`LegacyWireGoldenTests`对`Client.Count == 12`与`Server.Count == 19`的断言原样保留，这正是"0–18未被改动"的证据。
+- 稳定错误码扩展为15项（`Success`至`Conflict`），服务端Application枚举与线级枚举数值一一对应。
+- 新增迁移`0002_p1_account_progression.sql`：只新建`account_progression`并回填既有账号，`accounts`/`player_profiles`与迁移`0001`一律不动。
+
+#### P1.0-Config CSV配置管线：已完成并纳入CI门禁
+
+- 18张UTF-8 BOM的CSV源表放在`Config/Source/`，用Excel直接编辑；`Tools/Config/Naraka.ConfigCompiler`把它们编译成规范化JSON，双端只读消费。见ADR-0010。
+- 校验覆盖：ID唯一、外键存在、价格与数量非负、`StackLimit > 0`、概率权重合法、品质只允许白/蓝/紫/金/红、每个奖池权重和大于0、20抽保底品质必须可兑现、武器等级连续不重复、锻造配方材料存在、签到天数1–7、账号等级奖励等级合法、展示顺序确定。
+- 输出确定性：按稳定ID排序，LF换行、无BOM，附SHA-256清单与`configVersion`；相同输入必定字节相同。任何校验失败返回非0退出码并指出源文件与行号。
+- CI在跑测试前先执行`--check`：生成物与源表不一致就直接失败。
+
+#### P1.1-A 账号等级与三种货币：已完成端到端
+
+- 新增协议：`MsgLobbyAccountSummaryRequest`（19）与`MsgLobbyAccountSummaryResponse`（20）。请求体不含AccountId，服务端通过`LegacySessionAccountResolver`从已认证连接会话取得身份。
+- 三层共同阻止非法数据：数据库`UNSIGNED`列、服务端`LobbyAccountSummary.TryCreate`、客户端`LobbyAccountSnapshot.TryCreate`。
+- 加载失败只写状态消息，不覆盖上一次成功的余额，也不伪造0。
+
+#### P1.1-B 头像、头像框与初始货币发放：已完成
+
+- 协议21/22（账号资料）与23/24（设置外观）。头像与头像框使用配置里的稳定`AvatarId`/`AvatarFrameId`，不再是列表下标。
+- 初始货币按新玩法基线为铜币/幻丝/金币各1000。这与已部署的`0001`/`0002`迁移冲突（它们把余额初始化为0），解决方式是**不改动已部署迁移**：新增`account_grants`与`currency_ledger`两张表，登录时的`EnsureProvisionedAsync`在一个事务里按配置发放StarterGrant，用`(account_id, grant_key)`主键保证每个账号只发一次。发放是**累加**而不是覆盖，因此已有账号的余额不会被抹平。见ADR-0011。
+
+#### P1.2 英雄、兵器与宠物：已完成
+
+- 协议25/26（设置出战方案）。英雄界面（左侧英雄列表、中间模型锚点、右侧技能）与兵器界面（长剑/太刀切换、等级、熟练度、击杀数）均已实现。
+- 长剑与太刀不进仓库、不在商店出售，每个账号每种兵器恰好一把，等级/强化/熟练度/击杀数各自独立并由服务端持久化，默认兵器使用稳定`WeaponId`。
+
+#### P1.3 仓库、堆叠与装备方案：已完成
+
+- 协议27/28（读取仓库）与29/30（仓库变更：丢弃、出售、换位、整理、装备、卸下、扩容）。
+- 全部仓库物品走堆叠数量模型，魂玉与护甲也按`ItemId`堆叠、无随机词条、无独立实例。装备方案引用`ItemId`。
+- 已装备的魂玉/护甲至少保留一件：出售或丢弃到会失去所有权时服务端拒绝并提示先卸下。魂玉战斗装载6格且不允许重名，护甲1格。
+
+#### P1.4 商店与购买事务：已完成
+
+- 协议31/32（商店目录）与33/34（购买）。数量购买弹窗，购买在**一个事务**内完成扣费、货币流水、入库与限购计数；容量不足时整笔回滚。
+
+#### P1.5 锻造与唯一武器强化：已完成
+
+- 协议35/36（锻造面板）与37/38（强化）。材料足够时**必定成功**，服务端没有任何随机判定；界面显示"成功率100%"与"攻击力68 → 75"式的下一级预览。
+- 消耗、武器升级与货币流水在一个事务内完成；重复请求只产生一次强化结果。
+
+#### P1.6 抽奖：已完成
+
+- 协议39/40（奖池状态）、41/42（抽奖）与43/44（确认已展示）。品质由低到高为白→蓝→紫→金→红。
+- 服务端先在一个事务里完成扣费、随机、发奖与结果固化，客户端再播动画。动画可跳过，但**不改变结果**；未确认展示的订单在重新登录后会被重新取回继续展示。客户端不生成任何随机结果。
+- 十连至少一个蓝及以上；20抽保底出红；提前出红重置保底计数；保底跨登录保留。
+
+#### P1.7 签到、账号等级奖励、成就与红点：已完成
+
+- 协议45/46（签到状态）、47/48（签到领取）、49/50（成就与账号等级）、51/52（领取）、53/54（红点读取）、55/56（红点已读）。
+- 服务器日界为UTC+8的05:00，由`ServerDay`换算成单调递增的整数日号，因此跨月跨年都不会倒退。
+- 七日循环、每周期一次补签（消耗配置化的补签卡物品）、连续签到节点3/5/7。**主进度与连续次数是两个独立字段**：补签能点亮格子，但不推进连续次数。领取全部需要手动点击且幂等。
+- 成就使用`AchievementXp`与`AchievementLevel`，**绝不写入`AccountXp`**；账号经验只来自任务。四个分类（冒险历程、战斗大师、锻造大师、财富积累）各自独立配置。依赖P2战斗与P3远征的成就标记为`IsActiveInP1 = false`，进度恒为0，不显示任何编造的进度。
+- 红点是**独立模块**：路径前缀树 + `Version`/`SeenVersion`（不是bool），叶子变脏只让祖先跟着脏，界面只订阅`RedDotPresentationState`。业务模块通过MessagePipe发布来源事件，与红点模块之间没有任何直接引用。好友在线绿点/灰点不属于红点系统。见ADR-0012。
+
+#### P1.8 好友与一对一聊天：已完成
+
+- 协议57/58（社交视图）、59/60（按名搜索）、61/62（好友动作）、63/64（聊天动作）。六个好友动作与三个聊天动作共享协议对，因为它们的响应完全一样——整份社交视图。
+- 流程：搜索玩家 → 发送申请 → 接受或拒绝 → 成为好友。支持删除、屏蔽、在线状态、好友申请红点、一对一文字聊天、未读私聊红点、限流（10秒10条）、512字长度上限与输入校验。
+- 好友关系**成对写入**，接受申请、删除好友、屏蔽都在一个事务里完成全部相关行，因此不会出现单向好友。屏蔽会同时清除既有好友关系与两个方向的申请。
+- 若对方已经向自己发过申请，再次发起申请会直接成为好友，避免两条互相等待的申请永远挂着。
+- 会话按(低账号, 高账号)规范化，一对一会话只有一行；已读位置按账号分行，一方读完不会清掉另一方的未读。
+- 不包含世界频道、群聊、语音、文件传输与玩家交易。
+
+#### P1.9 十个入口联合验收：已完成本地验收
+
+- 十个大厅入口全部接入真实模块，占位文案"将在后续模块接入"已删除——每个入口都有专属面板，面板自己负责加载、空数据与失败状态。
+- 旧云端兼容机制：Bootstrap新增**可选**`serverCapabilities`字段。当版本门禁匹配但Host不返回它时，客户端退回P1.1-A兼容集合，其余入口显示"服务器功能尚未升级"且**不发送任何未知协议**。本仓库Host只声明`NarakaServerCapabilities.Implemented`（本Host真正实现的11项+社交，共12项），而不是整份登记表。
+- P1开发期曾临时保持`p0-config-1`以验证上述能力兼容。完整P1集中发布已把Bootstrap门禁同步提升为`p1-config-1`：当前P1客户端会在预检阶段拒绝旧`p0-config-1`云端，部署配套P1 Host后才能登录。生成配置继续使用独立版本号与哈希。
+
+#### P1本地实测结果（本轮实际执行，非推断）
+
+| 项目 | 结果 |
+| --- | --- |
+| 服务端Release构建 | 通过，0警告0错误 |
+| `Tools/CI/Invoke-ServerTests.ps1` | **total=352，executed=352，passed=352，failed=0** |
+| 配置`--check`一致性门禁 | 通过（生成物与`Config/Source`一致） |
+| 迁移dry-run `0001`–`0009` | 全部校验通过（4/3/5/3/2/2/4/7/7条语句） |
+| Unity导入预热 | 退出码0，零C#编译错误 |
+| Unity EditMode | **total=282，passed=281，failed=0，skipped=1**（跳过项为需要真实Host的`LegacyClientLiveSmokeTests`） |
+| Unity PlayMode | **total=3，passed=3，failed=0**，日志零异常 |
+
+#### P1未验证与待人工确认
+
+- 未执行真实Host/MySQL端到端冒烟：需要用户启动Host与数据库并授权，本轮未取得授权，也未读取任何连接串。
+- 未对云端NK库执行任何迁移；未修改、重启或重新部署阿里云服务器；未提交或推送Git。
+- 全部界面的视觉效果（布局、字号、素材位置、动画节奏）需要用户在Unity Play Mode人工验收；本轮只保证元素名稳定、状态分支完整与生命周期正确解绑。
+
+退出条件：所有大厅按钮均接入真实服务端权威数据；经济守恒、20抽保底、认证、权限、幂等、重登恢复、好友/聊天最小流程和UI业务绑定通过自动化与人工验收。**自动化部分已全部通过，人工视觉验收待用户执行。**
+
+### P2 战斗垂直切片：未开始
 
 - 顾沉岳、长剑、暮影妖狼和战斗HUD。
 - 移动、镜头、体力、闪避、三段攻击、蓄力、伤害、护甲、受击和死亡。
@@ -105,26 +309,19 @@
 
 退出条件：完整战斗循环通过自动化与性能验收。
 
-### P2 远征闭环：未开始
+### P3 远征闭环：未开始
 
 - 地图一/地图二抽象测试场景。
 - 固定传送门、异步加载、临时背包、死亡清理、返回大厅结算、断网闪退结算和幂等。
 
 退出条件：正常、死亡、重复请求、断网和服务器异常测试全部通过。
 
-### P3 内容系统：未开始
+### P4 内容系统：未开始
 
 - 两名英雄、两把武器、十类怪物。
-- 六章主线、支线、物品、魂玉、护甲、消耗品和锻造。
+- 六章主线、支线、物品、魂玉、护甲、消耗品和宠物内容扩充；锻造基础能力已前置到P1。
 
 退出条件：所有内容可由配置驱动，并能在灰盒地图完整跑通。
-
-### P4 大厅经济：未开始
-
-- 英雄、兵器、仓库、商店、抽奖、签到、账号等级奖励、红点和宠物。
-- 导入和绑定已生成UI资源。
-
-退出条件：经济守恒、20抽保底、重复请求和UI流程测试通过。
 
 ### P5 联网展示与热更新：未开始
 
@@ -141,12 +338,13 @@
 
 ## 4. 下一步
 
-P0与云端开发环境闭环均已完成。下一步等待用户明确选择并许可：
+P1的P1.0至P1.9已在本地完成实现，服务端352项测试与Unity EditMode/PlayMode全部通过。下一步等待用户与Codex复核后再分别授权：
 
-1. 按路线图进入P1战斗垂直切片；或
-2. 先执行正式登录界面View升级：DeepSeek按`Docs/AI/DEEPSEEK_UI_PROMPT.md`只提供第一阶段草案和逐步手工挂载说明，Claude按`Docs/AI/CLAUDE_PROJECT_PROMPT.md`读取真实仓库后复核、实现和运行验证，Codex执行架构与交付门禁。该任务只能替换P0功能登录页的表现，不得重写Account/Bootstrap业务、网络、服务端或数据库；正式大厅经济UI仍属于P4。
+1. 人工在Unity Play Mode验收十个界面的视觉效果与交互节奏；
+2. 按`Docs/Deployment/p1-cloud-batched-release-checklist.md`评估云端批量部署，部署本身需要单独授权；
+3. 云端升级完成后再考虑进入P2战斗垂直切片。不因为P1完成就提前开始P2。
 
-在取得许可前不继续开发、数据清理或云端变更。
+在取得许可前不修改云服务器、不对云端NK库执行迁移、不提交或推送Git。
 
 ## 5. 新对话续接提示词
 

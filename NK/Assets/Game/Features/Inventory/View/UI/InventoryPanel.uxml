@@ -1,0 +1,53 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Inventory/View/UI/InventoryPanel.uss?fileID=7433441132597879392&amp;guid=8b3ddfc785a9dc24c88b99fe3369808b&amp;type=3#InventoryPanel" />
+    <ui:VisualElement name="InventoryScreen" class="inv-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_warehouse_v1.png?fileID=2800000&amp;guid=6fc5e7591287ec34292057caccfac10b&amp;type=3#ui_fullscreen_warehouse_v1&quot;);">
+        <ui:VisualElement name="InventoryDim" class="inv-dim" />
+        <ui:VisualElement name="InventoryPanel" class="inv-panel">
+            <ui:Button name="InventoryCloseButton" tooltip="关闭" class="inv-close" />
+            <ui:VisualElement name="InventoryCategoryBar" class="inv-category-bar">
+                <ui:Button name="InventoryCategoryAll" text="全部" class="inv-category" />
+                <ui:Button name="InventoryCategorySoulstone" text="魂玉" class="inv-category" />
+                <ui:Button name="InventoryCategoryMaterial" text="材料" class="inv-category" />
+                <ui:Button name="InventoryCategorySpecial" text="特殊" class="inv-category" />
+                <ui:Button name="InventoryCategoryConsumable" text="消耗" class="inv-category" />
+                <ui:Button name="InventoryCategoryArmor" text="护甲" class="inv-category" />
+            </ui:VisualElement>
+            <ui:VisualElement name="InventoryBody" class="inv-body">
+                <ui:VisualElement name="InventoryLeft" class="inv-left">
+                    <ui:ScrollView name="InventoryScroll" class="inv-scroll">
+                        <ui:VisualElement name="InventoryGrid" class="inv-grid" />
+                    </ui:ScrollView>
+                    <ui:VisualElement name="InventoryFooter" class="inv-footer">
+                        <ui:Label name="InventoryCapacityLabel" picking-mode="Ignore" class="inv-capacity" />
+                        <ui:Button name="InventorySortButton" text="整理背包" class="inv-action" />
+                        <ui:Button name="InventoryExpandButton" text="扩容" class="inv-action" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="InventoryRight" class="inv-right">
+                    <ui:VisualElement name="InventoryDetailIcon" picking-mode="Ignore" class="inv-detail-icon" />
+                    <ui:Label name="InventoryDetailName" picking-mode="Ignore" class="inv-detail-name" />
+                    <ui:Label name="InventoryDetailQuality" picking-mode="Ignore" class="inv-detail-line" />
+                    <ui:Label name="InventoryDetailOwned" picking-mode="Ignore" class="inv-detail-line" />
+                    <ui:Label name="InventoryDetailStack" picking-mode="Ignore" class="inv-detail-line" />
+                    <ui:Label name="InventoryDetailPrice" picking-mode="Ignore" class="inv-detail-line" />
+                    <ui:Label name="InventoryDetailDescription" picking-mode="Ignore" class="inv-detail-text" />
+                    <ui:VisualElement name="InventoryEquipBar" class="inv-equip-bar" />
+                    <ui:VisualElement name="InventoryDetailActions" class="inv-detail-actions">
+                        <ui:Button name="InventoryDiscardButton" text="丢弃" class="inv-action inv-action--danger" />
+                        <ui:Button name="InventorySellButton" text="售卖" class="inv-action" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="InventoryConfirm" class="inv-confirm">
+                <ui:VisualElement name="InventoryConfirmBox" class="inv-confirm-box">
+                    <ui:Label name="InventoryConfirmMessage" picking-mode="Ignore" class="inv-confirm-message" />
+                    <ui:VisualElement name="InventoryConfirmActions" class="inv-confirm-actions">
+                        <ui:Button name="InventoryConfirmOk" text="确认" class="inv-action" />
+                        <ui:Button name="InventoryConfirmCancel" text="取消" class="inv-action" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="InventoryStatusLabel" picking-mode="Ignore" class="inv-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

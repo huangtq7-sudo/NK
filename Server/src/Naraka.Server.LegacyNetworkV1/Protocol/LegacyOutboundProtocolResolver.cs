@@ -15,12 +15,18 @@ public static class LegacyOutboundProtocolResolver
             ? alias
             : messageTypeName;
 
-        if (!LegacyProtocolCatalog.Client.TryGetValue(wireProtocolName, out var embeddedProtocolValue))
+        if (LegacyProtocolCatalog.Client.TryGetValue(wireProtocolName, out var embeddedProtocolValue))
         {
-            throw new InvalidOperationException(
-                $"Legacy client does not recognize outbound protocol '{messageTypeName}'.");
+            return new LegacyOutboundProtocol(messageTypeName, wireProtocolName, embeddedProtocolValue);
         }
 
-        return new LegacyOutboundProtocol(messageTypeName, wireProtocolName, embeddedProtocolValue);
+        // P1 responses live in the application catalog so the frozen P0 catalog stays byte-identical.
+        if (ApplicationProtocolCatalog.TryGetOutbound(wireProtocolName, out var applicationProtocolValue))
+        {
+            return new LegacyOutboundProtocol(messageTypeName, wireProtocolName, applicationProtocolValue);
+        }
+
+        throw new InvalidOperationException(
+            $"Legacy client does not recognize outbound protocol '{messageTypeName}'.");
     }
 }

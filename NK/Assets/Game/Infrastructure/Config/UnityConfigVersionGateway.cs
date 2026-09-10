@@ -58,7 +58,8 @@ namespace Naraka.Infrastructure.Config
                 response.configVersion,
                 response.minimumClientVersion,
                 response.maximumClientVersion,
-                response.protocolVersion);
+                response.protocolVersion,
+                response.serverCapabilities);
         }
 
         [Serializable]
@@ -68,6 +69,10 @@ namespace Naraka.Infrastructure.Config
             public string minimumClientVersion;
             public string maximumClientVersion;
             public string protocolVersion;
+
+            // 可选字段。旧云端 Host 的响应里没有它，JsonUtility 会保持 null，
+            // 客户端据此退回 P1.1-A 兼容模式而不是把它当成"服务器没有任何功能"。
+            public string[] serverCapabilities;
         }
     }
 }

@@ -1,0 +1,13 @@
+{
+  "name": "Game.Features.Inventory.Model",
+  "rootNamespace": "Naraka.Features.Inventory.Model",
+  "references": [
+    "Game.Core.Domain"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

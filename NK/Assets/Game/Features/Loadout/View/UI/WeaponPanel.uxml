@@ -1,0 +1,32 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Loadout/View/UI/HeroPanel.uss?fileID=7433441132597879392&amp;guid=7cb22efe55d5d324684984c7002fc7ae&amp;type=3#HeroPanel" />
+    <ui:VisualElement name="WeaponScreen" class="hero-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_weapons_v1.png?fileID=2800000&amp;guid=e7c233a56d843a04ab32abb4a440492b&amp;type=3#ui_fullscreen_weapons_v1&quot;);">
+        <ui:VisualElement name="WeaponDim" class="hero-dim" />
+        <ui:VisualElement name="WeaponPanel" class="hero-panel">
+            <ui:Button name="WeaponCloseButton" tooltip="关闭" class="hero-close" />
+            <ui:VisualElement name="WeaponLeft" class="hero-left">
+                <ui:Label name="WeaponNameLabel" picking-mode="Ignore" class="hero-name" />
+                <ui:VisualElement name="WeaponPreviewRow" class="hero-preview-row">
+                    <ui:Button name="WeaponPreviousButton" tooltip="上一把兵器" class="hero-arrow" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Material/icon_arrow_left_v1_512x512.png?fileID=2800000&amp;guid=87d12193a4e279840adca034ae468fe3&amp;type=3#icon_arrow_left_v1_512x512&quot;);" />
+                    <ui:VisualElement name="WeaponPreview" picking-mode="Ignore" class="hero-preview">
+                        <ui:VisualElement name="WeaponIcon" picking-mode="Ignore" class="weapon-icon" />
+                    </ui:VisualElement>
+                    <ui:Button name="WeaponNextButton" tooltip="下一把兵器" class="hero-arrow" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Material/icon_arrow_right_v1_512x512.png?fileID=2800000&amp;guid=43f057be57d93cf46968300d29bdca24&amp;type=3#icon_arrow_right_v1_512x512&quot;);" />
+                </ui:VisualElement>
+                <ui:Button name="WeaponEquipButton" text="选择" class="hero-equip" />
+            </ui:VisualElement>
+            <ui:VisualElement name="WeaponRight" class="hero-right">
+                <ui:Label name="WeaponDescriptionLabel" picking-mode="Ignore" class="hero-background" />
+                <ui:VisualElement name="WeaponStats" picking-mode="Ignore" class="weapon-stats">
+                    <ui:Label name="WeaponLevelLabel" picking-mode="Ignore" class="weapon-stat" />
+                    <ui:Label name="WeaponAttackLabel" picking-mode="Ignore" class="weapon-stat" />
+                    <ui:Label name="WeaponAttackSpeedLabel" picking-mode="Ignore" class="weapon-stat" />
+                    <ui:Label name="WeaponProficiencyLabel" picking-mode="Ignore" class="weapon-stat" />
+                    <ui:Label name="WeaponKillCountLabel" picking-mode="Ignore" class="weapon-stat" />
+                </ui:VisualElement>
+                <ui:Label name="WeaponUniqueNoteLabel" picking-mode="Ignore" class="weapon-note" />
+            </ui:VisualElement>
+            <ui:Label name="WeaponStatusLabel" picking-mode="Ignore" class="hero-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

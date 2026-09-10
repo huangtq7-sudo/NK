@@ -1,0 +1,14 @@
+{
+  "name": "Game.Infrastructure.Scene",
+  "rootNamespace": "Naraka.Infrastructure.Scene",
+  "references": [
+    "Game.Features.Lobby.Controller",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

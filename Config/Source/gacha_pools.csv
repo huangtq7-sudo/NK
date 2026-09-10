@@ -1,0 +1,2 @@
+﻿PoolId,DisplayName,CurrencyId,SinglePrice,TenPullPrice,TenPullMinimumQuality,PityCount,PityQuality,SortOrder,Description
+pool_standard,常驻宝匣,Gold,100,900,Blue,20,Red,1,消耗金币抽取材料与消耗品。十连必出蓝色及以上，20抽必出红色。

@@ -1,0 +1,14 @@
+{
+  "name": "Game.Features.Loading.Controller",
+  "rootNamespace": "Naraka.Features.Loading.Controller",
+  "references": [
+    "Game.Core.Application",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

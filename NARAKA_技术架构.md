@@ -1,7 +1,7 @@
 # 《NARAKA》技术架构基线
 
-版本：2.4
-更新日期：2026-09-02
+版本：2.6
+更新日期：2026-09-08
 状态：实施权威摘要
 详细来源：`outputs/naraka_design_v2/NARAKA_TDD_技术设计文档_MVC_v2.0.docx`
 
@@ -58,7 +58,7 @@
 - Animator、Animation Rigging、Timeline/Playables、Splines：角色、武器、处决和方向修正表现。
 - Addressables：场景、Prefab、UI、音频和特效资源管理。
 - HybridCLR：业务程序集热更新。
-- Luban：Excel配置校验并生成客户端/服务端C#和二进制配置。
+- 配置编译器（`Tools/Config/Naraka.ConfigCompiler`）：CSV源表校验并生成双端共享的规范化JSON。取代早期方案中的 Luban，见 ADR-0010。
 - Odin Inspector/Validator：配置编辑和批量校验；若无授权则使用自研 EditorWindow/PropertyDrawer 替代。
 - DOTween：非战斗UI动画；核心战斗时间线不依赖Tween。
 - Wwise：音频事件、Bus、State、Switch、RTPC和Snapshot；若授权或平台接入受阻，可通过 `IAudioService` 替换Unity Audio实现。
@@ -136,6 +136,15 @@
 - `Events<T>`：服务器推送的主线程强类型流。
 - `SendCriticalAsync`：退出和结算关键发送。
 
+P1新增大厅业务按ADR-0007从适配边界扩展应用消息，不解冻LegacyNetworkV1传输层：
+
+- 握手、AES/KDF、帧格式、Protobuf编码机制、粘包半包、心跳、Socket收发与线程模型保持冻结；既有协议名、协议号和字段不可改写或复用。
+- 允许在客户端与服务端适配器中增加成对的业务消息契约、类型注册和路由映射。新增协议号必须避开既有`0–18`，并由Bootstrap的客户端版本范围阻止旧客户端进入不兼容业务。
+- Controller只依赖特性级Gateway接口，不直接接触Socket、Legacy消息类型或数据库；Legacy DTO只存在于基础设施适配边界。
+- 每个写请求必须携带RequestId或OrderId，服务端从已认证连接会话取得账号身份，不能信任客户端提交的AccountId、余额、价格、奖励或抽奖结果。
+- 每组新增契约必须同时提供序列化/反序列化、路由、认证、超时/取消、重复请求和端到端测试；注册表扩展不得顺带重构冻结传输实现。
+- P1继续只把HTTP用于既有Bootstrap版本预检；若未来改用认证HTTP业务API，必须另立ADR，不能与本次适配器扩展混用。
+
 安全风险登记：CBC和旧KDF属于冻结遗留风险。冻结期间必须验证每消息随机IV、完整性校验和防重放序列；网络层未来解冻时优先迁移AEAD，但本阶段不修改传输实现。
 
 ## 9. 多人移动展示
@@ -151,7 +160,11 @@
 - 代码分层：Boot、Core、Hotfix、Generated、Content。
 - HybridCLR更新业务Model、Controller和规则程序集。
 - Addressables更新场景、Prefab、材质、UI、音频和特效。
-- 配置采用 `Excel → Luban校验 → 生成两端C#/二进制 → 差异与签名 → 灰度 → 全量/回滚`。
+- 配置采用 `CSV源表 → 本地 .NET 配置编译器校验 → 规范化JSON + SHA-256清单 → 双端只读消费`，见 [ADR-0010](Docs/ADR/0010-csv-config-pipeline.md)。
+  Luban 不纳入本项目；Unity 运行时**不读 xlsx**，云主机**不跑配置编译**。
+- 配置数据模型只在 `Shared/Config/NarakaConfigModels.cs` 写一份，服务端直接链接原文件，编译器镜像到 Unity；
+  `--check` 作为 CI 门禁，生成物与源表不一致就直接失败。
+- 服务端配置是**经济判定的唯一权威**；客户端加载同一份配置只用于展示，价格、概率与奖励一律以服务端返回值为准。
 - 版本分为ClientVersion、CodeHotfixVersion、ResourceVersion、ConfigVersion和ProtocolVersion。
 - P0使用Host的`GET /bootstrap/config-version`返回ConfigVersion、客户端最低/最高版本和ProtocolVersion；客户端Bootstrap MVC必须在注册或登录前完成兼容性检查，失败时保持Account入口阻塞并允许重试。
 - 版本预检不进入冻结的`LegacyNetworkV1`传输实现：本机开发允许loopback HTTP，直接远端地址必须使用HTTPS；单开发者云端环境允许按ADR-0006用加密SSH隧道把云端loopback映射为本机loopback，但不得直接公开HTTP端口。P0端点只提供兼容性元数据，不替代P5正式Manifest的签名、SHA-256、A/B缓存和KnownGood回滚机制。
@@ -170,7 +183,10 @@
 ## 12. 服务端架构
 
 - 首版采用模块化单体，不为“先进”而提前拆微服务。
-- 模块：Gateway/Session、Player、Inventory、Economy、Quest、Expedition、Gacha、Config和Presence。
+- Bootstrap 响应包含**可选**的 `serverCapabilities` 字段，声明本 Host 实际部署了哪些 P1 功能。
+  当 Bootstrap 版本门禁匹配但 Host 不返回该字段时，客户端退回 P1.1-A 兼容集合，登录与大厅照常可用，其余入口显示“服务器功能尚未升级”且**不发送任何未知协议**。完整 P1 客户端使用 `p1-config-1`，会在预检阶段拒绝仍返回 `p0-config-1` 的旧云端；能力兼容不能绕过版本门禁。
+  Host 只能声明自己真正实现的能力（`Implemented`），而不是整份登记表（`Full`）。见 [ADR-0012](Docs/ADR/0012-red-dot-prefix-tree-and-server-capabilities.md)。
+- 模块：Gateway/Session、Player、Inventory、Economy、Quest、Expedition、Gacha、Social、Config和Presence。
 - 基础框架：.NET Generic Host、Microsoft DI、SqlSugar、MySQL、FluentValidation、FluentMigrator、Quartz.NET和Polly。
 - Redis/Tair用于会话、在线状态和短期锁；RocketMQ只用于审计、统计、邮件和非实时通知，不进入实时路径。
 - log4net负责基础日志，OpenTelemetry提供Trace/Metrics，并接入Prometheus/Grafana或阿里云SLS/ARMS。
@@ -179,10 +195,15 @@
 
 ## 13. 数据库与事务
 
-核心表包括账号、玩家、会话、等级奖励、货币余额、不可变货币流水、堆叠库存、实例物品、负载、武器强化、任务、宠物、红点已读、抽奖订单/结果/保底、签到、远征、远征快照、临时掉落、幂等记录、邮件、审计和配置版本。
+核心表包括账号、玩家、会话、账号资料、发放记录、不可变货币流水、幂等记录、堆叠库存、装备方案、商店订单、武器强化、抽奖状态/订单/奖励/保底、签到周期与领取、一次性奖励领取、成就进度与成就经验、红点版本、好友/申请/屏蔽、一对一会话/消息/已读位置、任务、宠物、远征、远征快照、临时掉落、邮件、审计和配置版本。
+
+**不存在"实例物品"表**：按 ADR-0009，魂玉与护甲也按 `ItemId` 堆叠，所有仓库物品统一走堆叠数量模型。
 
 - 所有关键业务使用RequestId或OrderId幂等。
-- 货币余额和货币流水在同一个事务内保持守恒。
+- 货币余额和货币流水在同一个事务内保持守恒。经济操作把余额变动、库存变动、业务结果、货币流水与幂等结果**写在一起**，任一步失败全部回滚。
+- 初始货币不靠列默认值，而是一笔有记录、可审计、幂等的 StarterGrant 发放，由 `account_grants` 的主键保证每个账号只发一次，且是**累加而不是覆盖**。见 [ADR-0011](Docs/ADR/0011-starter-grant-and-currency-ledger.md)。
+- 好友关系**成对写入**（A→B 与 B→A 两行），接受申请、删除好友、屏蔽都在一个事务里完成全部相关行，因此不会出现单向好友。
+- 迁移只能新增，不得修改已部署的迁移文件（`0001`与`0002`有哈希锁定测试）；MySQL 5.7 静默忽略 `CHECK`，因此非负约束一律靠 `UNSIGNED` 列类型。
 - 返回大厅或异常结算时锁定远征行，合并临时掉落，写入库存/邮件并保存SettlementSummary。
 - 重复结算直接重放首次成功响应。
 - 死亡事务只清理当前远征未结算的MonsterDrop，并记录DeathAudit。
@@ -191,9 +212,11 @@
 
 ## 14. 红点
 
-- 使用节点树/前缀树聚合和脏标记局部刷新。
-- 业务模块发布 `RedDotSourceChangedEvent`，RedDotController计算最终可见状态。
-- 使用 `Version/SeenVersion`，不使用容易覆盖新内容的单一布尔值。
+- 使用节点树/前缀树聚合和脏标记局部刷新。节点树**就是路径本身**，祖先由字符串前缀决定，不单独维护父子指针。
+- 业务模块通过 MessagePipe 发布 `RedDotSourceChanged`，RedDotController 独自完成聚合；两边**没有任何直接引用**。界面只订阅经 R3 包装的只读 `RedDotPresentationState`。
+- 使用 `Version/SeenVersion`，不使用容易覆盖新内容的单一布尔值。`SeenVersion` 持久化到 `account_reddot`，因此跨登录保留；服务端只保存版本对，**不判断红点该不该亮**。
+- 好友的在线绿点/离线灰点**不属于**红点系统：它表达"对方在不在"，不是"有你还没处理的东西"。
+- 没有可领取、没有未读、没有新增时，**不显示任何红点**。完整节点结构与决策依据见 [ADR-0012](Docs/ADR/0012-red-dot-prefix-tree-and-server-capabilities.md)。
 - 临时战利品拾取时不触发仓库红点，返回大厅正式入库后才触发。
 - 任务可接取、可提交、等级奖励、签到、抽奖未展示结果和新物品分别由独立规则节点负责。
 
@@ -206,14 +229,14 @@
 - EditMode测试Model，PlayMode测试动画窗口、命中、UI绑定和场景加载。
 - 服务端使用单元测试与MySQL/Redis Testcontainers集成测试。
 - 协议使用Golden Files和Fuzz测试；服务端使用BenchmarkDotNet/k6或Socket压测。
-- CI门禁检查C#格式、静态分析、测试、Luban/Protobuf生成一致性、Addressables重复依赖、URP材质和热更回滚。
+- CI门禁检查C#格式、静态分析、测试、配置生成一致性（`--check`）、Protobuf生成一致性、Addressables重复依赖、URP材质和热更回滚。
 
 ## 16. 实施阶段
 
-- P0 基础：仓库、Unity/服务端骨架、MVC、CI、网络适配、登录和空大厅。
-- P1 战斗垂直切片：1英雄、1武器、1怪物、HUD和完整伤害循环。
-- P2 远征闭环：两图抽象、传送、临时掉落、死亡、异常结算和幂等。
-- P3 内容系统：2英雄、2武器、10怪物、任务、物品和锻造。
-- P4 大厅经济：商店、抽奖、签到、等级奖励、红点和宠物。
+- P0 基础：仓库、Unity/服务端骨架、MVC、CI、网络适配、登录和空大厅；已关闭。
+- P1 大厅与账号长期系统：按P1.0至P1.9依次完成共享契约与数据库迁移、账号快照与货币、英雄/兵器/宠物选择、仓库与装备、商店、锻造、抽奖、签到/账号等级奖励/红点、好友与一对一文字聊天，最后执行大厅联合验收。
+- P2 战斗垂直切片：1英雄、1武器、1怪物、HUD和完整伤害循环。
+- P3 远征闭环：两图抽象、传送、临时掉落、死亡、异常结算和幂等。
+- P4 内容系统：2英雄、2武器、10怪物、任务、物品、魂玉、护甲、消耗品和宠物内容扩充；锻造基础能力已前置到P1。
 - P5 联网展示与热更：10人移动、共享时间天气、HybridCLR和Addressables。
 - P6 打磨发布：地图素材绑定、性能、音频、可访问性、测试和发布。

@@ -1,0 +1,16 @@
+{
+  "name": "Game.Features.Gacha.Controller",
+  "rootNamespace": "Naraka.Features.Gacha.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Lobby.Controller",
+    "Game.Generated.Config",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

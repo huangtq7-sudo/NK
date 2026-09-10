@@ -1,0 +1,334 @@
+/* 好友与一对一聊天界面。只使用 Unity 2021.3 支持的 USS 属性；
+   选择器统一以 social- 前缀限定，不污染同一个 UIDocument 下的其它面板。 */
+
+.social-screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.social-dim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(4, 6, 10, 0.66);
+}
+
+.social-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.social-close {
+    position: absolute;
+    right: 96px;
+    top: 56px;
+    width: 56px;
+    height: 56px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../../../../Art/UI/Button/ui_button_close_v1_transparent_256x256.png");
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.social-close:hover {
+    opacity: 0.82;
+}
+
+.social-tabs {
+    position: absolute;
+    left: 200px;
+    top: 84px;
+    flex-direction: row;
+}
+
+.social-tab {
+    width: 150px;
+    height: 50px;
+    margin-right: 14px;
+    font-size: 19px;
+    color: rgb(226, 214, 188);
+    background-color: rgba(30, 34, 44, 0.9);
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgba(120, 104, 72, 0.6);
+    border-right-color: rgba(120, 104, 72, 0.6);
+    border-top-color: rgba(120, 104, 72, 0.6);
+    border-bottom-color: rgba(120, 104, 72, 0.6);
+}
+
+.social-tab--selected {
+    color: rgb(28, 24, 18);
+    background-color: rgb(214, 180, 106);
+}
+
+.social-search-row {
+    position: absolute;
+    left: 200px;
+    right: 200px;
+    top: 148px;
+    height: 52px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.social-search-field {
+    width: 320px;
+    height: 40px;
+    font-size: 17px;
+}
+
+.social-search-button {
+    width: 110px;
+    height: 40px;
+    margin-left: 12px;
+    font-size: 17px;
+    color: rgb(28, 24, 18);
+    background-color: rgb(214, 180, 106);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.social-search-button:disabled {
+    opacity: 0.45;
+}
+
+.social-search-result {
+    margin-left: 20px;
+    font-size: 17px;
+    color: rgb(214, 204, 180);
+}
+
+.social-search-add {
+    width: 130px;
+    height: 40px;
+    margin-left: 16px;
+    font-size: 16px;
+    color: rgb(28, 24, 18);
+    background-color: rgb(196, 172, 116);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.social-search-add:disabled {
+    opacity: 0.45;
+}
+
+.social-list-scroll {
+    position: absolute;
+    left: 200px;
+    width: 520px;
+    top: 214px;
+    bottom: 96px;
+}
+
+.social-list {
+    flex-direction: column;
+}
+
+.social-row {
+    height: 74px;
+    margin-bottom: 8px;
+    padding-left: 14px;
+    padding-right: 14px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(26, 30, 40, 0.88);
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgba(120, 104, 72, 0.6);
+    border-right-color: rgba(120, 104, 72, 0.6);
+    border-top-color: rgba(120, 104, 72, 0.6);
+    border-bottom-color: rgba(120, 104, 72, 0.6);
+}
+
+.social-row--selected {
+    border-left-color: rgb(226, 186, 96);
+    border-right-color: rgb(226, 186, 96);
+    border-top-color: rgb(226, 186, 96);
+    border-bottom-color: rgb(226, 186, 96);
+}
+
+/* 在线状态点。绿色在线、灰色离线。它不是红点：表达的是状态而不是待处理内容。 */
+.social-presence {
+    width: 14px;
+    height: 14px;
+    margin-right: 12px;
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-bottom-left-radius: 7px;
+    border-bottom-right-radius: 7px;
+    background-color: rgb(96, 100, 104);
+}
+
+.social-presence--online {
+    background-color: rgb(96, 186, 108);
+}
+
+.social-row-name {
+    flex-grow: 1;
+    font-size: 19px;
+    color: rgb(236, 226, 202);
+}
+
+.social-row-note {
+    width: 130px;
+    font-size: 15px;
+    color: rgb(180, 170, 148);
+}
+
+.social-row-button {
+    width: 96px;
+    height: 38px;
+    margin-left: 8px;
+    font-size: 15px;
+    color: rgb(28, 24, 18);
+    background-color: rgb(214, 180, 106);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.social-row-button:disabled {
+    opacity: 0.45;
+}
+
+.social-row-button--danger {
+    background-color: rgb(178, 92, 82);
+    color: rgb(240, 232, 220);
+}
+
+.social-chat {
+    position: absolute;
+    left: 748px;
+    right: 200px;
+    top: 214px;
+    bottom: 96px;
+    background-color: rgba(22, 26, 34, 0.9);
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgba(120, 104, 72, 0.6);
+    border-right-color: rgba(120, 104, 72, 0.6);
+    border-top-color: rgba(120, 104, 72, 0.6);
+    border-bottom-color: rgba(120, 104, 72, 0.6);
+}
+
+.social-chat-peer {
+    font-size: 20px;
+    color: rgb(236, 226, 202);
+    margin-bottom: 10px;
+}
+
+.social-chat-scroll {
+    flex-grow: 1;
+}
+
+.social-chat-messages {
+    flex-direction: column;
+}
+
+.social-chat-bubble {
+    max-width: 90%;
+    margin-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    background-color: rgba(48, 52, 62, 0.95);
+}
+
+/* 自己发的消息靠右并换一个底色，这样一眼能分清谁说的。 */
+.social-chat-bubble--self {
+    align-self: flex-end;
+    background-color: rgba(96, 84, 48, 0.95);
+}
+
+.social-chat-bubble-text {
+    font-size: 17px;
+    color: rgb(236, 230, 214);
+    white-space: normal;
+}
+
+.social-chat-input-row {
+    margin-top: 10px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.social-chat-input {
+    flex-grow: 1;
+    height: 42px;
+    font-size: 17px;
+}
+
+.social-chat-send {
+    width: 110px;
+    height: 42px;
+    margin-left: 12px;
+    font-size: 17px;
+    color: rgb(28, 24, 18);
+    background-color: rgb(214, 180, 106);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.social-chat-send:disabled {
+    opacity: 0.45;
+}
+
+.social-empty {
+    position: absolute;
+    left: 200px;
+    width: 520px;
+    top: 300px;
+    font-size: 19px;
+    color: rgb(198, 188, 166);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.social-status {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 44px;
+    font-size: 20px;
+    color: rgb(228, 168, 148);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}

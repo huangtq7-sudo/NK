@@ -1,0 +1,90 @@
+/* 十个大厅功能面板共用的容器。背景图由 LobbyFeaturePanelView 按当前功能从目录取。
+   ui_bg_* 素材本身就是 1920x1080、四周留透明边的整屏装饰框，
+   所以面板铺满逻辑分辨率即可，不需要再定尺寸。 */
+
+.feature-screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 遮罩同时承担挡住下层大厅点击的职责。 */
+.feature-dim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(4, 6, 10, 0.62);
+}
+
+.feature-window {
+    width: 100%;
+    height: 100%;
+}
+
+.feature-panel {
+    width: 100%;
+    height: 100%;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.feature-close {
+    position: absolute;
+    right: 96px;
+    top: 56px;
+    width: 56px;
+    height: 56px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../../../../Art/UI/Button/ui_button_close_v1_transparent_256x256.png");
+    -unity-background-scale-mode: scale-to-fit;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.feature-close:hover {
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0.82;
+}
+
+.feature-close:active {
+    background-color: rgba(0, 0, 0, 0);
+    opacity: 0.62;
+}
+
+.feature-title {
+    position: absolute;
+    left: 0;
+    right: 1400;
+    top: 130px;
+    font-size: 40px;
+    letter-spacing: 8px;
+    color: rgb(217, 180, 95);
+    -unity-text-align: middle-center;
+}
+
+.feature-message {
+    position: absolute;
+    left: 200px;
+    right: 200px;
+    top: 48%;
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: rgba(233, 226, 210, 0.62);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}

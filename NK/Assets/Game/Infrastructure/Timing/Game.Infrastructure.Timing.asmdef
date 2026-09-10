@@ -1,0 +1,14 @@
+{
+  "name": "Game.Infrastructure.Timing",
+  "rootNamespace": "Naraka.Infrastructure.Timing",
+  "references": [
+    "Game.Core.Application",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

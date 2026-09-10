@@ -1,0 +1,18 @@
+{
+  "name": "Game.Features.Shop.View",
+  "rootNamespace": "Naraka.Features.Shop.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Shop.Controller",
+    "Game.Features.Loadout.View",
+    "Game.Generated.Config",
+    "UniTask",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

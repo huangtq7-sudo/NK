@@ -1,0 +1,30 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Game/Features/Forge/View/UI/ForgePanel.uss?fileID=7433441132597879392&amp;guid=6ad413403b57fd041b600455bd134a31&amp;type=3#ForgePanel" />
+    <ui:VisualElement name="ForgeScreen" class="forge-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_forge_v1.png?fileID=2800000&amp;guid=732c1295a4e2ef646ac1aa0e0cf4bf22&amp;type=3#ui_fullscreen_forge_v1&quot;);">
+        <ui:VisualElement name="ForgeDim" class="forge-dim" />
+        <ui:VisualElement name="ForgePanel" class="forge-panel">
+            <ui:Button name="ForgeCloseButton" tooltip="关闭" class="forge-close" />
+            <ui:VisualElement name="ForgeTopLeft" class="forge-top-left">
+                <ui:VisualElement name="ForgeWeaponRow" class="forge-weapon-row">
+                    <ui:Button name="ForgePreviousButton" tooltip="上一把兵器" class="forge-arrow" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Material/icon_arrow_left_v1_512x512.png?fileID=2800000&amp;guid=87d12193a4e279840adca034ae468fe3&amp;type=3#icon_arrow_left_v1_512x512&quot;);" />
+                    <ui:VisualElement name="ForgeWeaponIcon" picking-mode="Ignore" class="forge-weapon-icon" />
+                    <ui:Button name="ForgeNextButton" tooltip="下一把兵器" class="forge-arrow" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Material/icon_arrow_right_v1_512x512.png?fileID=2800000&amp;guid=43f057be57d93cf46968300d29bdca24&amp;type=3#icon_arrow_right_v1_512x512&quot;);" />
+                </ui:VisualElement>
+                <ui:Label name="ForgeWeaponNameLabel" picking-mode="Ignore" class="forge-weapon-name" />
+            </ui:VisualElement>
+            <ui:VisualElement name="ForgeTopRight" class="forge-top-right">
+                <ui:Label name="ForgeLevelLabel" picking-mode="Ignore" class="forge-level" />
+                <ui:Label name="ForgeAttackPreviewLabel" picking-mode="Ignore" class="forge-preview" />
+                <ui:Label name="ForgeAttackSpeedPreviewLabel" picking-mode="Ignore" class="forge-preview-sub" />
+                <ui:Label name="ForgeMaxLevelLabel" picking-mode="Ignore" class="forge-max-level" />
+            </ui:VisualElement>
+            <ui:VisualElement name="ForgeBottom" class="forge-bottom">
+                <ui:Label name="ForgeCostTitle" text="强化消耗" picking-mode="Ignore" class="forge-cost-title" />
+                <ui:VisualElement name="ForgeCostList" class="forge-cost-list" />
+                <ui:Label name="ForgeSuccessRateLabel" picking-mode="Ignore" class="forge-success-rate" />
+                <ui:Button name="ForgeUpgradeButton" text="锻造" class="forge-upgrade" />
+            </ui:VisualElement>
+            <ui:Label name="ForgeStatusLabel" picking-mode="Ignore" class="forge-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

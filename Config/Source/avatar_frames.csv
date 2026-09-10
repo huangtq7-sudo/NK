@@ -1,0 +1,7 @@
+﻿AvatarFrameId,DisplayName,SortOrder,IconKey,UnlockRule
+frame_white,素白框,1,gacha_card_white,Default
+frame_green,青碧框,2,gacha_card_green,Default
+frame_blue,湛蓝框,3,gacha_card_blue,Default
+frame_purple,紫曜框,4,gacha_card_purple,Default
+frame_gold,鎏金框,5,gacha_card_gold,Default
+frame_dark,玄夜框,6,gacha_card_dark,Default

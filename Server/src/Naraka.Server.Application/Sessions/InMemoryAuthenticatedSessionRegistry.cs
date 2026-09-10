@@ -28,4 +28,22 @@ public sealed class InMemoryAuthenticatedSessionRegistry : IAuthenticatedSession
 
     public bool Remove(ConnectionId connectionId) =>
         _sessions.TryRemove(connectionId, out _);
+
+    public bool IsOnline(long accountId)
+    {
+        if (accountId <= 0)
+        {
+            return false;
+        }
+
+        foreach (var session in _sessions.Values)
+        {
+            if (session.AccountId == accountId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

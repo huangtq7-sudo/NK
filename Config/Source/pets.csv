@@ -1,0 +1,3 @@
+﻿PetId,DisplayName,SortOrder,IconKey,DefaultOwned,UnlockRule,Description
+pet_lingyu,灵愈,1,pet_lingyu,1,Default,每10秒检查一次。生命未满时恢复100生命；生命已满且护甲未满时恢复100护甲。
+pet_pofeng,破锋,2,pet_pofeng,0,DefeatDragonRed,每3秒攻击8米内已与玩家交战的敌人，伤害为最终攻击力的0.35倍，可攻击飞行怪。
