@@ -8,4 +8,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
+  - enabled: 1
+    path: Assets/Game/Scenes/World/Map01_Task.unity
+    guid: 8a14712c40bf4ef47a7687e21bc6033f
+  - enabled: 1
+    path: Assets/Game/Scenes/World/Map02_CombatGraybox.unity
+    guid: 8e6ee1a1edffe00448c889ca2246a66f
   m_configObjects: {}

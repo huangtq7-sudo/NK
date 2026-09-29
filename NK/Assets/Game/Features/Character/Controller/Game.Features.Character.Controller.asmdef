@@ -1,0 +1,15 @@
+{
+  "name": "Game.Features.Character.Controller",
+  "rootNamespace": "Naraka.Features.Character.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Core.Domain",
+    "Game.Features.Character.Model"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

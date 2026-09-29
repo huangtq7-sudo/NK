@@ -18,7 +18,20 @@
     "Game.Features.SignIn.View",
     "Game.Features.Achievement.View",
     "Game.Features.RedDot.View",
-    "Game.Features.Social.View"
+    "Game.Features.Social.View",
+    "Game.Features.Character.Model",
+    "Game.Features.Character.Controller",
+    "Game.Features.Character.View",
+    "Game.Features.Combat.Model",
+    "Game.Features.Combat.Controller",
+    "Game.Features.Combat.View",
+    "Game.Features.World.Controller",
+    "Game.Features.World.View",
+    "Game.Infrastructure.Input",
+    "Game.Infrastructure.Camera",
+    "Game.Infrastructure.Scene",
+    "Unity.InputSystem",
+    "Cinemachine"
   ],
   "includePlatforms": [
     "Editor"

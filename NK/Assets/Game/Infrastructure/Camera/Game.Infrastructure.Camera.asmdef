@@ -1,0 +1,18 @@
+{
+  "name": "Game.Infrastructure.Camera",
+  "rootNamespace": "Naraka.Infrastructure.Camera",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Character.Controller",
+    "Game.Features.Character.Model",
+    "Game.Infrastructure.Input",
+    "Unity.InputSystem",
+    "Cinemachine"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

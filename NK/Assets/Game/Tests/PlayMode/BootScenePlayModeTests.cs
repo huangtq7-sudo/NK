@@ -12,6 +12,19 @@ namespace Naraka.P0.PlayMode.Tests
 {
     public sealed class BootScenePlayModeTests
     {
+        /// <summary>
+        /// 持久化 App Root 会活过场景切换，也会活过测试。它的输入提供者启用了
+        /// 共享的 InputActionAsset，留给下一个测试夹具就会让虚拟设备读不到任何输入。
+        /// </summary>
+        [TearDown]
+        public void TearDown()
+        {
+            foreach (var root in Object.FindObjectsOfType<Naraka.Boot.AppRootLifetimeScope>())
+            {
+                Object.DestroyImmediate(root.gameObject);
+            }
+        }
+
         [UnityTest]
         public IEnumerator BootSceneBuildsAccountAndLobbyViews()
         {
@@ -29,8 +42,15 @@ namespace Naraka.P0.PlayMode.Tests
             Assert.That(root.Q<VisualElement>("ConfigVersionOverlay"), Is.Not.Null);
             Assert.That(root.Q<VisualElement>("LobbyScreen"), Is.Not.Null);
             Assert.That(root.Q<VisualElement>("AppearanceScreen"), Is.Not.Null);
-            Assert.That(root.Q<VisualElement>("LoadingScreen"), Is.Not.Null);
             Assert.That(root.Q<VisualElement>("FeatureScreen"), Is.Not.Null);
+
+            // 加载界面已迁移到持久化 App Root 的独立 UIDocument：
+            // 它必须活过场景切换，因此不能再挂在随 Bootstrap 场景销毁的 P0ClientShell 上。
+            var loadingView = Object.FindObjectOfType<Naraka.Features.Loading.View.LoadingView>();
+            Assert.That(loadingView, Is.Not.Null);
+            var loadingRoot = loadingView.GetComponent<UIDocument>().rootVisualElement;
+            Assert.That(loadingRoot.Q<VisualElement>("LoadingScreen"), Is.Not.Null);
+            Assert.That(loadingRoot.Q<VisualElement>("LoadingBarFill"), Is.Not.Null);
 
             // P1.1-A：等级与三种货币 Label 必须存在，且在服务端数据到达前保持占位。
             Assert.That(root.Q<Label>("PlayerLevelLabel"), Is.Not.Null);
@@ -49,7 +69,6 @@ namespace Naraka.P0.PlayMode.Tests
             {
                 Assert.That(root.Q<Button>(entry), Is.Not.Null, entry + " 缺失。");
             }
-            Assert.That(root.Q<VisualElement>("LoadingBarFill"), Is.Not.Null);
             Assert.That(root.Q<Button>("PlayerAvatarButton"), Is.Not.Null);
         }
 

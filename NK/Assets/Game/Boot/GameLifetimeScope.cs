@@ -3,7 +3,6 @@ using Naraka.Core.Application.Bootstrap;
 using Naraka.Core.Application.Config;
 using Naraka.Core.Application.Messaging;
 using Naraka.Core.Application.Networking;
-using Naraka.Core.Application.Timing;
 using Naraka.Features.Account.Controller;
 using Naraka.Features.Account.Model;
 using Naraka.Features.Account.View;
@@ -28,16 +27,12 @@ using Naraka.Features.Loadout.Controller;
 using Naraka.Features.Loadout.View;
 using Naraka.Features.Lobby.Controller;
 using Naraka.Features.Lobby.Model;
-using Naraka.Features.Loading.Controller;
-using Naraka.Features.Loading.View;
 using Naraka.Features.Lobby.View;
 using Naraka.Features.Shop.Controller;
 using Naraka.Features.Shop.View;
 using Naraka.Infrastructure.Config;
 using Naraka.Infrastructure.Messaging;
 using Naraka.Infrastructure.Network;
-using Naraka.Infrastructure.Scene;
-using Naraka.Infrastructure.Timing;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -46,7 +41,7 @@ namespace Naraka.Boot
 {
     public sealed class GameLifetimeScope : LifetimeScope
     {
-        private const string DefaultMapSceneName = "Map1";
+        private const string DefaultMapSceneName = "Map01_Task";
 
         [SerializeField] private string serverAddress = "127.0.0.1";
         [SerializeField] private int serverPort = 8011;
@@ -54,9 +49,6 @@ namespace Naraka.Boot
         [SerializeField] private string configVersion = "p1-config-1";
         [SerializeField] private string protocolVersion = "LegacyNetworkV1";
         [SerializeField] private string map1SceneName = DefaultMapSceneName;
-
-        /// <summary>登录后进入大厅前的最短加载时长（秒）。实际加载更久时以实际为准。</summary>
-        [SerializeField] private float minimumLoadingSeconds = 2f;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -98,16 +90,9 @@ namespace Naraka.Boot
             builder.Register<ConfigVersionController>(Lifetime.Singleton)
                 .AsSelf()
                 .As<IStartupReadiness>();
-            builder.Register<IGameClock, UnityGameClock>(Lifetime.Singleton);
-            builder.Register<LoadingController>(Lifetime.Singleton)
-                .AsSelf()
-                .As<ILoadingController>()
-                .WithParameter("minimumSeconds", (double)minimumLoadingSeconds);
-
             builder.Register<AccountSessionModel>(Lifetime.Singleton);
             builder.Register<AccountController>(Lifetime.Singleton);
 
-            builder.Register<ILobbySceneGateway, UnityLobbySceneGateway>(Lifetime.Singleton);
             builder.Register<LobbyModel>(Lifetime.Singleton);
 
             // 只把地图场景名注入LobbyController，不向容器注册裸string。
@@ -161,7 +146,6 @@ namespace Naraka.Boot
             builder.RegisterComponentInHierarchy<ConfigVersionView>();
             builder.RegisterComponentInHierarchy<AccountView>();
             builder.RegisterComponentInHierarchy<LobbyView>();
-            builder.RegisterComponentInHierarchy<LoadingView>();
 
             // 功能面板都是可选界面：场景里缺少组件时只报错，不让容器构建失败，
             // 否则登录与大厅这两个必需流程会被一个可选界面拖垮。
@@ -188,6 +172,33 @@ namespace Naraka.Boot
         /// 缺失时会在容器构建阶段抛异常并连带拖垮登录与大厅。可选界面不该有这种影响力，
         /// 因此这里缺失只报错，让必需流程继续可用。
         /// </summary>
+        /// <summary>
+        /// 大厅与账号的 Scope 挂在持久化 App Root 之下：加载界面、输入、相机与场景流转
+        /// 必须活过场景切换，而这十几个大厅控制器不应该被带进战斗场景。
+        ///
+        /// 找不到 App Root 时返回 null，Scope 退回成独立根，登录与大厅仍然可用 ——
+        /// 一个缺失的持久层不该让整个客户端起不来。
+        /// </summary>
+        protected override LifetimeScope FindParent()
+        {
+            var root = Find<AppRootLifetimeScope>();
+            if (root == null)
+            {
+                Debug.LogError(
+                    "场景缺少 AppRootLifetimeScope，开始游戏与战斗场景不可用；" +
+                    "请运行菜单 NARAKA/Setup/Apply P2 Scene Setup。",
+                    this);
+                return null;
+            }
+
+            if (root.Container == null)
+            {
+                root.Build();
+            }
+
+            return root;
+        }
+
         private void RegisterOptionalView<T>(IContainerBuilder builder, string displayName)
             where T : MonoBehaviour
         {

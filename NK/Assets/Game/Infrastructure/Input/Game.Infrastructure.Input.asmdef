@@ -1,0 +1,16 @@
+{
+  "name": "Game.Infrastructure.Input",
+  "rootNamespace": "Naraka.Infrastructure.Input",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Character.Controller",
+    "Game.Features.Character.Model",
+    "Unity.InputSystem"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

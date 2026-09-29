@@ -3,7 +3,6 @@ using System.Linq;
 using Naraka.Boot;
 using Naraka.Features.Account.View;
 using Naraka.Features.Bootstrap.View;
-using Naraka.Features.Loading.View;
 using Naraka.Features.Forge.View;
 using Naraka.Features.Achievement.View;
 using Naraka.Features.Gacha.View;
@@ -39,8 +38,6 @@ namespace Naraka.EditorTools
         private const string LobbyMainLayoutField = "lobbyLayout";
         private const string AppearanceUxmlPath =
             "Assets/Game/Features/Lobby/View/UI/LobbyAppearance.uxml";
-        private const string LoadingUxmlPath =
-            "Assets/Game/Features/Loading/View/UI/LoadingScreen.uxml";
         private const string AppearanceCatalogPath =
             SettingsDirectory + "/LobbyAppearanceCatalog.asset";
         private const string FeaturePanelUxmlPath =
@@ -162,7 +159,10 @@ namespace Naraka.EditorTools
             EnsureP0ClientShell();
 
             EditorSceneManager.SaveScene(scene);
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(BootScenePath, true) };
+
+            // 幂等合并而不是整表覆盖：这里曾经直接赋一个只含 Bootstrap 的数组，
+            // 结果是用户每点一次这个菜单，两张地图就会被静默移出 Build Settings。
+            P2SceneSetup.EnsureBuildSettings(new System.Text.StringBuilder());
         }
 
         private static void EnsureP0ClientShell()
@@ -214,7 +214,7 @@ namespace Naraka.EditorTools
             {
                 shell.AddComponent<RedDotBadgeView>();
             }
-            var loading = shell.GetComponent<LoadingView>() ?? shell.AddComponent<LoadingView>();
+            // 加载界面已迁移到持久化 App Root（见 P2SceneSetup），这里不再往 Shell 上挂。
             var cursor = shell.GetComponent<GameCursor>() ?? shell.AddComponent<GameCursor>();
 
             RemoveLegacyUiFontComponent(shell);
@@ -229,8 +229,6 @@ namespace Naraka.EditorTools
             AssignReference(appearance, "appearanceLayout",
                 AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(AppearanceUxmlPath));
             AssignReference(appearance, "catalog", catalog);
-            AssignReference(loading, "loadingLayout",
-                AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(LoadingUxmlPath));
             AssignReference(featurePanel, "featurePanelLayout",
                 AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(FeaturePanelUxmlPath));
             AssignReference(featurePanel, "catalog", EnsureFeaturePanelCatalog());

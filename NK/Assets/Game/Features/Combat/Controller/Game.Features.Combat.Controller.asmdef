@@ -1,0 +1,15 @@
+{
+  "name": "Game.Features.Combat.Controller",
+  "rootNamespace": "Naraka.Features.Combat.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Core.Domain",
+    "Game.Features.Combat.Model"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

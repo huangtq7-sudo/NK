@@ -1,7 +1,7 @@
 # 《NARAKA》技术架构基线
 
-版本：2.6
-更新日期：2026-09-08
+版本：2.8
+更新日期：2026-09-28
 状态：实施权威摘要
 详细来源：`outputs/naraka_design_v2/NARAKA_TDD_技术设计文档_MVC_v2.0.docx`
 
@@ -51,12 +51,12 @@
 - UniTask：网络等待、场景加载、Addressables、动画编排和取消；所有异步链传递 CancellationToken。
 - MessagePipe 1.8.2：跨模块离散事件，例如 `AccountAuthenticatedEvent`、`MonsterKilledEvent`、`LootPickedEvent`；通过VContainer注入`IDomainEventBus`，禁止全局总线和Service Locator。
 - R3 1.3.1：只读连续状态和UI订阅；`ReactiveProperty<T>`封装在Application内部的`ReactiveState<T>`中，View只能取得既有`IReadOnlyState<T>`，不得取得可写属性。
-- UnityHFSM或自研HFSM适配层：玩家动作和怪物动作状态机。
+- 自研轻量HFSM（`Game.Features.Character.Model.Hfsm`）：玩家动作和怪物动作状态机。P2明确不引入UnityHFSM，理由与边界见 [ADR-0015](Docs/ADR/0015-p2-player-hfsm-and-animator-projection.md)。
 - 自研/授权行为树适配层：怪物巡逻、追击、技能选择和阶段决策。
-- Input System：键鼠输入、按键重映射和动作上下文。
-- Cinemachine：第三人称镜头、传送和首领镜头；不实现目标锁定。
+- Input System 1.7.0：键鼠输入、按键重映射和动作上下文。P2接入，版本依据见 [ADR-0014](Docs/ADR/0014-p2-input-system-and-cinemachine.md)。
+- Cinemachine 2.10.1：第三人称镜头、传送和首领镜头；不实现目标锁定。镜头以角色为中心环绕，并为业务层提供只读的`ICameraOrientation.Yaw`作为移动方向基准。P2接入，版本依据见 [ADR-0014](Docs/ADR/0014-p2-input-system-and-cinemachine.md)。
 - Animator、Animation Rigging、Timeline/Playables、Splines：角色、武器、处决和方向修正表现。
-- Addressables：场景、Prefab、UI、音频和特效资源管理。
+- Addressables：场景、Prefab、UI、音频和特效资源管理。**P2明确暂缓**：场景继续通过 `ISceneLoader` 抽象后的 `SceneManager.LoadSceneAsync` 加载，该抽象就是后续迁移边界，见 [ADR-0016](Docs/ADR/0016-p2-persistent-app-root-and-real-scene-progress.md)。
 - HybridCLR：业务程序集热更新。
 - 配置编译器（`Tools/Config/Naraka.ConfigCompiler`）：CSV源表校验并生成双端共享的规范化JSON。取代早期方案中的 Luban，见 ADR-0010。
 - Odin Inspector/Validator：配置编辑和批量校验；若无授权则使用自研 EditorWindow/PropertyDrawer 替代。
@@ -86,12 +86,17 @@
 
 ## 5. 玩家战斗实现
 
-- 玩家采用分层状态机：Locomotion、Action、Reaction和Overlay Flags。
-- Locomotion：Idle、Move、Sprint。
-- Action：Dodge、Attack、Charge、Skill、Counter、Execute、SwitchWeapon、UseItem。
-- Reaction：HitStun、Knockdown、Death。
-- Overlay Flags：Invulnerable、SuperArmor、SpawnProtection。
-- 霸体屏蔽HitStun但不屏蔽Damage和Death；无敌标签直接阻断伤害。
+- 玩家采用分层状态机：Locomotion、Action、Reaction和Overlay Flags。三层互相独立，
+  转换规则集中在 `PlayerCore` 仲裁，优先级固定为 Death → HitStun → 强制场景/出场状态 → Action → Locomotion。
+- Locomotion：Idle、IdleVariation、Walk、Run、RunTurnback、StopWalk、StopRun。
+  移动是相机相对的，角色先转向目标方向再前进，因此只有一套行进状态与一套前进动画；
+  没有后退，也没有原地转身。见 [ADR-0017](Docs/ADR/0017-camera-relative-locomotion.md)。
+- Action：None、SpawnLobbyToMap01、SpawnMap01ToMap02、Dash、AttackCombo1/2/3、Charge、SkillF、SkillV。
+  Counter、Execute、SwitchWeapon、UseItem留到后续阶段。
+- Reaction：None、HitStun、Death。Knockdown留到怪物阶段。
+- Overlay Flags：InputLocked、SuperArmor、SpawnProtection、Loading、Grounded。
+- 霸体屏蔽HitStun但不屏蔽Damage和Death；重生保护期间直接免伤。
+  `Move_F`既无无敌帧也无霸体，因此P2的玩家状态里没有Invulnerable标签。
 - 近战命中使用可配置扇形/胶囊扫掠和Physics NonAlloc查询。
 - 使用 `HitId`、方向点积、高度、阵营、FlyingTag和已命中集合进行二次过滤。
 - 逻辑攻击窗口由可测试的时间轴配置控制，动画事件只用于表现同步，不能是唯一判定来源。
@@ -235,7 +240,7 @@ P1新增大厅业务按ADR-0007从适配边界扩展应用消息，不解冻Lega
 
 - P0 基础：仓库、Unity/服务端骨架、MVC、CI、网络适配、登录和空大厅；已关闭。
 - P1 大厅与账号长期系统：按P1.0至P1.9依次完成共享契约与数据库迁移、账号快照与货币、英雄/兵器/宠物选择、仓库与装备、商店、锻造、抽奖、签到/账号等级奖励/红点、好友与一对一文字聊天，最后执行大厅联合验收。
-- P2 战斗垂直切片：1英雄、1武器、1怪物、HUD和完整伤害循环。
+- P2 战斗垂直切片：1英雄、1武器、1怪物、HUD和完整伤害循环。P2第一阶段已把原属P3的两图灰盒、固定传送门、异步加载与死亡返回一并纳入，以便移动/镜头/状态机在真实场景流转下验收；范围调整见 [ADR-0016](Docs/ADR/0016-p2-persistent-app-root-and-real-scene-progress.md)。
 - P3 远征闭环：两图抽象、传送、临时掉落、死亡、异常结算和幂等。
 - P4 内容系统：2英雄、2武器、10怪物、任务、物品、魂玉、护甲、消耗品和宠物内容扩充；锻造基础能力已前置到P1。
 - P5 联网展示与热更：10人移动、共享时间天气、HybridCLR和Addressables。

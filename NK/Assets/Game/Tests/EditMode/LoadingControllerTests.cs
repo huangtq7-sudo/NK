@@ -40,7 +40,7 @@ namespace Naraka.P0.Tests
         [Test]
         public void LoadingScreenStaysHiddenBeforeRun()
         {
-            var controller = new LoadingController(new FakeGameClock(), Minimum);
+            var controller = new LoadingController(new FakeGameClock(), null, Minimum);
 
             Assert.That(controller.Current.IsVisible, Is.False);
             Assert.That(controller.Current.Progress, Is.EqualTo(0f));
@@ -50,7 +50,7 @@ namespace Naraka.P0.Tests
         public IEnumerator InstantWorkStillHoldsTheMinimumDuration() => UniTask.ToCoroutine(async () =>
         {
             var clock = new FakeGameClock();
-            var controller = new LoadingController(clock, Minimum);
+            var controller = new LoadingController(clock, null, Minimum);
 
             await controller.RunAsync(CancellationToken.None);
 
@@ -63,7 +63,7 @@ namespace Naraka.P0.Tests
         public IEnumerator SlowWorkExtendsBeyondTheMinimumDuration() => UniTask.ToCoroutine(async () =>
         {
             var clock = new FakeGameClock();
-            var controller = new LoadingController(clock, Minimum);
+            var controller = new LoadingController(clock, null, Minimum);
             var completion = new UniTaskCompletionSource();
             clock.OnDelay = () =>
             {
@@ -83,7 +83,7 @@ namespace Naraka.P0.Tests
         public IEnumerator ProgressNeverReachesFullWhileWorkIsPending() => UniTask.ToCoroutine(async () =>
         {
             var clock = new FakeGameClock();
-            var controller = new LoadingController(clock, Minimum);
+            var controller = new LoadingController(clock, null, Minimum);
             var completion = new UniTaskCompletionSource();
             clock.OnDelay = () =>
             {
@@ -117,7 +117,7 @@ namespace Naraka.P0.Tests
         public IEnumerator WorkFailurePropagatesToTheCaller() => UniTask.ToCoroutine(async () =>
         {
             var clock = new FakeGameClock();
-            var controller = new LoadingController(clock, Minimum);
+            var controller = new LoadingController(clock, null, Minimum);
 
             var thrown = false;
             try

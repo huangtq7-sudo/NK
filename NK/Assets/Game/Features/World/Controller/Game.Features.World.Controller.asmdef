@@ -1,0 +1,19 @@
+{
+  "name": "Game.Features.World.Controller",
+  "rootNamespace": "Naraka.Features.World.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Core.Domain",
+    "Game.Features.Character.Controller",
+    "Game.Features.Character.Model",
+    "Game.Features.Loading.Controller",
+    "Game.Features.Lobby.Controller",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

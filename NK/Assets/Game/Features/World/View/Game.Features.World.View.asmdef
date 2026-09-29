@@ -1,0 +1,23 @@
+{
+  "name": "Game.Features.World.View",
+  "rootNamespace": "Naraka.Features.World.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Character.Controller",
+    "Game.Features.Character.Model",
+    "Game.Features.Character.View",
+    "Game.Features.Combat.Controller",
+    "Game.Features.Combat.View",
+    "Game.Features.World.Controller",
+    "Game.Infrastructure.Camera",
+    "Game.Infrastructure.Input",
+    "UniTask",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

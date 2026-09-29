@@ -9,7 +9,14 @@
     "Game.Features.Bootstrap.Model",
     "Game.Features.Lobby.Controller",
     "Game.Features.Lobby.Model",
-    "UniTask"
+    "UniTask",
+    "Game.EditorTools",
+    "Game.Features.Character.Model",
+    "Game.Features.Character.View",
+    "Game.Features.Combat.View",
+    "Game.Infrastructure.Camera",
+    "Game.Infrastructure.Input",
+    "VContainer"
   ],
   "includePlatforms": [
     "Editor"

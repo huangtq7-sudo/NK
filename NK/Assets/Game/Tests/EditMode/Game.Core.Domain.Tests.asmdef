@@ -29,7 +29,12 @@
     "Game.Features.RedDot.Controller",
     "Game.Features.Social.Controller",
     "Game.Features.Lobby.View",
-    "Game.Infrastructure.Config"
+    "Game.Infrastructure.Config",
+    "Game.Features.Character.Model",
+    "Game.Features.Character.Controller",
+    "Game.Features.Combat.Model",
+    "Game.Features.Combat.Controller",
+    "Game.Features.World.Controller"
   ],
   "includePlatforms": [
     "Editor"
