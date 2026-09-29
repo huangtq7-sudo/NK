@@ -3,7 +3,7 @@
     <ui:VisualElement name="HeroScreen" class="hero-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_hero_rough_v1.png?fileID=2800000&amp;guid=01b8d8ed5d864ae488bd36da5d28fbb2&amp;type=3#ui_fullscreen_hero_rough_v1&quot;);">
         <ui:VisualElement name="HeroDim" class="hero-dim" />
         <ui:VisualElement name="HeroPanel" class="hero-panel">
-            <ui:Button name="HeroCloseButton" tooltip="关闭" class="hero-close" />
+            <ui:Button name="HeroCloseButton" tooltip="关闭" class="hero-close" style="top: 0; right: 0; width: 100px; height: 100px;" />
             <ui:VisualElement name="HeroLeft" class="hero-left">
                 <ui:Label name="HeroNameLabel" picking-mode="Ignore" class="hero-name" />
                 <ui:VisualElement name="HeroPreviewRow" class="hero-preview-row">

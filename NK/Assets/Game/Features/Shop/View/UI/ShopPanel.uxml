@@ -3,8 +3,8 @@
     <ui:VisualElement name="ShopScreen" class="shop-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_shop_v1.png?fileID=2800000&amp;guid=3c98272edf09e954f9cb23351032c423&amp;type=3#ui_fullscreen_shop_v1&quot;);">
         <ui:VisualElement name="ShopDim" class="shop-dim" />
         <ui:VisualElement name="ShopPanel" class="shop-panel">
-            <ui:Button name="ShopCloseButton" tooltip="关闭" class="shop-close" />
-            <ui:VisualElement name="ShopCategoryBar" class="shop-category-bar">
+            <ui:Button name="ShopCloseButton" tooltip="关闭" class="shop-close" style="top: 0; right: 0; width: 100px; height: 100px;" />
+            <ui:VisualElement name="ShopCategoryBar" class="shop-category-bar" style="left: auto; right: 140px;">
                 <ui:Button name="ShopCategoryAll" text="全部" class="shop-category" />
                 <ui:Button name="ShopCategorySoulstone" text="魂玉" class="shop-category" />
                 <ui:Button name="ShopCategoryMaterial" text="材料" class="shop-category" />
@@ -12,7 +12,7 @@
                 <ui:Button name="ShopCategoryConsumable" text="消耗" class="shop-category" />
                 <ui:Button name="ShopCategoryArmor" text="护甲" class="shop-category" />
             </ui:VisualElement>
-            <ui:VisualElement name="ShopBody" class="shop-body">
+            <ui:VisualElement name="ShopBody" class="shop-body" style="top: 220px;">
                 <ui:ScrollView name="ShopScroll" class="shop-scroll">
                     <ui:VisualElement name="ShopList" class="shop-list" />
                 </ui:ScrollView>

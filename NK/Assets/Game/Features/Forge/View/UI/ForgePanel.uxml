@@ -3,9 +3,9 @@
     <ui:VisualElement name="ForgeScreen" class="forge-screen" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Backgrounds/ui_fullscreen_forge_v1.png?fileID=2800000&amp;guid=732c1295a4e2ef646ac1aa0e0cf4bf22&amp;type=3#ui_fullscreen_forge_v1&quot;);">
         <ui:VisualElement name="ForgeDim" class="forge-dim" />
         <ui:VisualElement name="ForgePanel" class="forge-panel">
-            <ui:Button name="ForgeCloseButton" tooltip="关闭" class="forge-close" />
+            <ui:Button name="ForgeCloseButton" tooltip="关闭" class="forge-close" style="top: 0; right: 0; width: 100px; height: 100px;" />
             <ui:VisualElement name="ForgeTopLeft" class="forge-top-left">
-                <ui:VisualElement name="ForgeWeaponRow" class="forge-weapon-row">
+                <ui:VisualElement name="ForgeWeaponRow" class="forge-weapon-row" style="padding-bottom: 0; margin-top: 200px;">
                     <ui:Button name="ForgePreviousButton" tooltip="上一把兵器" class="forge-arrow" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Material/icon_arrow_left_v1_512x512.png?fileID=2800000&amp;guid=87d12193a4e279840adca034ae468fe3&amp;type=3#icon_arrow_left_v1_512x512&quot;);" />
                     <ui:VisualElement name="ForgeWeaponIcon" picking-mode="Ignore" class="forge-weapon-icon" />
                     <ui:Button name="ForgeNextButton" tooltip="下一把兵器" class="forge-arrow" style="background-image: url(&quot;project://database/Assets/Game/Art/UI/Material/icon_arrow_right_v1_512x512.png?fileID=2800000&amp;guid=43f057be57d93cf46968300d29bdca24&amp;type=3#icon_arrow_right_v1_512x512&quot;);" />

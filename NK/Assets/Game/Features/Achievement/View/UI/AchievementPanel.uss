@@ -139,7 +139,7 @@
 }
 
 .achv-row {
-    height: 92px;
+    height: 120px;
     margin-bottom: 10px;
     padding-left: 16px;
     padding-right: 16px;

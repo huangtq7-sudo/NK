@@ -183,7 +183,7 @@
 
 .signin-milestone {
     width: 236px;
-    height: 118px;
+    height: 140px;
     margin-right: 14px;
     margin-bottom: 10px;
     padding-left: 12px;
