@@ -33,6 +33,10 @@ public static class CatalogValidator
         RequireUniqueIds(catalog.Avatars, value => value.AvatarId, "avatars.csv", "AvatarId", diagnostics);
         RequireUniqueIds(catalog.AvatarFrames, value => value.AvatarFrameId, "avatar_frames.csv", "AvatarFrameId", diagnostics);
         RequireUniqueIds(catalog.Pets, value => value.PetId, "pets.csv", "PetId", diagnostics);
+        var monsters = RequireUniqueIds(
+            catalog.Monsters, value => value.MonsterId, "monsters.csv", "MonsterId", diagnostics);
+        RequireUniqueIds(
+            catalog.MonsterSkills, value => value.SkillId, "monster_skills.csv", "SkillId", diagnostics);
 
         ValidateCurrencies(catalog, diagnostics);
         ValidateItems(catalog, currencies, diagnostics);
@@ -46,6 +50,218 @@ public static class CatalogValidator
         ValidateAchievements(catalog, currencies, items, diagnostics);
         ValidateInventoryCapacity(catalog, currencies, diagnostics);
         ValidateAppearanceAndPets(catalog, diagnostics);
+        ValidateHeroes(catalog, diagnostics);
+        ValidateMonsters(catalog, diagnostics);
+        ValidateMonsterSkills(catalog, monsters, diagnostics);
+    }
+
+    /// <summary>已确认的体力上限。见 D-013 与 ADR-0013。</summary>
+    private const int ConfirmedHeroStamina = 20;
+
+    /// <summary>行为树决策频率的合法区间，来自 NARAKA_技术架构.md 的 5-10Hz 基线。</summary>
+    private const int MinDecisionsPerSecond = 5;
+
+    private const int MaxDecisionsPerSecond = 10;
+
+    /// <summary>
+    /// 英雄基础属性。体力上限是玩法基线的一部分，不是可以随手调的展示数字：
+    /// 上限 60 消耗 10 能连冲 6 次，上限 20 只能冲 2 次，两者是完全不同的手感。
+    /// </summary>
+    private static void ValidateHeroes(NarakaConfigCatalog catalog, DiagnosticBag diagnostics)
+    {
+        const string file = "heroes.csv";
+        foreach (var hero in catalog.Heroes)
+        {
+            if (hero.Stamina != ConfirmedHeroStamina)
+            {
+                diagnostics.Add(
+                    file,
+                    0,
+                    $"英雄 '{hero.HeroId}' 的 Stamina 为 {hero.Stamina}，"
+                    + $"但已确认的体力上限是 {ConfirmedHeroStamina}（ADR-0013）。");
+            }
+
+            RequirePositive(file, $"英雄 '{hero.HeroId}' 的 Health", hero.Health, diagnostics);
+            RequirePositive(file, $"英雄 '{hero.HeroId}' 的 Attack", hero.Attack, diagnostics);
+            RequireNonNegative(file, $"英雄 '{hero.HeroId}' 的 Defense", hero.Defense, diagnostics);
+            RequirePositive(file, $"英雄 '{hero.HeroId}' 的 MoveSpeed", hero.MoveSpeed, diagnostics);
+        }
+    }
+
+    private static void ValidateMonsters(NarakaConfigCatalog catalog, DiagnosticBag diagnostics)
+    {
+        const string file = "monsters.csv";
+        RequireDistinctSortOrder(
+            catalog.Monsters, value => value.SortOrder, value => value.MonsterId, file, diagnostics);
+
+        foreach (var monster in catalog.Monsters)
+        {
+            var subject = $"怪物 '{monster.MonsterId}'";
+            RequireEnum(file, $"{subject} 的 Category", monster.Category, ConfigMonsterCategory.All, diagnostics);
+            RequireEnum(
+                file, $"{subject} 的 BalanceStatus", monster.BalanceStatus, ConfigBalanceStatus.All, diagnostics);
+
+            RequirePositive(file, $"{subject} 的 Health", monster.Health, diagnostics);
+            RequireNonNegative(file, $"{subject} 的 Armor", monster.Armor, diagnostics);
+            RequireNonNegative(file, $"{subject} 的 Defense", monster.Defense, diagnostics);
+            RequirePositive(file, $"{subject} 的 Attack", monster.Attack, diagnostics);
+            RequirePositive(file, $"{subject} 的 PatrolSpeed", monster.PatrolSpeed, diagnostics);
+            RequirePositive(file, $"{subject} 的 ChaseSpeed", monster.ChaseSpeed, diagnostics);
+            RequireNonNegative(file, $"{subject} 的 PatrolRadius", monster.PatrolRadius, diagnostics);
+            RequireNonNegative(file, $"{subject} 的 PatrolPauseSeconds", monster.PatrolPauseSeconds, diagnostics);
+            RequirePositive(file, $"{subject} 的 PerceptionRadius", monster.PerceptionRadius, diagnostics);
+            RequirePositive(file, $"{subject} 的 AttackRange", monster.AttackRange, diagnostics);
+            RequirePositive(
+                file, $"{subject} 的 NormalAttackMultiplier", monster.NormalAttackMultiplier, diagnostics);
+            RequirePositive(
+                file, $"{subject} 的 NormalAttackCooldownSeconds", monster.NormalAttackCooldownSeconds, diagnostics);
+            RequireNonNegative(
+                file, $"{subject} 的 NormalAttackWindupSeconds", monster.NormalAttackWindupSeconds, diagnostics);
+            RequirePositive(
+                file, $"{subject} 的 NormalAttackHitSeconds", monster.NormalAttackHitSeconds, diagnostics);
+            RequireNonNegative(
+                file, $"{subject} 的 NormalAttackRecoverySeconds", monster.NormalAttackRecoverySeconds, diagnostics);
+            RequireNonNegative(file, $"{subject} 的 HitStunSeconds", monster.HitStunSeconds, diagnostics);
+            RequirePositive(file, $"{subject} 的 DeathSeconds", monster.DeathSeconds, diagnostics);
+
+            // 感知 <= 脱离 < 休眠：顺序反了会让怪物"发现得到却永远追不上"，
+            // 或者在还没脱离战斗的距离上就先睡着。
+            if (monster.ChaseRadius < monster.PerceptionRadius)
+            {
+                diagnostics.Add(file, 0, $"{subject} 的 ChaseRadius 必须不小于 PerceptionRadius。");
+            }
+
+            if (monster.DormantDistance <= monster.ChaseRadius)
+            {
+                diagnostics.Add(file, 0, $"{subject} 的 DormantDistance 必须大于 ChaseRadius。");
+            }
+
+            if (monster.AttackRange > monster.PerceptionRadius)
+            {
+                diagnostics.Add(file, 0, $"{subject} 的 AttackRange 不能大于 PerceptionRadius。");
+            }
+
+            // 5-10Hz 是架构基线写定的决策频率区间：更低会显得迟钝，更高等于每帧决策。
+            if (monster.DecisionsPerSecond < MinDecisionsPerSecond
+                || monster.DecisionsPerSecond > MaxDecisionsPerSecond)
+            {
+                diagnostics.Add(
+                    file,
+                    0,
+                    $"{subject} 的 DecisionsPerSecond 为 {monster.DecisionsPerSecond}，"
+                    + $"必须落在 {MinDecisionsPerSecond}-{MaxDecisionsPerSecond} 之间。");
+            }
+
+            if (monster.PhaseHealthRatio <= 0f || monster.PhaseHealthRatio >= 1f)
+            {
+                diagnostics.Add(file, 0, $"{subject} 的 PhaseHealthRatio 必须落在 0 与 1 之间。");
+            }
+        }
+    }
+
+    private static void ValidateMonsterSkills(
+        NarakaConfigCatalog catalog,
+        ISet<string> monsters,
+        DiagnosticBag diagnostics)
+    {
+        const string file = "monster_skills.csv";
+        foreach (var group in catalog.MonsterSkills.GroupBy(skill => skill.MonsterId, StringComparer.Ordinal))
+        {
+            RequireDistinctSortOrder(
+                group.ToArray(), value => value.SortOrder, value => value.SkillId, file, diagnostics);
+        }
+
+        foreach (var skill in catalog.MonsterSkills)
+        {
+            var subject = $"怪物技能 '{skill.SkillId}'";
+            if (!monsters.Contains(skill.MonsterId))
+            {
+                diagnostics.Add(file, 0, $"{subject} 的 MonsterId '{skill.MonsterId}' 不存在于 monsters.csv。");
+            }
+
+            RequireEnum(file, $"{subject} 的 ColorTag", skill.ColorTag, ConfigMonsterColorTag.All, diagnostics);
+            RequireEnum(
+                file, $"{subject} 的 BalanceStatus", skill.BalanceStatus, ConfigBalanceStatus.All, diagnostics);
+
+            // 颜色标签就是玩家看到的"能不能反击"。两者不一致时玩家按 Space 得到的结果
+            // 与画面提示相反，这类缺陷在实机里极难归因，因此在配置阶段直接拒绝。
+            if (string.Equals(skill.ColorTag, ConfigMonsterColorTag.Red, StringComparison.Ordinal)
+                && skill.Counterable)
+            {
+                diagnostics.Add(file, 0, $"{subject} 是红色技能，不允许 Counterable=1。");
+            }
+
+            if (string.Equals(skill.ColorTag, ConfigMonsterColorTag.Gold, StringComparison.Ordinal)
+                && !skill.Counterable)
+            {
+                diagnostics.Add(file, 0, $"{subject} 是金色技能，必须 Counterable=1。");
+            }
+
+            if (string.Equals(skill.ColorTag, ConfigMonsterColorTag.None, StringComparison.Ordinal))
+            {
+                diagnostics.Add(file, 0, $"{subject} 不能使用 None 颜色：普通攻击不进技能表。");
+            }
+
+            RequirePositive(file, $"{subject} 的 DamageMultiplier", skill.DamageMultiplier, diagnostics);
+            RequirePositive(file, $"{subject} 的 CooldownSeconds", skill.CooldownSeconds, diagnostics);
+            RequireNonNegative(file, $"{subject} 的 MinRange", skill.MinRange, diagnostics);
+            RequireNonNegative(file, $"{subject} 的 ConeAngleDegrees", skill.ConeAngleDegrees, diagnostics);
+            RequirePositive(file, $"{subject} 的 HitSeconds", skill.HitSeconds, diagnostics);
+            RequireNonNegative(file, $"{subject} 的 WindupSeconds", skill.WindupSeconds, diagnostics);
+            RequireNonNegative(file, $"{subject} 的 RecoverySeconds", skill.RecoverySeconds, diagnostics);
+            RequireNonNegative(
+                file, $"{subject} 的 RecentUseSuppressionSeconds", skill.RecentUseSuppressionSeconds, diagnostics);
+
+            if (skill.MaxRange <= skill.MinRange)
+            {
+                diagnostics.Add(file, 0, $"{subject} 的 MaxRange 必须大于 MinRange。");
+            }
+
+            if (skill.RequiresPhaseAtOrBelow <= 0f || skill.RequiresPhaseAtOrBelow > 1f)
+            {
+                diagnostics.Add(file, 0, $"{subject} 的 RequiresPhaseAtOrBelow 必须落在 0 与 1 之间（含 1）。");
+            }
+
+            // 预警必须真的先于伤害：预警时长为 0 等于"没有预警"。
+            if (skill.WarningSeconds <= 0f)
+            {
+                diagnostics.Add(file, 0, $"{subject} 的 WarningSeconds 必须大于 0，预警要先于伤害窗口。");
+            }
+        }
+    }
+
+    private static void RequireEnum(
+        string file,
+        string subject,
+        string value,
+        IReadOnlyList<string> allowed,
+        DiagnosticBag diagnostics)
+    {
+        for (var i = 0; i < allowed.Count; i++)
+        {
+            if (string.Equals(allowed[i], value, StringComparison.Ordinal))
+            {
+                return;
+            }
+        }
+
+        diagnostics.Add(file, 0, $"{subject} '{value}' 非法，只允许 {string.Join('/', allowed)}。");
+    }
+
+    private static void RequirePositive(string file, string subject, double value, DiagnosticBag diagnostics)
+    {
+        if (value <= 0d)
+        {
+            diagnostics.Add(file, 0, $"{subject} 必须大于 0。");
+        }
+    }
+
+    private static void RequireNonNegative(string file, string subject, double value, DiagnosticBag diagnostics)
+    {
+        if (value < 0d)
+        {
+            diagnostics.Add(file, 0, $"{subject} 不能为负。");
+        }
     }
 
     private static void ValidateCurrencies(NarakaConfigCatalog catalog, DiagnosticBag diagnostics)

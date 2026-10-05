@@ -22,7 +22,7 @@ public sealed record EmittedConfig(
 public static class ConfigEmitter
 {
     /// <summary>结构版本。字段增删或语义变更时必须手工提升。</summary>
-    public const string SchemaVersion = "1.0.0";
+    public const string SchemaVersion = "1.1.0";
 
     public const string CatalogFileName = "naraka-config.json";
     public const string ManifestFileName = "manifest.json";

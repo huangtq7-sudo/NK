@@ -1,6 +1,6 @@
 {
-  "SchemaVersion": "1.0.0",
-  "ConfigVersion": "p1-config-5e52cf730692",
+  "SchemaVersion": "1.1.0",
+  "ConfigVersion": "p1-config-45539ed9c3ac",
   "Currencies": [
     {
       "CurrencyId": "Copper",
@@ -626,7 +626,7 @@
       "Health": 1000,
       "Attack": 100,
       "Defense": 80,
-      "Stamina": 60,
+      "Stamina": 20,
       "MoveSpeed": 5,
       "PortraitKey": "hero_portrait_gu_chenyue",
       "Background": "出身镇北军的重锋战将。以正面压制、反击与破韧见长，擅长在敌阵中央硬撼强敌。"
@@ -639,7 +639,7 @@
       "Health": 1000,
       "Attack": 90,
       "Defense": 65,
-      "Stamina": 60,
+      "Stamina": 20,
       "MoveSpeed": 5.5,
       "PortraitKey": "hero_portrait_pei_xingzhou",
       "Background": "行走江湖的浪客剑侠。以位移、群体控制与机动见长，擅长游走切入与牵制。"
@@ -2819,6 +2819,61 @@
       "DefaultOwned": false,
       "UnlockRule": "DefeatDragonRed",
       "Description": "每3秒攻击8米内已与玩家交战的敌人，伤害为最终攻击力的0.35倍，可攻击飞行怪。"
+    }
+  ],
+  "Monsters": [
+    {
+      "MonsterId": "monster_wolf_duskshadow",
+      "DisplayName": "暮影妖狼",
+      "SortOrder": 1,
+      "Category": "Normal",
+      "BalanceStatus": "P2Graybox",
+      "Health": 600,
+      "Armor": 100,
+      "Defense": 20,
+      "Attack": 60,
+      "PatrolSpeed": 2.4,
+      "ChaseSpeed": 6,
+      "PatrolRadius": 6,
+      "PatrolPauseSeconds": 2,
+      "PerceptionRadius": 14,
+      "ChaseRadius": 22,
+      "AttackRange": 3.2,
+      "DormantDistance": 40,
+      "DecisionsPerSecond": 6,
+      "PhaseHealthRatio": 0.5,
+      "NormalAttackMultiplier": 1,
+      "NormalAttackCooldownSeconds": 2,
+      "NormalAttackWindupSeconds": 0.45,
+      "NormalAttackHitSeconds": 0.25,
+      "NormalAttackRecoverySeconds": 0.6,
+      "HitStunSeconds": 0.6,
+      "DeathSeconds": 2,
+      "ModelKey": "graybox_wolf",
+      "Description": "普通地面怪。巡逻、感知、追击与普通攻击；生命降到一半以下才会释放红色锥形吐息。"
+    }
+  ],
+  "MonsterSkills": [
+    {
+      "SkillId": "monster_skill_wolf_breath",
+      "MonsterId": "monster_wolf_duskshadow",
+      "DisplayName": "赤瘴吐息",
+      "SortOrder": 1,
+      "BalanceStatus": "P2Graybox",
+      "ColorTag": "Red",
+      "Counterable": false,
+      "DamageMultiplier": 1.8,
+      "CooldownSeconds": 12,
+      "MinRange": 0,
+      "MaxRange": 9,
+      "ConeAngleDegrees": 60,
+      "RequiresPhaseAtOrBelow": 0.5,
+      "WarningSeconds": 0.8,
+      "WindupSeconds": 0.35,
+      "HitSeconds": 0.3,
+      "RecoverySeconds": 0.9,
+      "RecentUseSuppressionSeconds": 6,
+      "Description": "红色锥形吐息。不可反击；生命高于一半时不会释放。红色预警先于伤害窗口。"
     }
   ]
 }

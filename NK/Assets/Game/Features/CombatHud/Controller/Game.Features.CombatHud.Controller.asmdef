@@ -1,0 +1,20 @@
+{
+  "name": "Game.Features.CombatHud.Controller",
+  "rootNamespace": "Naraka.Features.CombatHud.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Core.Domain",
+    "Game.Features.Character.Controller",
+    "Game.Features.Character.Model",
+    "Game.Features.Combat.Model",
+    "Game.Features.Monster.Controller",
+    "Game.Features.Monster.Model",
+    "Game.Features.Combat.Controller"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

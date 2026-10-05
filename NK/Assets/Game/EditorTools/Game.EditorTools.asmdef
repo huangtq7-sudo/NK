@@ -31,7 +31,12 @@
     "Game.Infrastructure.Camera",
     "Game.Infrastructure.Scene",
     "Unity.InputSystem",
-    "Cinemachine"
+    "Cinemachine",
+    "Game.Features.Monster.Model",
+    "Game.Features.Monster.Controller",
+    "Game.Features.Monster.View",
+    "Game.Features.CombatHud.Controller",
+    "Game.Features.CombatHud.View"
   ],
   "includePlatforms": [
     "Editor"

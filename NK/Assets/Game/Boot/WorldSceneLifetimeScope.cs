@@ -1,3 +1,6 @@
+using Naraka.Features.Combat.View;
+using Naraka.Features.CombatHud.View;
+using Naraka.Features.Monster.View;
 using Naraka.Features.World.View;
 using UnityEngine;
 using VContainer;
@@ -22,19 +25,39 @@ namespace Naraka.Boot
                 Debug.LogError($"场景 {gameObject.scene.name} 缺少 WorldSceneEntry，玩家不会生成。", this);
             }
 
-            // 传送门数量可能是 0（地图二）或多个。逐个注入而不是逐个注册：
+            // 数量可能是 0 或多个的场景组件统一走"逐个注入"，而不是逐个注册：
             // 同一类型的多次 RegisterComponent 只会让其中一个被解析到，其余拿不到依赖。
-            var portals = FindObjectsOfType<MapPortal>(true);
-            if (portals.Length > 0)
+            InjectAll(builder, FindObjectsOfType<MapPortal>(true));
+            InjectAll(builder, FindObjectsOfType<MonsterSpawner>(true));
+            InjectAll(builder, FindObjectsOfType<GrayboxWolfView>(true));
+            InjectAll(builder, FindObjectsOfType<CounterTrainingTarget>(true));
+
+            // 战斗 HUD 的视觉与挂载由用户手工完成，因此它可能还不存在。
+            // 存在才注册：缺少 HUD 不应该让整张地图起不来。
+            if (FindObjectOfType<CombatHudView>(true) != null)
             {
-                builder.RegisterBuildCallback(container =>
-                {
-                    for (var i = 0; i < portals.Length; i++)
-                    {
-                        container.Inject(portals[i]);
-                    }
-                });
+                builder.RegisterComponentInHierarchy<CombatHudView>();
             }
+        }
+
+        private static void InjectAll<T>(IContainerBuilder builder, T[] components)
+            where T : Component
+        {
+            if (components == null || components.Length == 0)
+            {
+                return;
+            }
+
+            builder.RegisterBuildCallback(container =>
+            {
+                for (var i = 0; i < components.Length; i++)
+                {
+                    if (components[i] != null)
+                    {
+                        container.Inject(components[i]);
+                    }
+                }
+            });
         }
 
         protected override LifetimeScope FindParent()

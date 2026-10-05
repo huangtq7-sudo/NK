@@ -23,7 +23,13 @@ namespace Naraka.Features.Character.Model.Hfsm
         SceneSpawn = 12,
         InputLocked = 13,
         IdleTimeout = 14,
-        Respawn = 15
+        Respawn = 15,
+
+        /// <summary>按下 Space 起手反击。</summary>
+        CounterInput = 16,
+
+        /// <summary>反击成功。</summary>
+        CounterSucceeded = 17
     }
 
     /// <summary>

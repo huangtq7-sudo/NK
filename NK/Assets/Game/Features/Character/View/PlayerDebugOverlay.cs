@@ -38,12 +38,15 @@ namespace Naraka.Features.Character.View
 
             if (input.DebugHitPressed)
             {
-                player.TakeDamage(debugDamage);
+                player.ApplyDebugRawDamage(debugDamage);
             }
 
             if (input.DebugDeathPressed)
             {
-                player.TakeDamage(player.State.Health);
+                // 原始伤害要先过防御再扣护甲，所以"刚好等于当前生命"是打不死的。
+                // 调试用的一击必杀直接给一个足够大的值，不去反推公式。
+                player.ApplyDebugRawDamage(
+                    (player.State.Health + player.State.Armor) * 100f);
             }
 
             if (input.DebugRevivePressed)

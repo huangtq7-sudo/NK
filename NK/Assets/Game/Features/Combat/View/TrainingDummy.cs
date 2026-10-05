@@ -5,15 +5,21 @@ using UnityEngine;
 namespace Naraka.Features.Combat.View
 {
     /// <summary>
-    /// 灰盒训练假人。可以被三段攻击、蓄力与技能打到，有简单生命值和受击闪色。
+    /// 灰盒训练假人。可以被三段攻击、蓄力与技能打到，有生命、护甲、防御与受击闪色。
     ///
     /// 它刻意不实现任何 AI、寻路、掉落、韧性、处决或服务端同步 ——
-    /// 那些属于后续阶段，本阶段只验证命中链是否真实成立。
+    /// 那些属于怪物模块，本类只验证命中链与伤害公式是否真实成立。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class TrainingDummy : DamageReceiver
     {
         [SerializeField] private float maxHealth = 500f;
+
+        [Tooltip("护甲耐久。伤害先扣护甲，溢出部分才扣生命。")]
+        [SerializeField] private float maxArmor;
+
+        [Tooltip("防御。最终伤害 = 原始伤害 × 100 / (100 + 防御)。")]
+        [SerializeField] private float defense;
 
         [Tooltip("受击闪色持续时间（秒）。")]
         [SerializeField] private float flashSeconds = 0.12f;
@@ -37,11 +43,15 @@ namespace Naraka.Features.Combat.View
 
         public float MaxHealth => maxHealth;
 
+        public float Armor => _model?.Armor ?? maxArmor;
+
+        public float Defense => defense;
+
         public override bool IsAlive => _model != null && !_model.IsDead;
 
         private void Awake()
         {
-            _model = new DamageableModel(maxHealth);
+            _model = new DamageableModel(maxHealth, maxArmor, defense);
             _block = new MaterialPropertyBlock();
             if (targetRenderer == null)
             {
@@ -51,23 +61,23 @@ namespace Naraka.Features.Combat.View
             ApplyColor(normalColor);
         }
 
-        public override DamageApplication Apply(float amount)
+        public override DamageApplication TakeDamage(in HitRequest request)
         {
             if (_model == null)
             {
                 return default;
             }
 
-            var lost = _model.ApplyDamage(amount);
-            if (lost <= 0f)
+            var result = _model.ApplyRawDamage(request.RawDamage);
+            if (result.Total <= 0f)
             {
                 return default;
             }
 
             _flashRemaining = flashSeconds;
             ApplyColor(hitColor);
-            RaiseDamageDisplayed(lost);
-            return new DamageApplication(lost, _model.IsDead);
+            RaiseDamageDisplayed(result.Total);
+            return new DamageApplication(result.ArmorLost, result.HealthLost, result.Died);
         }
 
         /// <summary>重置假人。灰盒调试用，不代表正式怪物复活逻辑。</summary>

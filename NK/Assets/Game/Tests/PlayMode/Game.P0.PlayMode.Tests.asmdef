@@ -22,7 +22,15 @@
     "VContainer",
     "Unity.InputSystem",
     "Cinemachine",
-    "Unity.InputSystem.TestFramework"
+    "Unity.InputSystem.TestFramework",
+    "Game.Features.Combat.Model",
+    "Game.Features.Monster.Model",
+    "Game.Features.Monster.Controller",
+    "Game.Features.Monster.View",
+    "Game.Features.CombatHud.Controller",
+    "Game.Features.CombatHud.View",
+    "Game.Features.AI.Model",
+    "Game.Core.Domain"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

@@ -155,12 +155,18 @@ namespace Naraka.P2.Tests
         }
 
         [Test]
-        public void IdleVariationPlaysAfterFiveSeconds()
+        public void IdleVariationPlaysAfterTheConfiguredDelay()
         {
             var core = NewCore();
-            Assert.That(core.Tuning.Idle.VariationDelaySeconds, Is.EqualTo(5f));
+            var delay = core.Tuning.Idle.VariationDelaySeconds;
 
-            Hold(core, PlayerInputFrame.Idle, 4.9f);
+            // 2026-10-04：从 5 秒改为 2.4 秒。新 idle 片段（2.667 秒）烘焙的头发模拟
+            // 不闭环，播满一轮就在循环处硬跳 41.9°；把延迟压到片段长度以内，
+            // Idle 永远播不到那个边界。约束与余量见 PlayerTuning.CreateBaseline 的注释，
+            // 以及 PlayerAnimationContractTests.IdleVariationStartsBeforeTheIdleClipWouldLoop。
+            Assert.That(delay, Is.EqualTo(2.4f));
+
+            Hold(core, PlayerInputFrame.Idle, delay - 0.1f);
             Assert.That(core.Locomotion, Is.EqualTo(LocomotionState.Idle));
 
             Hold(core, PlayerInputFrame.Idle, 0.2f);
@@ -172,13 +178,15 @@ namespace Naraka.P2.Tests
         public void IdleVariationReturnsToIdleAndCanPlayAgain()
         {
             var core = NewCore();
-            Hold(core, PlayerInputFrame.Idle, 5.1f);
+            var delay = core.Tuning.Idle.VariationDelaySeconds;
+
+            Hold(core, PlayerInputFrame.Idle, delay + 0.1f);
             Assert.That(core.Locomotion, Is.EqualTo(LocomotionState.IdleVariation));
 
             Hold(core, PlayerInputFrame.Idle, core.Tuning.Idle.VariationDurationSeconds + 0.1f);
             Assert.That(core.Locomotion, Is.EqualTo(LocomotionState.Idle));
 
-            Hold(core, PlayerInputFrame.Idle, 5.1f);
+            Hold(core, PlayerInputFrame.Idle, delay + 0.1f);
             Assert.That(core.Locomotion, Is.EqualTo(LocomotionState.IdleVariation),
                 "回到 Idle 后必须重新计时，之后仍可再次播放。");
         }
@@ -189,7 +197,8 @@ namespace Naraka.P2.Tests
             var core = NewCore();
 
             // 全程只转摄像机，不做任何角色操作。
-            Hold(core, PlayerInputFrame.Idle.WithCameraMoved(true), 5.1f);
+            Hold(core, PlayerInputFrame.Idle.WithCameraMoved(true),
+                core.Tuning.Idle.VariationDelaySeconds + 0.1f);
 
             Assert.That(core.Locomotion, Is.EqualTo(LocomotionState.IdleVariation),
                 "单纯转动摄像机不算角色操作，不应该重置待机计时。");
@@ -199,11 +208,14 @@ namespace Naraka.P2.Tests
         public void MovementResetsTheIdleTimer()
         {
             var core = NewCore();
-            Hold(core, PlayerInputFrame.Idle, 4.5f);
+            var delay = core.Tuning.Idle.VariationDelaySeconds;
+
+            // 两段都差一点点到阈值：计时如果没有重置，两段加起来就会触发。
+            Hold(core, PlayerInputFrame.Idle, delay - 0.1f);
 
             // 动一下再站住：计时必须从头开始。
             Hold(core, PlayerInputFrame.Idle.WithMove(0f, 1f), 0.2f);
-            Hold(core, PlayerInputFrame.Idle, 1.5f);
+            Hold(core, PlayerInputFrame.Idle, delay - 0.1f);
 
             Assert.That(core.Locomotion, Is.Not.EqualTo(LocomotionState.IdleVariation));
         }
@@ -212,10 +224,12 @@ namespace Naraka.P2.Tests
         public void AttackResetsTheIdleTimer()
         {
             var core = NewCore();
-            Hold(core, PlayerInputFrame.Idle, 4.5f);
+            var delay = core.Tuning.Idle.VariationDelaySeconds;
+
+            Hold(core, PlayerInputFrame.Idle, delay - 0.1f);
 
             PlayerComboTests.ClickAttack(core);
-            Hold(core, PlayerInputFrame.Idle, 1.5f);
+            Hold(core, PlayerInputFrame.Idle, delay - 0.1f);
 
             Assert.That(core.Locomotion, Is.Not.EqualTo(LocomotionState.IdleVariation));
         }
@@ -387,10 +401,11 @@ namespace Naraka.P2.Tests
         [Test]
         public void IdleVariationDurationMatchesTheMeasuredClip()
         {
-            // 待机动作实测 15.067 秒。配置写成 3 秒会让它只播 20% 就被砍掉。
+            // 待机动作实测 8.0 秒（2026-10-04 的新动画；旧动画是 15.067 秒）。
+            // 配置写成估计值会让它只播一小段就被砍掉。
             Assert.That(
                 PlayerTuning.CreateBaseline().Idle.VariationDurationSeconds,
-                Is.EqualTo(15.067f).Within(0.001f));
+                Is.EqualTo(8f).Within(0.001f));
         }
 
         internal static void Hold(PlayerCore core, PlayerInputFrame input, float seconds)

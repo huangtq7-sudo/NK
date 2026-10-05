@@ -2,7 +2,8 @@
   "name": "Game.Features.Character.Model",
   "rootNamespace": "Naraka.Features.Character.Model",
   "references": [
-    "Game.Core.Domain"
+    "Game.Core.Domain",
+    "Game.Features.Combat.Model"
   ],
   "autoReferenced": true,
   "overrideReferences": false,

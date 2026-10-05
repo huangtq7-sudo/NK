@@ -1,4 +1,5 @@
 using Naraka.Features.Character.Model.Hfsm;
+using Naraka.Features.Combat.Model;
 
 namespace Naraka.Features.Character.Model
 {
@@ -49,6 +50,13 @@ namespace Naraka.Features.Character.Model
         private int _currentAttackId;
         private bool _deathCompleted;
 
+        private readonly TimedActionTuning _counterAction;
+        private readonly TimedActionTuning _executeAction;
+        private float _counterSuperArmorRemaining;
+        private bool _counterSucceeded;
+        private int _counteredAttackerId;
+        private bool _counterSuccessPending;
+
         public PlayerCore(PlayerTuning tuning)
         {
             _tuning = tuning;
@@ -63,6 +71,13 @@ namespace Naraka.Features.Character.Model
             _skillV = new SkillCooldown(tuning.SkillV.CooldownSeconds);
             _vitals = new PlayerVitals(tuning.Vitals);
 
+            // 反击与处决没有动画片段，它们的时间轴完全来自规则数值。
+            // 在构造时算一次并缓存：窗口判定每帧都要用，不该每帧重建。
+            _counterAction = new TimedActionTuning(
+                new ActionPlayback(tuning.Counter.FailedDurationSeconds),
+                0f, 0f, 0f, 0f, 0f, 0f, 0f);
+            _executeAction = BuildExecuteAction(tuning.Execute);
+
             _locomotion.Configure(
                 LocomotionState.Idle,
                 onEnter: () => _idleTimer.Reset());
@@ -72,6 +87,24 @@ namespace Naraka.Features.Character.Model
         }
 
         public PlayerTuning Tuning => _tuning;
+
+        /// <summary>
+        /// 处决动作的时间轴。命中窗放在动作前 15%-45% 之间，
+        /// 让"按下普通攻击"与"目标掉血"之间有一个可见的间隔，而不是同一帧结算。
+        /// </summary>
+        private static TimedActionTuning BuildExecuteAction(ExecuteTuning execute)
+        {
+            var duration = execute.DurationSeconds <= 0f ? 1f : execute.DurationSeconds;
+            return new TimedActionTuning(
+                new ActionPlayback(duration),
+                duration * 0.15f,
+                duration * 0.45f,
+                duration,
+                duration,
+                0f,
+                0f,
+                execute.DamageMultiplier);
+        }
 
         public LocomotionState Locomotion => _locomotion.Current;
 
@@ -93,6 +126,9 @@ namespace Naraka.Features.Character.Model
 
         public float MaxArmor => _vitals.MaxArmor;
 
+        /// <summary>防御。最终伤害 = 原始伤害 × 100 / (100 + 防御)。</summary>
+        public float Defense => _vitals.Defense;
+
         public float SkillFCooldownRemaining => _skillF.Remaining;
 
         public float SkillVCooldownRemaining => _skillV.Remaining;
@@ -106,6 +142,31 @@ namespace Naraka.Features.Character.Model
         public float IdleSeconds => _idleTimer.IdleSeconds;
 
         public bool IsDead => _reaction.Current == ReactionState.Death;
+
+        /// <summary>反击判定窗是否开启。它是状态的投影，不是第二份判定真相。</summary>
+        public bool IsCounterWindowOpen =>
+            _action.Current == ActionState.Counter &&
+            !_counterSucceeded &&
+            _action.TimeInState <= _tuning.Counter.WindowSeconds;
+
+        /// <summary>处决进行中：全程无敌。</summary>
+        public bool IsExecuting => _action.Current == ActionState.Execute;
+
+        /// <summary>
+        /// 取出一次"反击成功"的事实。只返回一次 true，
+        /// 因此目标不会因为多帧读取而反复进入处决窗口。
+        /// </summary>
+        public bool ConsumeCounterSuccess(out int attackerId)
+        {
+            attackerId = _counteredAttackerId;
+            if (!_counterSuccessPending)
+            {
+                return false;
+            }
+
+            _counterSuccessPending = false;
+            return true;
+        }
 
         public PlayerOverlayFlags Flags => BuildFlags();
 
@@ -146,6 +207,7 @@ namespace Naraka.Features.Character.Model
             _attackHeldPrevious = false;
             _attackHeldSeconds = 0f;
             _chargeConsumedThisHold = false;
+            ResetCounterState();
             _action.Restart(spawnState, StateChangeReason.SceneSpawn);
         }
 
@@ -170,6 +232,7 @@ namespace Naraka.Features.Character.Model
             _hasLastMoveYaw = false;
             _noMoveSeconds = 0f;
             _reversalPending = false;
+            ResetCounterState();
             _spawnProtectionRemaining = _tuning.Reaction.SpawnProtectionSeconds;
             _reaction.Restart(ReactionState.None, StateChangeReason.Respawn);
             _action.Restart(ActionState.None, StateChangeReason.Respawn);
@@ -177,19 +240,42 @@ namespace Naraka.Features.Character.Model
         }
 
         /// <summary>
-        /// 受到伤害。霸体只免硬直，不免伤害与死亡；重生保护期间直接免伤。
+        /// 受到一次<b>扣防御之前</b>的普通伤害。调试与测试入口，
+        /// 等价于一次没有颜色、不可反击的攻击。
         /// </summary>
-        public VitalsDamageResult ApplyDamage(float amount)
+        public VitalsDamageResult ApplyDamage(float rawDamage) =>
+            ApplyIncomingAttack(IncomingAttack.Normal(rawDamage)).Damage;
+
+        /// <summary>
+        /// 受到一次来袭攻击。
+        ///
+        /// 判定顺序是固定的：无敌（处决）→ 重生保护 → 反击 → 扣防御 → 扣护甲 → 扣生命。
+        /// 霸体排在最后且只影响硬直：它不免伤害、不免护甲扣减，也不阻止死亡。
+        /// </summary>
+        public IncomingAttackResult ApplyIncomingAttack(in IncomingAttack attack)
         {
-            if (IsDead || _spawnProtectionRemaining > 0f)
+            if (IsDead)
             {
                 return default;
             }
 
-            var result = _vitals.ApplyDamage(amount);
+            // 处决全程无敌，重生保护期间直接免伤。两者都在反击判定之前，
+            // 因为"打不到我"比"我把它打回去"更早成立。
+            if (IsExecuting || _spawnProtectionRemaining > 0f)
+            {
+                return default;
+            }
+
+            if (attack.Counterable && IsCounterWindowOpen)
+            {
+                SucceedCounter(attack.AttackerId);
+                return new IncomingAttackResult(true, default, attack.AttackerId);
+            }
+
+            var result = _vitals.ApplyRawDamage(attack.RawDamage);
             if (result.ArmorLost <= 0f && result.HealthLost <= 0f)
             {
-                return result;
+                return new IncomingAttackResult(false, result, 0);
             }
 
             _stamina.NotifyDamaged();
@@ -198,7 +284,7 @@ namespace Naraka.Features.Character.Model
             if (result.Died)
             {
                 EnterDeath();
-                return result;
+                return new IncomingAttackResult(false, result, 0);
             }
 
             if ((BuildFlags() & PlayerOverlayFlags.SuperArmor) == 0)
@@ -206,7 +292,29 @@ namespace Naraka.Features.Character.Model
                 EnterHitStun();
             }
 
-            return result;
+            return new IncomingAttackResult(false, result, 0);
+        }
+
+        /// <summary>
+        /// 反击成功。目标的处决窗口由调用方按 <c>CounterTuning.ExecuteWindowSeconds</c> 开启，
+        /// 这里只负责玩家这一侧：立刻结束反击动作并获得霸体。
+        /// </summary>
+        private void SucceedCounter(int attackerId)
+        {
+            _counterSucceeded = true;
+            _counterSuccessPending = true;
+            _counteredAttackerId = attackerId;
+            _counterSuperArmorRemaining = _tuning.Counter.SuccessSuperArmorSeconds;
+            _action.TryChangeTo(ActionState.None, StateChangeReason.ActionCompleted);
+            _idleTimer.Reset();
+        }
+
+        private void ResetCounterState()
+        {
+            _counterSucceeded = false;
+            _counterSuccessPending = false;
+            _counteredAttackerId = 0;
+            _counterSuperArmorRemaining = 0f;
         }
 
         /// <summary>推进一帧。所有状态切换都发生在这里，外部不直接写状态。</summary>
@@ -284,6 +392,15 @@ namespace Naraka.Features.Character.Model
 
             _skillF.Tick(deltaSeconds);
             _skillV.Tick(deltaSeconds);
+            if (_counterSuperArmorRemaining > 0f)
+            {
+                _counterSuperArmorRemaining -= deltaSeconds;
+                if (_counterSuperArmorRemaining < 0f)
+                {
+                    _counterSuperArmorRemaining = 0f;
+                }
+            }
+
             if (_spawnProtectionRemaining > 0f)
             {
                 _spawnProtectionRemaining -= deltaSeconds;
@@ -414,6 +531,14 @@ namespace Naraka.Features.Character.Model
                 return;
             }
 
+            // 反击排在最前：它是一个 0.2 秒的防守窗口，晚一帧就没有意义了。
+            // 它不消耗体力、没有冷却，唯一的代价是失败后摇。
+            if (input.CounterPressed)
+            {
+                StartCounter();
+                return;
+            }
+
             // 技能优先于普通攻击：玩家按了 F/V 就是要放技能，不该被连招吃掉。
             if (input.SkillFPressed && TryStartSkill(ActionState.SkillF))
             {
@@ -434,6 +559,16 @@ namespace Naraka.Features.Character.Model
 
             if (_combo.HasBufferedInput)
             {
+                // 处决由普通攻击触发：目标处在处决窗口里时，这一次普通攻击变成处决，
+                // 而不是推进连招。连招计数在处决结束后重新开始。
+                if (input.ExecutableTargetAvailable)
+                {
+                    _combo.ClearBuffer();
+                    _combo.Reset();
+                    StartAttack(ActionState.Execute, StateChangeReason.AttackInput);
+                    return;
+                }
+
                 var step = _combo.TryAdvance();
                 if (step > 0)
                 {
@@ -476,6 +611,19 @@ namespace Naraka.Features.Character.Model
             _action.Restart(ActionState.Dash, StateChangeReason.SprintTap);
             SetAnimation(PlayerAnimation.Dash, restart: true);
             return true;
+        }
+
+        /// <summary>
+        /// 起手反击。无体力消耗、无冷却，因此没有任何可以拒绝它的条件 ——
+        /// 乱按的代价是失败后摇把自己钉在原地。
+        /// </summary>
+        private void StartCounter()
+        {
+            _counterSucceeded = false;
+            _idleTimer.Reset();
+            _combo.ClearBuffer();
+            _action.Restart(ActionState.Counter, StateChangeReason.CounterInput);
+            SetAnimation(PlayerAnimation.Counter, restart: true);
         }
 
         private void StartAttack(ActionState action, StateChangeReason reason)
@@ -694,6 +842,7 @@ namespace Naraka.Features.Character.Model
             _combo.ClearBuffer();
             _sprint.Reset();
             _deathCompleted = false;
+            ResetCounterState();
             _action.Restart(ActionState.None, StateChangeReason.Died);
             _locomotion.Restart(LocomotionState.Idle, StateChangeReason.Died);
             _reaction.Restart(ReactionState.Death, StateChangeReason.Died);
@@ -769,6 +918,8 @@ namespace Naraka.Features.Character.Model
             ActionState.SkillF => _tuning.SkillF.Action,
             ActionState.SkillV => _tuning.SkillV.Action,
             ActionState.Dash => _tuning.Dash,
+            ActionState.Counter => _counterAction,
+            ActionState.Execute => _executeAction,
             ActionState.SpawnLobbyToMap01 => _tuning.Reaction.SpawnLobbyToMap01,
             ActionState.SpawnMap01ToMap02 => _tuning.Reaction.SpawnMap01ToMap02,
             _ => default
@@ -783,7 +934,8 @@ namespace Naraka.Features.Character.Model
             IsComboAction(action) ||
             action == ActionState.Charge ||
             action == ActionState.SkillF ||
-            action == ActionState.SkillV;
+            action == ActionState.SkillV ||
+            action == ActionState.Execute;
 
         private static ActionState StepToAction(int step) => step switch
         {
@@ -814,6 +966,8 @@ namespace Naraka.Features.Character.Model
                 ActionState.Charge => PlayerAnimation.Charge,
                 ActionState.SkillF => PlayerAnimation.SkillF,
                 ActionState.SkillV => PlayerAnimation.SkillV,
+                ActionState.Counter => PlayerAnimation.Counter,
+                ActionState.Execute => PlayerAnimation.Execute,
                 ActionState.SpawnLobbyToMap01 => PlayerAnimation.SpawnBurstLobbyToMap01,
                 ActionState.SpawnMap01ToMap02 => PlayerAnimation.SpawnBurstMap01ToMap02,
                 _ => PlayerAnimation.Idle
@@ -847,13 +1001,26 @@ namespace Naraka.Features.Character.Model
                 flags |= PlayerOverlayFlags.Loading;
             }
 
-            // 蓝色霸体：第三段普通攻击、蓄力与英雄技能。只免硬直，不免伤害与死亡。
+            // 蓝色霸体：第三段普通攻击、蓄力与英雄技能，外加反击成功后的 2 秒。
+            // 只免硬直，不免伤害与死亡。
             if (_action.Current == ActionState.AttackCombo3 ||
                 _action.Current == ActionState.Charge ||
                 _action.Current == ActionState.SkillF ||
-                _action.Current == ActionState.SkillV)
+                _action.Current == ActionState.SkillV ||
+                _counterSuperArmorRemaining > 0f)
             {
                 flags |= PlayerOverlayFlags.SuperArmor;
+            }
+
+            // 无敌只在处决过程中成立。Move_F 依然没有无敌帧（ADR-0013）。
+            if (_action.Current == ActionState.Execute)
+            {
+                flags |= PlayerOverlayFlags.Invulnerable;
+            }
+
+            if (IsCounterWindowOpen)
+            {
+                flags |= PlayerOverlayFlags.CounterWindow;
             }
 
             if (_spawnProtectionRemaining > 0f)
@@ -884,7 +1051,9 @@ namespace Naraka.Features.Character.Model
                 if (IsAttackAction(action))
                 {
                     hitWindowOpen = tuning.IsHitWindowOpen(clipTime);
-                    damage = tuning.Damage;
+
+                    // 原始伤害 = FinalAttack × SkillMultiplier。扣防御在受击方那一侧。
+                    damage = tuning.RawDamage(_tuning.FinalAttack);
                     radius = action == ActionState.SkillF
                         ? _tuning.SkillF.Radius
                         : action == ActionState.SkillV

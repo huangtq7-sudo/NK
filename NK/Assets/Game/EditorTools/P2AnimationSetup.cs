@@ -132,31 +132,82 @@ namespace Naraka.EditorTools
                     continue;
                 }
 
-                var clips = existing != null && existing.Length > 0
-                    ? existing
-                    : importer.defaultClipAnimations;
-                if (clips == null || clips.Length == 0)
+                // 片段范围每次都从文件重新取，不沿用 `.meta` 里存着的旧帧号。
+                //
+                // 2026-10-04 的新动画把 FBX 时间模式从 30fps 改成了 60fps，而
+                // `firstFrame`/`lastFrame` 是按**帧号**存的：同一个 0–38 在 30fps 下
+                // 是整段 1.267 秒，在 60fps 下只剩前半段 0.633 秒。于是走路只播了半个
+                // 步幅就硬接回起点，每个循环跳一次 —— 实测首末帧最大骨骼姿态差 42.8°，
+                // 而片段内正常的单帧步进只有 2.9°，相差 15 倍。
+                // 范围从文件取之后，换帧率也不会再把循环截断。
+                var natural = importer.defaultClipAnimations;
+                if (natural == null || natural.Length == 0)
                 {
                     report.AppendLine($"  [导入] {fbx} 没有可用的 Take，跳过。");
                     continue;
                 }
 
-                if (clips.All(clip => clip.loopTime) && !hasStaleMotionNode &&
-                    existing != null && existing.Length == clips.Length)
+                // 先判断、再改写：下面会原地修改 `existing` 里的条目，
+                // 那之后拿它和 `natural` 比就永远相等了。
+                if (!hasStaleMotionNode && SameClipRanges(existing, natural))
                 {
                     continue;
                 }
 
-                for (var i = 0; i < clips.Length; i++)
+                var before = existing != null && existing.Length > 0
+                    ? $"{existing[0].firstFrame:F0}–{existing[0].lastFrame:F0}"
+                    : "未设置";
+
+                // 以 `.meta` 里已有的条目为基准，只改范围与 `loopTime`，
+                // 其余导入标记原样保留。直接套用 `defaultClipAnimations` 会把
+                // `loopBlendPositionY` 这类标记一起冲回默认值，让 `.meta` 的差异
+                // 里混进本轮并不打算改的行。
+                var wanted = existing != null && existing.Length == natural.Length
+                    ? existing
+                    : natural;
+                for (var i = 0; i < wanted.Length; i++)
                 {
-                    clips[i].loopTime = true;
+                    wanted[i].firstFrame = natural[i].firstFrame;
+                    wanted[i].lastFrame = natural[i].lastFrame;
+                    wanted[i].loopTime = true;
                 }
 
                 importer.motionNodeName = string.Empty;
-                importer.clipAnimations = clips;
+                importer.clipAnimations = wanted;
                 importer.SaveAndReimport();
-                report.AppendLine($"  [导入] {fbx}.fbx.meta 设置 loopTime = true（唯一改动项）。");
+                var clip = LoadClip(path);
+                report.AppendLine(
+                    $"  [导入] {fbx}.fbx.meta 片段范围 {before} → " +
+                    $"{natural[0].firstFrame:F0}–{natural[0].lastFrame:F0}" +
+                    "（导入器报告的完整 Take 范围，Unity 会裁到实际关键帧）" +
+                    $"，实际片段长度 {(clip == null ? -1f : clip.length):F3} 秒，loopTime = true。");
             }
+        }
+
+        /// <summary>
+        /// `.meta` 里存着的片段范围是否已经等于文件自带的整段 Take。
+        /// 相等时不写入，因此重复执行本工具不会产生新的资产改动。
+        /// </summary>
+        private static bool SameClipRanges(
+            ModelImporterClipAnimation[] existing, ModelImporterClipAnimation[] natural)
+        {
+            if (existing == null || existing.Length != natural.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < existing.Length; i++)
+            {
+                if (!string.Equals(existing[i].name, natural[i].name, StringComparison.Ordinal) ||
+                    !Approximately(existing[i].firstFrame, natural[i].firstFrame) ||
+                    !Approximately(existing[i].lastFrame, natural[i].lastFrame) ||
+                    !existing[i].loopTime)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -196,9 +247,19 @@ namespace Naraka.EditorTools
         /// 状态机按配置时长结束动作，于是所有比配置长的动画都被拦腰截断。
         /// 片段长度这种东西只有一个真相，就是片段本身，不该由人去猜。
         ///
-        /// 这个工具**只管片段长度**。播放速度、命中窗、连段窗与动作位移都是设计值，
-        /// 工具一律不碰 —— 例如三段攻击刻意把位移设成 0（攻击不改变坐标），
-        /// 如果工具去同步"动画烘焙了多少位移"就会把这个设计意图冲掉。
+        /// 片段长度变了的时候，这个动作的**窗口按同一比例缩放**：命中窗、连段窗、
+        /// 后摇起点与位移窗都是"片段里的第几秒"，换一条长度不同的动画之后
+        /// 原来的秒数就指向了别的动作阶段，甚至可能落到片段之外。
+        /// 按比例缩放保留的是设计好的**相对节奏**，这是换动画时唯一说得通的做法。
+        ///
+        /// 播放速度（主体/后摇倍率）、动作位移与停止距离都是设计值，工具一律不碰：
+        ///
+        /// - 三段攻击刻意把位移设成 0（攻击不改变坐标），同步"动画烘焙了多少位移"
+        ///   会把这个设计意图冲掉；
+        /// - 2026-10-04 的新动画集本身就是原地动作（根节点水平位移≈0），
+        ///   冲刺 12.276、V 技能 17.838、停止距离 1.439/1.417 这些数值
+        ///   已经没有可测量的来源，它们现在是纯粹的手感设计值。
+        ///   让工具去"同步"只会把它们写成 0，顺带毁掉停止动作的指数衰减。
         ///
         /// 已经一致的字段不再写入，因此重复执行不会改动资产。
         /// </summary>
@@ -230,13 +291,9 @@ namespace Naraka.EditorTools
                         break;
                     case PlayerAnimatorProjector.StateNames.StopWalk:
                         changes += SetFloat(serialized, "stopWalkSeconds", length, fbx, report);
-                        changes += SetFloat(
-                            serialized, "stopWalkDistance", Abs(MeasureForwardDisplacement(clip)), fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.StopRun:
                         changes += SetFloat(serialized, "stopRunSeconds", length, fbx, report);
-                        changes += SetFloat(
-                            serialized, "stopRunDistance", Abs(MeasureForwardDisplacement(clip)), fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.RunTurnback:
                         changes += SetFloat(serialized, "runTurnbackSeconds", length, fbx, report);
@@ -248,31 +305,31 @@ namespace Naraka.EditorTools
                         changes += SetFloat(serialized, "deathSeconds", length, fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.Dash:
-                        changes += SetClipSeconds(serialized, "dash", length, fbx, report);
+                        changes += SetTimedAction(serialized, "dash", clip, fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.AttackCombo1:
-                        changes += SetClipSeconds(serialized, "combo1", length, fbx, report);
+                        changes += SetTimedAction(serialized, "combo1", clip, fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.AttackCombo2:
-                        changes += SetClipSeconds(serialized, "combo2", length, fbx, report);
+                        changes += SetTimedAction(serialized, "combo2", clip, fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.AttackCombo3:
-                        changes += SetClipSeconds(serialized, "combo3", length, fbx, report);
+                        changes += SetTimedAction(serialized, "combo3", clip, fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.Charge:
-                        changes += SetClipSeconds(serialized, "charge", length, fbx, report);
+                        changes += SetTimedAction(serialized, "charge", clip, fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.SkillF:
-                        changes += SetClipSeconds(serialized, "skillF", length, fbx, report);
+                        changes += SetTimedAction(serialized, "skillF", clip, fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.SkillV:
-                        changes += SetClipSeconds(serialized, "skillV", length, fbx, report);
+                        changes += SetTimedAction(serialized, "skillV", clip, fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.SpawnBurstLobbyToMap01:
-                        changes += SetClipSeconds(serialized, "spawnLobbyToMap01", length, fbx, report);
+                        changes += SetTimedAction(serialized, "spawnLobbyToMap01", clip, fbx, report);
                         break;
                     case PlayerAnimatorProjector.StateNames.SpawnBurstMap01ToMap02:
-                        changes += SetClipSeconds(serialized, "spawnMap01ToMap02", length, fbx, report);
+                        changes += SetTimedAction(serialized, "spawnMap01ToMap02", clip, fbx, report);
                         break;
                 }
             }
@@ -288,53 +345,19 @@ namespace Naraka.EditorTools
             report.AppendLine($"  [时长] 共同步 {changes} 项。");
         }
 
-        /// <summary>
-        /// 片段在根骨骼上烘焙的水平位移（沿本地 Z）。
-        /// 只用于停止动作的减速距离 —— 那是"脚不打滑"需要的物理量，不是设计值。
-        /// </summary>
-        private static float MeasureForwardDisplacement(AnimationClip clip)
-        {
-            var bindings = AnimationUtility.GetCurveBindings(clip);
-            var rootPath = bindings
-                .Where(b => b.propertyName.StartsWith("m_LocalPosition", StringComparison.Ordinal))
-                .Select(b => b.path)
-                .Distinct(StringComparer.Ordinal)
-                .OrderBy(x => x.Count(c => c == '/'))
-                .FirstOrDefault();
-            if (string.IsNullOrEmpty(rootPath))
-            {
-                return 0f;
-            }
-
-            foreach (var binding in bindings)
-            {
-                if (!string.Equals(binding.path, rootPath, StringComparison.Ordinal) ||
-                    !string.Equals(binding.propertyName, "m_LocalPosition.z", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                var curve = AnimationUtility.GetEditorCurve(clip, binding);
-                if (curve == null || curve.length == 0)
-                {
-                    return 0f;
-                }
-
-                return curve.Evaluate(clip.length) - curve.Evaluate(0f);
-            }
-
-            return 0f;
-        }
-
         private static float Abs(float value) => value < 0f ? -value : value;
 
         /// <summary>
-        /// 写入一个动作条目的片段长度。窗口与速度一律不动 —— 它们是设计值。
+        /// 同步一个 <c>ActionEntry</c>：片段长度取自片段本身，窗口按长度变化的比例缩放。
+        ///
+        /// 换一条长度不同的动画之后，"第 0.785 秒开始命中"这种绝对秒数就指向了
+        /// 新动作的另一个阶段。按比例缩放保留的是设计好的相对节奏 ——
+        /// 前摇占多少、命中窗占多少、后摇占多少，这些比例不变。
         /// </summary>
-        private static int SetClipSeconds(
+        private static int SetTimedAction(
             SerializedObject serialized,
             string field,
-            float length,
+            AnimationClip clip,
             string fbx,
             StringBuilder report)
         {
@@ -352,14 +375,57 @@ namespace Naraka.EditorTools
                 return 0;
             }
 
-            if (Approximately(clipSeconds.floatValue, length))
+            var changes = 0;
+            var previous = clipSeconds.floatValue;
+            var length = clip.length;
+
+            if (!Approximately(previous, length))
+            {
+                // 比例只在旧长度有效时才算得出来。旧长度为 0 的情况只会出现在
+                // 刚新建的资产上，这时窗口本来就是默认值，直接写长度即可。
+                var ratio = previous > 0.0005f ? length / previous : 1f;
+                report.AppendLine(
+                    $"  [时长] {fbx} → {field}.clipSeconds {previous:0.###} → {length:0.###}" +
+                    (Approximately(ratio, 1f) ? string.Empty : $"（窗口按 ×{ratio:0.####} 缩放）"));
+                clipSeconds.floatValue = length;
+                changes++;
+
+                if (!Approximately(ratio, 1f))
+                {
+                    changes += Scale(entry, "hitWindowStart", ratio);
+                    changes += Scale(entry, "hitWindowEnd", ratio);
+                    changes += Scale(entry, "comboWindowStart", ratio);
+                    changes += Scale(entry, "comboWindowEnd", ratio);
+                    changes += Scale(entry, "displacementClipSeconds", ratio);
+                    // 后摇起点为负表示"沿用命中窗结束时间"，那是一个标记而不是秒数。
+                    changes += Scale(entry, "recoveryStartSeconds", ratio, skipNegative: true);
+                }
+            }
+
+            return changes;
+        }
+
+        private static int Scale(
+            SerializedProperty entry, string field, float ratio, bool skipNegative = false)
+        {
+            var property = entry.FindPropertyRelative(field);
+            if (property == null)
             {
                 return 0;
             }
 
-            report.AppendLine(
-                $"  [时长] {fbx} → {field}.clipSeconds {clipSeconds.floatValue:0.###} → {length:0.###}");
-            clipSeconds.floatValue = length;
+            if (skipNegative && property.floatValue < 0f)
+            {
+                return 0;
+            }
+
+            var scaled = property.floatValue * ratio;
+            if (Approximately(property.floatValue, scaled))
+            {
+                return 0;
+            }
+
+            property.floatValue = scaled;
             return 1;
         }
 
@@ -537,6 +603,7 @@ namespace Naraka.EditorTools
                 CollectPaths(instance.transform, instance.transform, known);
 
                 var problems = 0;
+                var ignored = 0;
                 foreach (var (_, fbx) in StateToFbx)
                 {
                     var clip = LoadClip($"{AnimationRoot}/{fbx}.fbx");
@@ -549,20 +616,34 @@ namespace Naraka.EditorTools
                         .Select(binding => binding.path)
                         .Distinct(StringComparer.Ordinal)
                         .Where(path => !string.IsNullOrEmpty(path) && !known.Contains(path))
+                        .ToArray();
+
+                    // 真正要紧的只有骨骼曲线。骨骼全部挂在 `Root/` 下面，
+                    // 因此第一段不是 Root 的路径必然是导出残留：新动画集里是
+                    // 被拆开的网格节点（mesh_0..mesh_7 / 0000_mesh_*），
+                    // 待机动作里还多一份带 `W0_` 前缀的重复骨架。
+                    // Unity 会直接忽略这些曲线，它们不影响骨骼运动，
+                    // 但必须和真正的骨骼路径不匹配区分开 —— 否则这条校验就成了噪音，
+                    // 下次真有骨骼对不上的时候没人会注意到。
+                    var skeleton = unmatched
+                        .Where(path => IsSkeletonPath(path, known))
                         .Take(3)
                         .ToArray();
-                    if (unmatched.Length == 0)
+                    ignored += unmatched.Length - skeleton.Length;
+
+                    if (skeleton.Length == 0)
                     {
                         continue;
                     }
 
                     problems++;
-                    report.AppendLine($"  [校验] {fbx} 有无法匹配的曲线路径：{string.Join("、", unmatched)}");
+                    report.AppendLine($"  [校验] {fbx} 有无法匹配的**骨骼**曲线路径：{string.Join("、", skeleton)}");
                 }
 
                 report.AppendLine(problems == 0
-                    ? $"  [校验] {StateToFbx.Length} 个动画的曲线路径全部匹配正式角色模型。"
-                    : $"  [校验] {problems} 个动画存在路径不匹配。");
+                    ? $"  [校验] {StateToFbx.Length} 个动画的骨骼曲线路径全部匹配正式角色模型" +
+                      $"（另有 {ignored} 条导出残留节点路径被忽略）。"
+                    : $"  [校验] {problems} 个动画存在骨骼路径不匹配。");
             }
             finally
             {
@@ -592,6 +673,17 @@ namespace Naraka.EditorTools
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// 这条曲线路径是不是指向骨骼。骨骼全部在 `Root/` 之下，
+        /// 因此第一段是 `Root` 却又匹配不上的路径才是真问题。
+        /// </summary>
+        private static bool IsSkeletonPath(string path, ICollection<string> known)
+        {
+            var slash = path.IndexOf('/');
+            var head = slash < 0 ? path : path.Substring(0, slash);
+            return string.Equals(head, "Root", StringComparison.Ordinal) && !known.Contains(path);
         }
 
         private static void CollectPaths(Transform root, Transform current, ISet<string> into)

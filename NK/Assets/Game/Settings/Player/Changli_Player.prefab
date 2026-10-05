@@ -82,6 +82,7 @@ MonoBehaviour:
   animatorProjector: {fileID: 441233493474215836}
   hitbox: {fileID: 24721335985191112}
   faction: 1
+  executeSearchRadius: 4
 --- !u!114 &1280057217557851540
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -222,7 +223,7 @@ Animator:
   m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 8cafa42f3521b0641b7eed6c6e5556ae, type: 2}
-  m_CullingMode: 1
+  m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
@@ -261,6 +262,7 @@ MonoBehaviour:
   rootBone: {fileID: 0}
   rootBoneName: Root
   cancelRotation: 0
+  preserveVertical: 1
 --- !u!4 &9139344471572206766 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cb7b5c1573f41b44f901049663785542, type: 3}

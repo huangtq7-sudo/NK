@@ -34,6 +34,10 @@ namespace Naraka.Features.Character.View
             public const string Death = "Death";
             public const string SpawnBurstLobbyToMap01 = "SpawnBurstLobbyToMap01";
             public const string SpawnBurstMap01ToMap02 = "SpawnBurstMap01ToMap02";
+
+            // Counter 与 Execute 刻意没有 State：长离这套动画里没有经过确认的
+            // 反击/处决动作，按"不随意复用其他动画"的约束，宁可暂时没有表现，
+            // 也不拿一段不相干的动画顶替。见 NARAKA_待确认问题.md 的 Q-023。
         }
 
         [Tooltip("状态之间的固定交叉淡入时长（秒）。")]
@@ -92,6 +96,8 @@ namespace Naraka.Features.Character.View
             var hash = _hashes[index];
             if (hash == 0 || !_animator.HasState(0, hash))
             {
+                // 没有对应 State 的动画（当前是 Counter 与 Execute）保持上一个姿态。
+                // 这是有意的缺位，不是失败路径，因此不报错也不回退到 Idle。
                 return;
             }
 
@@ -114,7 +120,8 @@ namespace Naraka.Features.Character.View
         /// </summary>
         private void CacheHashes()
         {
-            _hashes = new int[(int)PlayerAnimation.SpawnBurstMap01ToMap02 + 1];
+            // 数组按枚举最大值开尺寸，没有片段的动画保持 0，Apply 会据此跳过。
+            _hashes = new int[(int)PlayerAnimation.Execute + 1];
             _hashes[(int)PlayerAnimation.Idle] = Animator.StringToHash(StateNames.Idle);
             _hashes[(int)PlayerAnimation.IdleVariation] = Animator.StringToHash(StateNames.IdleVariation);
             _hashes[(int)PlayerAnimation.Walk] = Animator.StringToHash(StateNames.Walk);

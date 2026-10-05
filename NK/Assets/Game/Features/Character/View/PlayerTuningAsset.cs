@@ -52,8 +52,8 @@ namespace Naraka.Features.Character.View
             [Tooltip("位移在片段时间的前多少秒内完成。0 表示铺满整段；给小值就是瞬间冲刺。")]
             public float displacementClipSeconds;
 
-            [Tooltip("灰盒基础伤害。")]
-            public float damage;
+            [Tooltip("技能倍率。原始伤害 = 最终攻击力 × 技能倍率；扣防御在受击方那一侧。")]
+            public float skillMultiplier;
 
             public TimedActionTuning ToTuning()
             {
@@ -71,7 +71,7 @@ namespace Naraka.Features.Character.View
                     comboWindowEnd,
                     forwardDisplacement,
                     displacementClipSeconds,
-                    damage);
+                    skillMultiplier);
             }
 
             public static ActionEntry From(TimedActionTuning tuning) => new ActionEntry
@@ -86,7 +86,7 @@ namespace Naraka.Features.Character.View
                 comboWindowEnd = tuning.ComboWindowEnd,
                 forwardDisplacement = tuning.ForwardDisplacement,
                 displacementClipSeconds = tuning.DisplacementClipSeconds,
-                damage = tuning.Damage
+                skillMultiplier = tuning.SkillMultiplier
             };
         }
 
@@ -147,11 +147,12 @@ namespace Naraka.Features.Character.View
         public ActionEntry dash = ActionEntry.From(Baseline.Dash);
 
         [Header("待机")]
-        [Tooltip("连续无角色操作多久后播放一次待机动作。")]
-        public float idleVariationDelaySeconds = 5f;
+        [Tooltip("连续无角色操作多久后播放一次待机动作。" +
+                 "必须小于 Idle 片段长度减去交叉淡入时长，否则会先看到 Idle 的循环跳变。")]
+        public float idleVariationDelaySeconds = 2.4f;
 
         [Tooltip("待机动作时长（秒）。由 Rebuild Player Animator 从动画片段同步。")]
-        public float idleVariationDurationSeconds = 15.067f;
+        public float idleVariationDurationSeconds = 8f;
 
         [Header("连招")]
         public float comboInputBufferSeconds = 0.18f;
@@ -193,13 +194,39 @@ namespace Naraka.Features.Character.View
         [Tooltip("Burst01：地图一进入地图二的出场动画。")]
         public ActionEntry spawnMap01ToMap02 = ActionEntry.From(Baseline.Reaction.SpawnMap01ToMap02);
 
-        [Header("生命与护甲")]
+        [Header("生命、护甲与防御")]
         public float maxHealth = 1000f;
         public float maxArmor = 500f;
+
+        [Tooltip("防御。最终伤害 = 原始伤害 × 100 / (100 + 防御)。")]
+        public float defense = 80f;
 
         [Tooltip("重生时护甲恢复比例。")]
         [Range(0f, 1f)]
         public float reviveArmorRatio = 0.5f;
+
+        [Header("攻击力")]
+        [Tooltip("最终攻击力。所有攻击的原始伤害 = 它 × 技能倍率。P2 取英雄 100 + 长剑 1 级 120。")]
+        public float finalAttack = 220f;
+
+        [Header("反击与处决")]
+        [Tooltip("反击判定窗时长（秒）。窗口内吃到金色可反击技能才算成功。")]
+        public float counterWindowSeconds = 0.2f;
+
+        [Tooltip("反击失败后的后摇时长（秒）。")]
+        public float counterFailRecoverySeconds = 0.5f;
+
+        [Tooltip("反击成功后玩家获得的霸体时长（秒）。")]
+        public float counterSuccessSuperArmorSeconds = 2f;
+
+        [Tooltip("反击成功后目标进入的处决窗口时长（秒）。")]
+        public float counterExecuteWindowSeconds = 1.5f;
+
+        [Tooltip("处决动作时长（秒）。没有正式处决动画，这是灰盒占位值。")]
+        public float executeDurationSeconds = 1f;
+
+        [Tooltip("处决伤害倍率。")]
+        public float executeDamageMultiplier = 1.5f;
 
         public PlayerTuning ToTuning() => new PlayerTuning(
             new LocomotionTuning(
@@ -243,7 +270,14 @@ namespace Naraka.Features.Character.View
                 spawnProtectionSeconds,
                 spawnLobbyToMap01.ToTuning(),
                 spawnMap01ToMap02.ToTuning()),
-            new VitalsTuning(maxHealth, maxArmor, reviveArmorRatio),
+            new VitalsTuning(maxHealth, maxArmor, defense, reviveArmorRatio),
+            new CounterTuning(
+                counterWindowSeconds,
+                counterFailRecoverySeconds,
+                counterSuccessSuperArmorSeconds,
+                counterExecuteWindowSeconds),
+            new ExecuteTuning(executeDurationSeconds, executeDamageMultiplier),
+            finalAttack,
             sprintTapMaxSeconds);
     }
 }

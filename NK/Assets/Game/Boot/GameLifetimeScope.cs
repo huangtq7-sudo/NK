@@ -83,9 +83,9 @@ namespace Naraka.Boot
                 .AsSelf()
                 .As<IServerCapabilities>();
 
-            // 客户端配置只用于展示。加载失败不阻断登录，由各界面显示配置错误。
-            builder.Register<IGameConfigProvider>(
-                _ => new StreamingAssetsGameConfigProvider(), Lifetime.Singleton);
+            // 客户端配置只用于展示。它已经移到持久化的 AppRootLifetimeScope：
+            // 怪物数值也从同一份目录读，而地图场景里没有 GameLifetimeScope。
+            // 本 Scope 是 App Root 的子 Scope，因此这里的消费者照常解析得到。
 
             builder.Register<ConfigVersionController>(Lifetime.Singleton)
                 .AsSelf()

@@ -30,7 +30,7 @@ public sealed class GameConfig
     /// 服务端要求的配置结构版本。与 <c>Naraka.ConfigCompiler</c> 的 SchemaVersion 必须一致，
     /// 由测试断言，因此结构升级时不可能只改一边。
     /// </summary>
-    public const string RequiredSchemaVersion = "1.0.0";
+    public const string RequiredSchemaVersion = "1.1.0";
 
     private static readonly JsonSerializerOptions DeserializerOptions = new()
     {

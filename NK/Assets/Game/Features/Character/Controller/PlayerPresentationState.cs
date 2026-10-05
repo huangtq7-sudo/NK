@@ -15,6 +15,7 @@ namespace Naraka.Features.Character.Controller
             float maxHealth,
             float armor,
             float maxArmor,
+            float defense,
             float stamina,
             float maxStamina,
             float skillFCooldownRemaining,
@@ -33,6 +34,7 @@ namespace Naraka.Features.Character.Controller
             MaxHealth = maxHealth;
             Armor = armor;
             MaxArmor = maxArmor;
+            Defense = defense;
             Stamina = stamina;
             MaxStamina = maxStamina;
             SkillFCooldownRemaining = skillFCooldownRemaining;
@@ -56,6 +58,9 @@ namespace Naraka.Features.Character.Controller
         public float Armor { get; }
 
         public float MaxArmor { get; }
+
+        /// <summary>防御。最终伤害 = 原始伤害 × 100 / (100 + 防御)。</summary>
+        public float Defense { get; }
 
         public float Stamina { get; }
 
@@ -88,6 +93,21 @@ namespace Naraka.Features.Character.Controller
 
         public float StaminaRatio => MaxStamina <= 0f ? 0f : Stamina / MaxStamina;
 
+        /// <summary>霸体：只免硬直，不免伤害与死亡。</summary>
+        public bool HasSuperArmor => (Flags & PlayerOverlayFlags.SuperArmor) != 0;
+
+        /// <summary>无敌：本阶段只有处决过程会成立。</summary>
+        public bool IsInvulnerable => (Flags & PlayerOverlayFlags.Invulnerable) != 0;
+
+        /// <summary>重生保护中，直接免伤。</summary>
+        public bool HasSpawnProtection => (Flags & PlayerOverlayFlags.SpawnProtection) != 0;
+
+        /// <summary>反击判定窗开启中。</summary>
+        public bool IsCounterWindowOpen => (Flags & PlayerOverlayFlags.CounterWindow) != 0;
+
+        /// <summary>角色输入被锁定（加载、出场、受击硬直或死亡）。</summary>
+        public bool IsInputLocked => (Flags & PlayerOverlayFlags.InputLocked) != 0;
+
         public static PlayerPresentationState FromCore(PlayerCore core, ActionRejection rejection) =>
             new PlayerPresentationState(
                 !core.IsDead,
@@ -95,6 +115,7 @@ namespace Naraka.Features.Character.Controller
                 core.MaxHealth,
                 core.Armor,
                 core.MaxArmor,
+                core.Defense,
                 core.Stamina,
                 core.MaxStamina,
                 core.SkillFCooldownRemaining,

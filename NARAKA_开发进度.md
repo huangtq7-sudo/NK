@@ -1,8 +1,8 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.14
-更新日期：2026-09-28
-当前阶段：P1大厅与账号长期系统已关闭；P2战斗垂直切片第一阶段（任务场景、灰盒战斗、玩家HFSM、移动与第三人称镜头）已完成实现与自动化验收，等待用户人工验收与提交授权
+版本：1.18
+更新日期：2026-10-04
+当前阶段：P1已关闭；P2.1已于2026-09-29通过用户人工验收；P2.2（单怪物战斗闭环、权威伤害规则、怪物AI与战斗HUD代码接口）已完成实现与自动化验收；2026-10-04按用户要求把全部玩家动画换成带头发飘动的新版本，并修掉新导出带来的四个缺陷（Root 旋转与缩放、裁剪范围被帧率腰斩、根位移轴向、垂直位移残留），蓄力的腾空已恢复
 
 ## 1. 当前状态
 
@@ -423,6 +423,564 @@ PlayMode新增覆盖：Bootstrap仍可启动且只有一个持久化组合根、
 - 战斗HUD正式视觉、正式怪物AI、长剑/太刀、暮影妖狼。
 - Q-017（R3依赖阻断Windows独立播放器构建）未修复，因此人工验收只能在编辑器Play Mode内进行。
 
+#### P2.2 单怪物战斗闭环、正式伤害规则、怪物AI与战斗HUD代码接口：已完成实现
+
+P2.1 已于 2026-09-29 通过用户人工验收：移动、镜头、动画、输入、场景切换与操作手感
+均视为已验收基线，本阶段没有改动其中任何一项参数。
+
+##### 新增程序集（6 个）
+
+| 程序集 | 依赖方向 | 说明 |
+| --- | --- | --- |
+| `Game.Features.AI.Model` | 无引用 | 泛型行为树，`noEngineReferences` |
+| `Game.Features.Monster.Model` | → Core.Domain、AI.Model、Combat.Model | 怪物规则与 HFSM，`noEngineReferences` |
+| `Game.Features.Monster.Controller` | → Core.Application、Monster.Model、Combat.*、Generated.Config | 编排与配置转换，`noEngineReferences` |
+| `Game.Features.Monster.View` | → Monster.Controller、Combat.View、VContainer | 灰盒狼表现与场景适配 |
+| `Game.Features.CombatHud.Controller` | → Character.Controller、Monster.Controller、Combat.Controller | HUD 只读状态，`noEngineReferences` |
+| `Game.Features.CombatHud.View` | → CombatHud.Controller、TextMeshPro、VContainer | HUD 绑定脚本 |
+
+依赖方向保持 `View → Controller → Model/Domain Interface ← Infrastructure`，
+四个 Model/Controller 程序集全部 `noEngineReferences: true`。
+
+##### 怪物 AI 结构
+
+行为树只产出意图（Dormant / Patrol / Perceive / Chase / NormalAttack / SelectSkill /
+Recover / Dead），怪物 HFSM 是「当前动作」的唯一真相
+（Idle / Move / Attack / Skill / HitStun / Knockdown / Death）。
+动作层不空闲时行为树的结果不生效，因此正在挥出去的一下必须打完。
+决策频率 6Hz（配置校验强制落在 5–10Hz），休眠时拉长到 1 秒。
+地面寻路使用 Unity 2021.3 自带 NavMesh，**没有引入任何第三方 AI 包**，
+也没有新增 `com.unity.ai.navigation`；没有导航数据时退回直线推进。
+详见 [ADR-0018](Docs/ADR/0018-monster-behavior-tree-and-hfsm.md)。
+
+##### 伤害与反击规则
+
+`DamageFormula` 是唯一实现，玩家与怪物共用：
+`RawDamage = FinalAttack × SkillMultiplier`，
+`AfterDefense = RawDamage × 100 / (100 + Defense)`，
+随后先扣护甲、溢出扣生命。**防御在受击方一侧扣**。
+判定顺序固定为：无敌（处决）→ 重生保护 → 反击 → 扣防御 → 扣护甲 → 扣生命；
+霸体只免普通硬直。反击 0.2 秒判定窗、0 体力、0 冷却、失败 0.5 秒后摇、
+只接受金色可反击技能；成功后玩家获得 2 秒霸体、目标进入 1.5 秒处决窗口；
+处决由普通攻击触发、全程无敌、伤害 `FinalAttack × 1.5`。
+详见 [ADR-0019](Docs/ADR/0019-authoritative-damage-counter-execute.md)。
+
+##### P2 灰盒数值表（全部标记 `P2Graybox`，**不是已确认的平衡值**）
+
+暮影妖狼（`Config/Source/monsters.csv`）：
+
+| 项 | 值 | 项 | 值 |
+| --- | --- | --- | --- |
+| 生命 | 600 | 护甲 | 100 |
+| 防御 | 20 | 攻击力 | 60 |
+| 巡逻速度 | 2.4 | 追击速度 | 6.0 |
+| 巡逻半径 | 6.0 | 巡逻停顿 | 2.0 秒 |
+| 感知半径 | 14.0 | 脱离半径 | 22.0 |
+| 攻击距离 | 3.2 | 休眠距离 | 40.0 |
+| 决策频率 | 6 次/秒 | 阶段阈值 | 50% 生命 |
+| 普攻倍率 | 1.0 | 普攻冷却 | 2.0 秒 |
+| 普攻前摇/命中/后摇 | 0.45 / 0.25 / 0.6 秒 | 受击硬直 | 0.6 秒 |
+| 死亡时长 | 2.0 秒 | 颜色标签 | 无（不可反击） |
+
+赤瘴吐息（`Config/Source/monster_skills.csv`）：
+
+| 项 | 值 | 项 | 值 |
+| --- | --- | --- | --- |
+| 颜色标签 | Red | 可反击 | 否 |
+| 伤害倍率 | 1.8 | 冷却 | 12.0 秒 |
+| 射程 | 0–9.0 | 锥角 | 60° |
+| 阶段门槛 | 生命 ≤ 50% | 预警 | 0.8 秒 |
+| 前摇/命中/后摇 | 0.35 / 0.3 / 0.9 秒 | 最近使用抑制 | 6.0 秒 |
+
+玩家侧新增/改动的灰盒值：
+
+| 项 | 值 | 说明 |
+| --- | --- | --- |
+| 最终攻击力 | 220 | 英雄 100 + 长剑 1 级 120，**合成规则是假设**，见 Q-022 |
+| 防御 | 80 | 与顾沉岳一致 |
+| 三段普攻倍率 | 1.0 / 1.2 / 1.6 | 取代原来的绝对伤害 100/120/160 |
+| 蓄力倍率 | 3.0 | 取代原来的 300 |
+| F / V 倍率 | 1.2 / 2.5 | 与 `hero_skills.csv` 的震岳斩、破军镇狱对齐 |
+| 处决倍率 | 1.5 | 玩法文档 §7 |
+| 处决动作时长 | 1.0 秒 | **占位值**，没有权威来源，见 Q-023 |
+| 反击窗 / 失败后摇 / 霸体 / 处决窗 | 0.2 / 0.5 / 2.0 / 1.5 秒 | 玩法文档 §7 |
+
+单位说明：距离与速度都用 Unity 世界单位，与玩家的走 5.0 / 跑 7.5 / 冲刺 12.276
+同一套刻度（见 Q-021，模型比例问题未解决）。
+
+##### 配置管线
+
+- 新增两张 UTF-8 BOM 源表 `Config/Source/monsters.csv`、`monster_skills.csv`。
+- `Shared/Config/NarakaConfigModels.cs` 新增 `MonsterConfig`、`MonsterSkillConfig`
+  与三组常量（颜色标签、分类、平衡状态），`SchemaVersion` 由 `1.0.0` 提升为 `1.1.0`。
+- 编译器新增校验：感知 ≤ 脱离 < 休眠；攻击距离 ≤ 感知；决策频率落在 5–10；
+  阶段阈值落在 (0,1)；红色不得可反击、金色必须可反击、普通攻击不进技能表；
+  预警时长必须 > 0。
+- **修正既有冲突**：`heroes.csv` 两名英雄的 `Stamina` 由 60 改为 **20**
+  （D-013 / ADR-0013 已确认的体力上限），并新增编译期校验与 EditMode 契约测试，
+  60 这个值不可能再回到战斗模型里。
+- 生成配置 `ConfigVersion` 由 `p1-config-5e52cf730692` 变为 `p1-config-45539ed9c3ac`。
+  它与 Bootstrap 登录门禁 `p1-config-1` 是两个独立版本号，登录不受影响。
+
+##### 怪物素材包审计结果（只读，未导入）
+
+`E:\素材\30 Unity Asset Polygonal - Creatures Pack v1.0\...unitypackage`（38.1 MB）
+按 gzip tar 解出 524 个条目的路径清单，**没有导入工程、没有复制任何文件进仓库**。
+包内 10 个生物目录与玩法文档的十类怪物一一对应。暮影妖狼对应
+`Assets/Polygonal Creatures Pack/Polygonal Wolf/`：
+
+- FBX：`Polygonal Wolf.FBX`（本体）、`Base.FBX`，以及 18 个动画 FBX：
+  `@Idle`、`@Walk Forward W/WO Root`、`@Walk Backward W/WO Root`、
+  `@Run Forward W/WO Root`、`@Jump W/WO Root`、`@Bite Attack`、
+  **`@Breath Attack`**、`@Pound Attack W/WO Root`、`@Take Damage`、`@Die`、
+  `@Howl`、`@Eating`、`@Resting`、`@Look Around`。
+- Prefab：`Polygonal Wolf Black / Brown / White`。
+- 材质：同名三套 + `Demo Ground`。贴图：三套 Base + 三套 Glow，共 6 张 png。
+- Animator：`Polygonal Wolf.controller`、`Demo Polygonal Wolf.controller`、`Rotate.controller`。
+- 场景：`Demo Scene.unity`、`Turntable Scene.unity`（演示用，不导入）。
+- 发行方 Meshtint Studio；包内没有 LICENSE 文件，**授权范围待用户确认**。
+- `@Breath Attack` 正好对应「红色锥形吐息」，因此玩法映射与素材是对得上的。
+
+**本轮没有导入这个包**，场上是明确命名的 `GrayboxWolf` 方块替身。
+
+##### 场景装配
+
+新增幂等工具 `NARAKA/Setup/Apply P2.2 Combat Setup`，只改 `Map02_CombatGraybox`：
+
+- 生成 `Assets/Game/Settings/Monster/GrayboxWolf.prefab`（方块本体 + 命中盒 + 预警面片
+  + NavMeshAgent + CapsuleCollider）与三份灰盒材质；
+- 新增 `GrayboxWolfSpawner`（上限 1、不补充）、`CounterTrainingTarget_DevOnly`、
+  `NavigationArea`；把 `GrayboxGround` 标为 Navigation Static 并在没有导航数据时烘焙一次；
+- 不碰地图一、不碰玩家 Prefab、不碰相机与出生点，不打开任何第三方源场景。
+
+`CounterTrainingTarget_DevOnly` 是**开发测试对象**：暮影妖狼在设计上只有普通攻击和
+红色吐息，两者都不可反击，因此金色反击路径只能靠这个独立靶子验证，
+绝不给狼编一个不存在的金色技能。
+
+##### 战斗 HUD 代码接口
+
+`CombatHudPresentationState` 覆盖玩家生命/护甲/体力、F/V 冷却、动作拒绝原因、
+目标名称/生命/护甲、怪物技能预警类型、死亡状态；`ICombatHudController` 另外提供
+`PlayerDamaged` / `MonsterDamaged` 两个受击反馈事件。
+`CombatHudView` 只做绑定，每个 Inspector 字段都是可选的。
+HUD 的视觉与挂载由用户手工完成，步骤见 `Docs/UI/p22-combat-hud-manual-setup.md`。
+
+##### P2.2 本地实测结果（本轮实际执行，非推断）
+
+| 项目 | 结果 |
+| --- | --- |
+| 配置编译器 `--check` 门禁 | **通过**：`ConfigVersion=p1-config-45539ed9c3ac`，`SchemaVersion=1.1.0`（仓库自带 .NET 10.0.400 SDK 实跑） |
+| `Naraka.ConfigCompiler.Tests` | **20/20 通过** |
+| `Tools/CI/Invoke-ServerTests.ps1` | **total=354，executed=354，passed=354，failed=0**（含 LegacyNetworkV1 golden 56/56，证明冻结传输层未被触碰） |
+| Unity 导入预热 | 退出码 0，零 C# 编译错误 |
+| `NARAKA/Setup/Apply P2 Scene Setup` | 成功；重建 `PlayerTuning.asset`，Animator 18 State / 0 Parameter / 0 Transition；片段长度与动画一致 |
+| `NARAKA/Setup/Apply P2.2 Combat Setup` | 成功；生成灰盒狼、生成点、训练靶、导航区域并烘焙 NavMesh |
+| Unity EditMode | **total=463，passed=461，failed=1，skipped=1** |
+| Unity PlayMode | **未能执行**（见下） |
+| 脱战修正的离线复验 | 纯 Model 层不引用 UnityEngine，用 .NET 10 SDK 直接驱动 `MonsterCore` 逐条核对：追击→脱战→持续回家→到家恢复巡逻→回家途中重新交战→无目标巡逻→远距离休眠并降频，**9 项全部符合预期** |
+| Model 层类型检查 | `Core.Domain` + `AI.Model` + `Combat.Model` + `Character.Model` + `Monster.Model` 用 .NET SDK 以 C# 9 / netstandard2.1 编译，**0 警告 0 错误** |
+
+前三项与后两项是在 Unity 许可证失效之后、用仓库自带的 .NET 10 SDK 跑出来的，
+因此它们覆盖了 14:33 那次 EditMode 运行之后才做的改动。
+
+唯一失败项是 `MonsterBehaviorTests.ItDisengagesWhenThePlayerRunsFarEnoughAway`：
+脱战意图只维持一个决策周期就回到巡逻。已修正为「一直往回走直到回到出生点附近」，
+并补了到家后恢复巡逻的断言。这次修正**没有**经过 Unity Test Runner 复跑，
+但已经用上表的离线驱动逐条核对过行为，并通过了 Model 层类型检查。
+
+**只改了一个服务端文件**：`Server/src/Naraka.Server.Application/Config/GameConfig.cs`
+里的 `RequiredSchemaVersion` 由 `"1.0.0"` 改为 `"1.1.0"`。
+这是被本轮配置扩展强制的：`NarakaConfigModels.cs` 新增了两张表，按既定规则必须提升
+`SchemaVersion`，而服务端这个常量与编译器的 `SchemaVersion` 必须一致
+（该常量自己的注释就写着「由测试断言，因此结构升级时不可能只改一边」）。
+不改它会让服务端拒绝加载生成配置，354 项服务端测试里有 200 多项直接失败。
+除这一行之外，服务端、数据库、协议与云端部署零改动。
+
+**阻塞**：2026-09-29 14:36（UTC）起本机 Unity 许可证失效
+（`No valid Unity Editor license found`，`C:\ProgramData\Unity\Unity_lic.ulf` 已不存在），
+此后所有 `Unity.exe -batchmode` 一律退出码 1。因此：
+脱战修正后的 EditMode 复跑、全部 PlayMode 测试、装配工具幂等复核与
+Q-017 的独立播放器构建都**没有执行**。这是环境问题，与本轮代码无关：
+同一份代码在 14:33 的运行里完成了 463 项 EditMode 测试。处理办法见 Q-025。
+
+XML 与日志路径：`artifacts/ci/unity/editmode-results.xml`、`editmode.log`、
+`warmup.log`、`setup.log`（`playmode-results.xml` 是 P2.1 时期的旧结果，不代表本轮）。
+
+##### 本轮新增测试清单
+
+EditMode（`Tests/EditMode/`）：
+
+- `DamageFormulaTests`（9 项）：原始伤害、防御为 0 与非 0、负防御钳制、护甲吸收与溢出、
+  玩家与怪物同公式、重生保护免伤、霸体不免伤、死亡拒绝伤害。
+- `MonsterBehaviorTests`（19 项）：灰盒值标记、无目标时巡逻、远距离休眠、休眠降频、
+  感知→追击、进入攻击距离出手、普攻不可反击、半血以上不得吐息、半血解锁红色吐息、
+  预警先于命中窗、技能选择受距离/冷却/抑制约束、脱战并走回出生点、
+  行为树不能打断进行中的动作、霸体只免硬直、无霸体进硬直、玩家能杀死狼、
+  死亡拒绝一切、处决窗口会过期、死亡不能进处决窗口、行为树按频率决策、选择节点短路。
+- `CounterExecuteTests`（17 项）：反击基线数值、Space 起手且不耗体力、0.2 秒窗口、
+  0.5 秒失败后摇、无冷却、只接受金色、普攻不可反击、红色不可反击、窗口外不生效、
+  成功后 2 秒霸体、成功只上报一次、处决替换普攻、无目标时仍是连招、
+  处决全程无敌、处决 1.5 倍伤害、倍率与 hero_skills 对齐、死亡不能反击、反击本身没有命中窗。
+- `CombatHitTests` 扩充 5 项：护甲吃满伤害仍算命中、被反击不产生命中事实、
+  命中事件带阵营、普攻与红色技能永远不可标记为可反击。
+
+EditModeUnity（`Tests/EditModeUnity/`）：
+
+- `GameConfigCatalogTests` 新增 4 项：英雄体力必须为 20、狼是灰盒怪且距离关系自洽、
+  怪物技能引用完整且颜色与可反击一致、吐息是阶段门控的红色锥形技能。
+- `P22SetupIdempotencyTests`（3 项）：连续两次装配后 Prefab 与场景逐字节相同、
+  场景里每类装配对象各只有一个、狼 Prefab 是 Graybox 且带命中盒与预警。
+
+PlayMode（`Tests/PlayMode/P22CombatPlayModeTests.cs`，9 项，**本轮未能执行**）：
+只生成一只狼、数值来自生成配置、巡逻→感知→追击→攻击、玩家离开后脱战、
+玩家能伤害并杀死狼、狼能扣玩家护甲与生命、红色吐息只在半血后出现且预警先于伤害、
+HUD 状态跟随玩家与目标、重新进入地图二不产生重复对象。
+
+是否存在联网条件跳过项：有，1 项 —— `LegacyClientLiveSmokeTests` 需要真实 Host，
+与 P2.1 相同，按环境条件默认跳过。
+
+##### 明确未做的事
+
+- 不实现掉落、任务推进、经验、货币或服务端持久化（P3/P4）。
+- 不实现 10 类怪物、第二名英雄、长剑/太刀可视模型与滚轮切换。
+- 鼠标右键纵击仍未实现：没有经过确认的动画，不复用其他动画，继续记为阻塞项。
+- 没有修改 LegacyNetworkV1、数据库、协议或云端部署；服务端只动了上面那一行版本常量。
+- Q-017（R3 依赖阻断 Windows 独立播放器构建）已完成定位但**未修复**：
+  `NK/Assets/Plugins/R3/` 里有 R3.dll 与三个依赖 DLL，唯独缺
+  `System.Runtime.CompilerServices.Unsafe.dll`，而 R3.dll 的程序集引用表里确实有它
+  （已逐字节确认）。编辑器导入与 EditMode/PlayMode 正常是因为 Editor 的 Mono BCL 自带这个程序集，
+  独立播放器构建才需要工程里真的有这份托管 DLL。
+  补齐文件就在仓库里：`.tools/vendor-r3-1.3.1/src/R3.Unity/Assets/Packages/
+  System.Runtime.CompilerServices.Unsafe.6.0.0/lib/netstandard2.0/System.Runtime.CompilerServices.Unsafe.dll`
+  （18,024 字节，SHA-256 `01748200f2400c742aa689f1f5101bd6298efdfd92c00c18f4fa473847235ba9`）。
+  现有三个依赖 DLL 已核对与该 vendor 目录**逐字节相同**，因此来源无歧义。
+  **本轮没有把它复制进去**：修复必须能用独立播放器构建验证，而许可证失效导致无法构建；
+  并且按要求 Q-017 要作为独立提交，不与怪物 AI 大改混在一起。
+- 本轮未提交、未推送、未部署云端。
+
+#### 动画换版：带头发飘动的新动作集（2026-10-04）
+
+用户重做了全部动作（旧动画没有头发自然飘动），源文件在
+`E:\素材\新版本AS\艾斯3d建模-鸣潮 长离-标准版\新动作`（28 个动画 + 1 个标准 T 姿势）。
+规则按用户给定："有新版就换，没有新版则保留旧版；新版没有 `AM` 前缀，自动识别对应关系"。
+
+##### 替换结果
+
+- **替换 28 个**，保留工程内旧文件名、只换文件内容。
+  带前缀的 5 组对应关系：`Stand1_Action03`→`AM_Stand1_Action03`（Idle）、
+  `Stand1_Action03_SEQ1`→`AM_Stand1_Action03_SEQ1`（待机动作）、
+  `Summon`→`AM_Summon`（第二段普攻）、`Death`→`AM_Death`、
+  `AirAttack01`–`05`→`AM_AirAttack01`–`05`；其余 19 个同名。
+- **保留旧版 6 个**（新版没有对应文件）：`AM_Skill01`、`AM_QTE`、
+  `AM_Stand1_Action01_SEQ1`、`AM_Stand1_Action02_SEQ1`、
+  `Manipulate_Release_F`、`Manipulate_Release_F_02`。
+  其中 `AM_Skill01` 是 18 个动画状态里唯一还在用旧动画的，因此 **F 技能的头发不会飘**。
+- 保留旧文件名是刻意的：Animator Controller、`.meta` 里的 `loopTime` 与
+  `PlayerTuning.asset` 全部按 GUID/路径引用资产，换内容不换名字等于零引用风险、
+  零 GUID 变动，`.meta` 一个字都没改（3 个循环片段的 `loopTime` 原样保留）。
+
+##### 骨骼与材质：模型不用换
+
+新动作文件夹里的 `·长离_标准T姿势.fbx` 临时导入做了逐路径比对，结论是不需要换模型：
+
+- 骨骼层级与正式模型完全一致（`Root/Bip001/...`，含 57 个 `Bone_Hair*`/`Bangs` 节点），
+  新动画确实驱动头发骨骼；
+- 差别只在网格节点：正式模型 1 个合并的 `R2T1ChangLiMd10011_LOD0`，
+  标准版 8 个拆开的 `mesh_0`–`mesh_7` 外加一个淘宝水印节点；
+- **新动画的骨骼曲线路径 100% 匹配正式模型**，材质仍是 `Changli/Materials` 下的
+  8 个 `MI_*`（`.meta` 的 `externalObjects` 重映射未改，也没有生成任何新材质资产）。
+
+因此保留已验收的正式模型（少 7 次绘制调用、无水印节点），临时导入的标准版已删除。
+
+##### 修掉一个真缺陷：根位移通道换了轴
+
+这是本轮唯一的实际缺陷，只能靠实测发现。把片段采样到模型上读**世界**位移：
+
+| 片段 | 根节点世界位移 | 骨盆水平位移 |
+| --- | --- | --- |
+| `Move_F`（冲刺） | (0, **−4.833**, 0) | 0.230 |
+| `Attack04_1`（V 技能） | (0, **−7.022**, 0) | 0.016 |
+| `Attack10`（蓄力） | (0, **−3.335**, 0.024) | 0.122 |
+| `Run_Turnback` | (0, **+4.561**, 0) | 0.046 |
+| `Stop_Walk_R` | (0, **−0.566**, 0) | 0.030 |
+
+旧导出把整体位移放在 `Root` 的水平轴（冲刺 +12.276 等），新导出放在**垂直轴**，
+数值恰好是旧值除以 2.54（英寸/厘米换算比）。新动画本身是原地动作，
+所以那条通道是误导出的垃圾数据。而 `RootMotionCanceller` 原本刻意"抵消水平、保留垂直"，
+于是一条都抵消不掉 —— 角色每做一个动作就会沉下去或飞起来几个单位。
+
+**修法**：`RootMotionCanceller` 改为锁住根节点的整条位移通道（三个轴）。
+垂直姿态不会丢，因为它在 `Bip001` 及以下（实测 `Attack10` 骨盆相对根节点零垂直位移，
+旧 `AM_Skill01` 骨盆相对根节点上升 1.043，那部分仍然保留）。
+`preserveVertical` 保留旧行为备用，默认关闭，并有契约测试钉住它必须关闭。
+
+##### 片段长度与窗口
+
+28 个新片段里只有两条长度变了，其余逐帧一致：
+
+| 字段 | 旧 | 新 | 处理 |
+| --- | --- | --- | --- |
+| `idleVariationDurationSeconds` | 15.067 | **8.000** | 直接同步 |
+| `combo2.clipSeconds`（`Summon`） | 1.833 | **2.667** | 同步并把窗口按 **×1.4548** 等比缩放 |
+
+命中窗、连段窗、后摇起点与位移窗都是"片段里的第几秒"，换一条更长的动画之后
+原来的秒数指向另一个动作阶段甚至落到片段之外。按比例缩放保留设计好的相对节奏，
+这恢复了 ADR-0015 正文原本的做法。`PlayerTuning.CreateBaseline()` 与
+`PlayerTuningAsset` 默认值已同步，期望值/兜底值/资产三者一致。
+
+动作位移（冲刺 12.276、V 技能 17.838）与停止距离（1.439/1.417）从此是**纯设计值**：
+新片段水平位移≈0，已经没有可测量的来源，工具不再推导它们
+—— 继续"同步"只会写成 0 并毁掉停止动作的指数衰减。
+
+##### 导出残留：570 条曲线被忽略
+
+新动画里有一批曲线指向模型上不存在的节点：26 个片段各 8 条指向
+`mesh_0`–`mesh_7`（或 `0000_mesh_0` 这种带序号变体）；
+`Stand1_Action03` 与 `_SEQ1` 另有一整份带 `W0_` 前缀的**重复骨架**，
+两者曲线路径数因此是 491 条而不是 274 条。Unity 会忽略不存在的路径，不影响表现。
+
+`ValidateClipPaths` 原来只报总数，换完动画后会变成 570 条噪音。改为按路径首段判断：
+骨骼全在 `Root/` 之下，首段不是 `Root` 的记为导出残留并只报数量。
+现在的输出是"18 个动画的骨骼曲线路径全部匹配正式角色模型（另有 570 条导出残留节点路径被忽略）"。
+
+##### 本轮实测结果（实际执行，非推断）
+
+| 项目 | 结果 |
+| --- | --- |
+| Unity 导入预热 | 退出码 0，零 C# 编译错误 |
+| `NARAKA/Setup/Rebuild Player Animator` | 成功；同步 7 项（待机动作时长、第二段片段长度与 5 个窗口），Animator 18 State/0 Parameter/0 Transition |
+| 骨骼曲线校验 | **18 个动画的骨骼曲线路径全部匹配正式角色模型**，570 条导出残留路径被忽略 |
+| `NARAKA/Setup/Apply P2 Scene Setup` | 成功；片段长度已一致、未再改动 |
+| Unity EditMode | **total=465，passed=464，failed=0，skipped=1** |
+| Unity PlayMode | **total=27，passed=27，failed=0，skipped=0** |
+| 装配工具幂等 | 两个工具各连续执行两次，7 个产物逐字节相同（Bootstrap/地图一/地图二场景、玩家 Prefab、PlayerTuning、Animator、GrayboxWolf Prefab）；NavMesh 检测到已有数据后跳过烘焙 |
+| 动画 `.meta` | **0 个文件改动**，3 个循环片段的 `loopTime` 原样保留 |
+
+新增/改写的契约测试：
+`BakedRootMotionIsLargeEnoughToMatter` 改为测量根节点三个轴的位移（原来只看水平 Z，
+换成原地动画后必然失败）；新增
+`TheBakedRootChannelIsVerticalSoCancellingOnlyHorizontalWouldMissIt`（把"为什么要锁三个轴"
+钉进测试）与 `ThePlayerPrefabCancelsTheWholeRootTranslationChannel`（断言 `preserveVertical` 关闭）。
+
+##### 顺带修掉的 P2.2 场景问题
+
+PlayMode 第一次在带怪物的地图二上跑完，暴露出一个布置问题：
+`GrayboxWolfSpawner` 原先放在出生点正前方 14 单位，而狼的感知半径正好是 14，
+于是玩家一落地就被发现，并在 Burst01 出场动画（输入锁定约 4.8 秒）期间被打进硬直
+—— `PortalTriggersOnceAndLoadsMap02WithItsOwnBurst` 断言出场结束后输入应当解锁，因此失败。
+
+这是场景布置问题，不是测试要放宽（"不得删除或放宽已有测试"）。
+生成点移到 30 单位外：感知 14、休眠 40，狼因此在原地巡逻，玩家必须自己走近才会被发现。
+出场流程不再被战斗打断，这也更符合设计意图。`P22CombatSetup` 的默认位置同步改为 30。
+
+遗留的三处导出问题（不影响可玩性，建议重新导出）见
+[Q-026](NARAKA_待确认问题.md)：F 技能缺新动画、根位移轴向与单位、待机动作里的重复骨架。
+
+#### 动画换版的后续：用户实测报告的两个缺陷（2026-10-04）
+
+换版完成后用户在 Unity 里实际播放，报告：
+
+> idle 状态、run 状态、idle 五秒后的状态、v 技能状态，冲刺闪避状态，
+> 第二段攻击和第三段攻击状态，受击状态都是贴在地上的，方向轴不对，
+> 并且走路、idle 会出现卡顿的效果。
+
+这是**两个独立缺陷**，都来自新导出的设置变化，都与上一轮已处理的根位移无关。
+定位过程全部靠测量：先读 FBX 的节点属性与全局设置，再把片段采样到正式模型上量真实姿态，
+最后用从 Git LFS 还原的旧片段做同一套导入设置下的对照。
+
+##### 缺陷一：`Root` 节点上多了 90° 旋转和 1/2.54 缩放 → 躺平、缩小
+
+| `Root` 节点 | 旧动画 / 正式模型 | 新动画 |
+| --- | --- | --- |
+| `Lcl Rotation` | 缺省（0） | **(+90, 0, 0)** |
+| `Lcl Scaling` | 缺省（1） | **0.3937 = 1/2.54** |
+| `PreRotation` | (−90, 0, 0) | (−90, 0, 0)（相同） |
+| `Bip001` 以下的身体动画 | — | 与旧版几乎逐位相同 |
+
+正式模型的 `Root` 静止姿态是 `Rx(−90)`（来自每个 FBX 都有的 `PreRotation`），
+新片段把它驱动到 0，于是整具骨架绕世界 X 轴转 +90°：躺在地上、头朝前，同时缩到 39.37%。
+
+实测 15 个新片段的 Root 偏差恰好是 +90°，例外是 `Walk_F`（+6.87°）与 `Attack01`（−3.14°）
+—— 正是用户唯一没有点名"贴在地上"的两个；而唯一还在用旧动画的 F 技能偏差是 0°，
+作为对照组成立。症状与测量完全对应。
+
+**修法**：新增 `PlayerAnimationRootFixup`（`AssetPostprocessor`），在导入期按
+"该文件的 Root 静止姿态 → 正式模型的 Root 静止姿态"重定基。补偿量不是写死的 90°，
+而是算出来的，因此 6 个旧片段算出单位四元数、一个字节都不改（日志里它们不出现），
+`Run_Turnback` 的 180° 转身也被完整保留（修正后偏差是 `(0,0,−180)`，X 轴归零）。
+左乘常量四元数是线性映射，值与切线用同一个乘法变换，曲线形状逐帧保留。
+
+为什么不在运行期修：`RootMotionCanceller` 分不清当前播的是新片段还是旧片段，
+补偿量加给旧片段就会把旧片段转错 90°，而交叉淡入期间补偿量根本没有定义。
+
+##### 缺陷二：FBX 时间模式 30fps → 60fps，把按帧号写死的裁剪范围腰斩 → 卡顿
+
+工程里只有三个片段带显式裁剪范围，正好是三个循环动画，范围按**帧号**存：
+
+| 片段 | `.meta` 范围 | 旧（30fps） | 新（60fps） | 首末帧最大骨骼差 |
+| --- | --- | --- | --- | --- |
+| `Walk_F` | 0–38 | 1.267s＝整段 | 0.633s＝前一半 | 0.00° → **42.80°** |
+| `Run_F` | 0–22 | 0.733s＝整段 | 0.367s＝前一半 | — → **69.13°** |
+| `AM_Stand1_Action03` | 0–80 | 2.667s＝整段 | 1.333s＝前一半 | 0.17° → **52.26°** |
+
+走路只播半个步幅就硬接回起点（片段内正常单帧步进只有 2.9°，相差 15 倍），这就是卡顿。
+
+**修法**：`ApplyImportSettings` 不再沿用 `.meta` 里的帧号，每次从
+`importer.defaultClipAnimations` 重取完整 Take 范围，只覆盖 `firstFrame`/`lastFrame`/
+`loopTime`，其余导入标记保留。`.meta` 的差异因此只有每个文件一行 `lastFrame`。
+
+修完三个片段的时长回到 **1.267 / 0.733 / 2.667 秒**，与 2026-09-29 验收的基线完全一致。
+上一轮报告里写的"`Walk_F` 0.633 秒、`Run_F` 0.367 秒"是这个缺陷的症状、不是设计长度，
+据此提出的"脚打滑"担心同样不成立。
+
+##### 修复后的实测
+
+| 项目 | 修复前 | 修复后 |
+| --- | --- | --- |
+| 18 个片段的 Root 旋转偏差 | 15 个 +90° | **全部 0.00°** |
+| 18 个片段的 Root 缩放 | 新片段全是 0.3937 | **全部 1.0000** |
+| 角色姿态（Root 局部 +Z 与世界 +Y 的夹角） | 最大 90° | **全部 < 5°** |
+| `Walk_F` 循环首末帧差 | 42.80° | **0.29°** |
+| `Run_F` 循环首末帧差 | 69.13° | **0.00°** |
+| `AM_Stand1_Action03` 循环首末帧差 | 52.26° | 41.93°（见下，导出端问题） |
+| 片段时长（走/跑/idle） | 0.633 / 0.367 / 1.333 | **1.267 / 0.733 / 2.667**（＝验收基线） |
+
+##### 遗留：新 idle 本身不是一个循环动作
+
+裁剪范围修好之后 idle 还剩 41.93°，这一半不是引擎问题：
+
+- 发梢在 1.0 秒处偏离首帧 **55.75°**，到末尾只回落到 41.93°，从不回到起点；
+- 身体（裙摆）也差 **12.34°**；
+- 逐帧扫过全部 141 个候选结束点，最接近的也有 **30.87°** —— 裁到任何更短的范围都救不回来；
+- Unity 的 Loop Pose（`loopPose`）对 Generic + `NoAvatar` 的片段实测**完全无效**
+  （开与不开都是 41.93°）；
+- 对照：旧 idle 在同样 2.667 秒下只有 **0.17°**。
+
+即新 `Stand1_Action03` 烘焙的头发模拟是"从静止开始逐渐摆动"的一次性动作，
+必须重新导出。登记为 [Q-026](NARAKA_待确认问题.md) 第 1 项，并由
+`PlayerAnimationContractTests.KnownBrokenLoops` 记录当前值防止变坏
+—— 重新导出闭合之后测试会要求把登记项删掉，门槛自动收回 5°。
+
+##### 本轮新增的测试与工具
+
+| 新增 | 作用 |
+| --- | --- |
+| `TheOfficialModelRootRestMatchesTheConventionTheImportFixupAssumes` | 把导入期修正依赖的"正确静止姿态"钉在模型上，模型重新导出会先报警 |
+| `EveryAnimationKeepsTheSkeletonUprightAndFullSize` | 18 个片段各取 9 个采样点，断言角色竖直且不缩放 —— 直接对应"贴在地上" |
+| `LoopingAnimationsActuallyLoopSeamlessly` | 循环片段首末帧姿态差，直接对应"卡顿" |
+| `LoopingClipRangesCoverTheWholeTake` | 裁剪范围必须等于完整 Take，防止再把帧号写死 |
+| `NARAKA/Diag/P2.2 Animation Axis Diag` | 逐片段量 Root 曲线与真实姿态（就是找到缺陷一的工具） |
+| `NARAKA/Diag/P2.2 Idle Loop Scan` | 分开统计头发与身体的循环缝，并扫描可用的循环点 |
+
+| 验收项 | 结果 |
+| --- | --- |
+| Unity 导入预热 | 退出码 0，零 C# 编译错误 |
+| `NARAKA/Setup/Rebuild Player Animator` | 成功；3 个 `.meta` 的 `lastFrame` 更新，28 个新片段的 Root 被重定基，6 个旧片段未改动 |
+| Unity EditMode | **total=469，passed=468，failed=0，skipped=1** |
+| Unity PlayMode | **total=27，passed=27，failed=0，skipped=0** |
+| 动画 `.meta` 改动 | 3 个文件各 1 行（`lastFrame`），其余 31 个未改动 |
+| 装配工具幂等 | 三个工具（动画、P2 场景、P2.2 战斗）各再跑一遍，10 个产物**逐字节相同** |
+| 受保护路径 | 0 改动（Aquarius / PureNature / CharliShader / 大厅 UI） |
+
+
+#### 蓄力的腾空与待机动作延迟（2026-10-04，用户第二轮实测后）
+
+用户继续验收，提出两件事：
+
+> 可以将 idle 状态 5 秒后未执行动作后播放的 Stand1_Action03_SEQ1，
+> 转换为 2.7 秒后未执行则播放吗，这样就不会有 idle 突变的突兀感觉了。
+> 还有一个问题是长按后执行的蓄力动画没有飞上天空，而是在原地旋转。
+
+##### 蓄力：腾空确实在片段里，被两件事一起吃掉
+
+逐帧读 `Attack10` 的根节点位移，`Root.z` 那一列是 `0 → 2.058（t=1.3s）→ 0.024`，
+一条去而复返的弧线。按同一个补偿量还原成正确约定：
+
+| 时刻 | 还原后的高度 | 还原后的前进 |
+| --- | --- | --- |
+| 0.0s | 0 | 0 |
+| **1.3s** | **+5.227**（角色身高 4.04，跳得比自己还高） | 7.38 |
+| 2.2s | +0.062（落回原高度） | 8.470 |
+
+两个原因：
+
+1. 上一轮只还原了 `Root` 的旋转与缩放，**没有还原位移** ——
+   于是"向上"被读成"向前"、"向前"被读成"向下"（原始采样下角色的脚一路沉到 −3.33）；
+2. `RootMotionCanceller` 当时锁了三个轴，连垂直分量一起抹掉。
+
+**修法**：`PlayerAnimationRootFixup` 用同源补偿把位移通道一起还原，
+`RootMotionCanceller` 的 `preserveVertical` 回到默认打开（这本来就是 ADR-0015 的原始分工：
+抵消器只抵消代码已经驱动的水平那一份，垂直留给动画）。
+
+还原的正确性是可验证的 —— 实测水平行程与配置值分毫不差：
+
+| 动作 | 实测水平行程 | 配置值 |
+| --- | --- | --- |
+| 冲刺 `Move_F` | **12.276** | 12.276 |
+| V 技能 `Attack04_1` | **17.837** | 17.838 |
+| 停止走路 `Stop_Walk_R` | **1.439** | 1.439 |
+| 停止奔跑 `Stop_Run_R` | **1.417** | 1.417 |
+
+这同时推翻了上一轮的一个结论：位移值并没有"失去可测量的来源"，
+来源一直在，只是被轴向错位藏住了。ADR-0015 对应小节已加指路。
+
+##### 顺带抓出一条：第一段普攻的垂直位移残留
+
+打开"保留垂直"之前必须确认一条不变量：游戏里没有跳跃、角色恒定贴地，
+所以根节点的垂直**净变化只可能是 0**。量完 18 个状态，有一个违反：
+
+| 状态 | 垂直净变化 | 垂直最高 | 判定 |
+| --- | --- | --- | --- |
+| `Attack10`（蓄力） | +0.062 | **+5.227** | 腾空弧线，落回原高度 |
+| `Attack01`（第一段普攻） | **−3.167** | −0.043 | **导出残留，单调下沉** |
+| 其余 16 个 | 0.000 | 0.000 | 无垂直位移 |
+
+`Attack01` 的文件静止姿态也是唯一异常的（`(-86.86, 180, 180)` 而不是 0）。
+留着它就等于第一段普攻把角色按进地里 3 个单位。导入期按不变量压平到首帧值，
+压平之后它的根位移变成"水平 0.174、垂直 0"，恰好符合玩法文档
+"三段普通攻击、蓄力与 F 技能不改变角色坐标"。
+
+##### 命中判定不受影响
+
+判定盒 `Hitbox` 是玩家根节点的**直接子物体**，不挂在骨骼上，
+`MeleeHitbox` 用 `transform.TransformPoint(localOffset)` 取查询中心。
+所以骨架升空不改变命中位置，战斗行为与已验收基线一致。
+
+##### 待机动作延迟 5 → 2.4 秒
+
+用户的思路成立：循环缝在 2.667 秒，在播到边界之前切进待机动作就看不到那一跳。
+但 2.7 秒差一点点 —— 切入要走 0.1 秒交叉淡入，淡入期间 Idle 还在推进，
+所以约束是「延迟 + 0.1 < 2.667」，即**延迟 < 2.567**；2.7 秒落在跳变之后 0.033 秒。
+取 **2.4 秒**，留 0.167 秒余量。
+
+副作用：待机循环从 13 秒（5 + 8）变成 10.4 秒（2.4 + 8），
+待机动作占站立时间从 62% 升到 77%。这是观感取舍，由人工验收判断。
+这是遮盖不是修复，片段本身仍不闭环；重新导出之后延迟可以调回 5 秒。
+
+##### 本轮新增/改写的测试
+
+| 测试 | 作用 |
+| --- | --- |
+| `TheBakedRootDisplacementMatchesTheConfiguredDisplacement` | 实测水平行程必须等于配置位移 —— 轴向还原正确性的最强证据 |
+| `EveryClipsRootVerticalChannelReturnsToWhereItStarted` | 18 个状态的根节点垂直净变化必须≈0（抓出 `Attack01` 的那条） |
+| `TheChargeKeepsItsVerticalLeapAndThePrefabLetsItThrough` | 蓄力腾空峰值 > 4、落回原点，且 Prefab 必须保留垂直 |
+| `IdleVariationStartsBeforeTheIdleClipWouldLoopWhileThatLoopIsBroken` | 延迟 + 淡入 < Idle 片段长度；循环修好后自动让路 |
+| `IdleVariationPlaysAfterTheConfiguredDelay` | 原 `...AfterFiveSeconds`，改为从配置推导 |
+| 另外 3 条 idle 计时测试 | 写死的 4.5/5.1 秒在延迟缩短后会变成空测，改为从配置推导 |
+
+被推翻并改写的两条：`TheBakedRootChannelIsVerticalSoCancellingOnlyHorizontalWouldMissIt`
+与 `ThePlayerPrefabCancelsTheWholeRootTranslationChannel` —— 它们断言的
+"根通道挂在垂直轴上"是轴向错位的**症状**，不是契约，错位修好后前提就不存在了。
+
+| 验收项 | 结果 |
+| --- | --- |
+| Unity 导入预热 | 退出码 0，零 C# 编译错误 |
+| Unity EditMode | **total=472，passed=471，failed=0，skipped=1** |
+| Unity PlayMode | **total=27，passed=27，failed=0，skipped=0** |
+| 装配工具幂等 | 三个工具各再跑一遍，10 个产物**逐字节相同** |
+| 动画 `.meta` 改动 | 仍是 3 个文件各 1 行（`lastFrame`），本轮没有新增 |
+
+
 #### 人工验收待执行项
 
 1. 长离模型在地图一的实际表现（材质、蒙皮、缩放、朝向）。
@@ -435,7 +993,8 @@ PlayMode新增覆盖：Bootstrap仍可启动且只有一个持久化组合根、
 7. 灰盒传送门与训练假人的位置是否便于验证。
 8. 加载界面在两次切图之间的连续性。
 
-退出条件：完整战斗循环通过自动化与性能验收。**第一阶段自动化已通过，人工验收与后续子阶段待执行。**
+退出条件：完整战斗循环通过自动化与性能验收。
+**P2.1 自动化与人工验收均已通过（2026-09-29）；P2.2 实现已完成，自动化验收被本机 Unity 许可证问题阻断。**
 
 ### P3 远征闭环：未开始
 

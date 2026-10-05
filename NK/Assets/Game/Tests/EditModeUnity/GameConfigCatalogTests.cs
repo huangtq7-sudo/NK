@@ -54,6 +54,8 @@ namespace Naraka.Unity.EditMode.Tests
             Assert.That(catalog.Avatars, Is.Not.Empty);
             Assert.That(catalog.AvatarFrames, Is.Not.Empty);
             Assert.That(catalog.Pets, Is.Not.Empty);
+            Assert.That(catalog.Monsters, Is.Not.Empty);
+            Assert.That(catalog.MonsterSkills, Is.Not.Empty);
         }
 
         [Test]
@@ -135,6 +137,83 @@ namespace Naraka.Unity.EditMode.Tests
                 Is.EqualTo(new[] { "White", "Blue", "Purple", "Gold", "Red" }));
             Assert.That(ConfigQuality.IndexOf(ConfigQuality.Red), Is.GreaterThan(ConfigQuality.IndexOf(ConfigQuality.Gold)));
             Assert.That(ConfigQuality.IndexOf("Rainbow"), Is.EqualTo(-1));
+        }
+    
+        [Test]
+        public void HeroStaminaMatchesTheConfirmedBaseline()
+        {
+            var catalog = LoadCatalog();
+
+            foreach (var hero in catalog.HeroesInDisplayOrder)
+            {
+                Assert.That(
+                    hero.Stamina,
+                    Is.EqualTo(20),
+                    $"英雄 {hero.HeroId} 的体力上限必须是 20（D-013 / ADR-0013）。");
+            }
+        }
+
+        [Test]
+        public void TheWolfIsConfiguredAsAGrayboxMonster()
+        {
+            var catalog = LoadCatalog();
+
+            Assert.That(catalog.TryGetMonster("monster_wolf_duskshadow", out var wolf), Is.True);
+            Assert.That(wolf.DisplayName, Is.EqualTo("暮影妖狼"));
+            Assert.That(
+                wolf.BalanceStatus,
+                Is.EqualTo(ConfigBalanceStatus.P2Graybox),
+                "怪物数值还没有平衡确认，必须标成灰盒调试值。");
+            Assert.That(wolf.PhaseHealthRatio, Is.EqualTo(0.5f).Within(0.0001f));
+            Assert.That(wolf.DecisionsPerSecond, Is.InRange(5, 10));
+            Assert.That(wolf.ChaseRadius, Is.GreaterThanOrEqualTo(wolf.PerceptionRadius));
+            Assert.That(wolf.DormantDistance, Is.GreaterThan(wolf.ChaseRadius));
+        }
+
+        [Test]
+        public void MonsterSkillsReferenceAnExistingMonsterAndAgreeWithTheirColor()
+        {
+            var catalog = LoadCatalog();
+
+            foreach (var skill in catalog.Catalog.MonsterSkills)
+            {
+                Assert.That(
+                    catalog.TryGetMonster(skill.MonsterId, out _),
+                    Is.True,
+                    $"技能 {skill.SkillId} 引用了不存在的怪物 {skill.MonsterId}。");
+                Assert.That(
+                    ConfigMonsterColorTag.All,
+                    Does.Contain(skill.ColorTag),
+                    $"技能 {skill.SkillId} 的颜色标签非法。");
+
+                if (skill.ColorTag == ConfigMonsterColorTag.Red)
+                {
+                    Assert.That(skill.Counterable, Is.False, "红色技能不可反击。");
+                }
+
+                if (skill.ColorTag == ConfigMonsterColorTag.Gold)
+                {
+                    Assert.That(skill.Counterable, Is.True, "金色技能必须可反击。");
+                }
+
+                Assert.That(skill.WarningSeconds, Is.GreaterThan(0f), "预警必须先于伤害窗口。");
+            }
+        }
+
+        [Test]
+        public void TheWolfBreathIsAPhaseGatedRedSkill()
+        {
+            var catalog = LoadCatalog();
+
+            var skills = catalog.GetMonsterSkills("monster_wolf_duskshadow");
+
+            Assert.That(skills, Is.Not.Empty);
+            var breath = skills[0];
+            Assert.That(breath.SkillId, Is.EqualTo("monster_skill_wolf_breath"));
+            Assert.That(breath.ColorTag, Is.EqualTo(ConfigMonsterColorTag.Red));
+            Assert.That(breath.Counterable, Is.False);
+            Assert.That(breath.RequiresPhaseAtOrBelow, Is.EqualTo(0.5f).Within(0.0001f));
+            Assert.That(breath.ConeAngleDegrees, Is.GreaterThan(0f), "锥形吐息必须有锥角。");
         }
     }
 }

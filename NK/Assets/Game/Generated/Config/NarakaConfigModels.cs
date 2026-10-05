@@ -45,6 +45,8 @@ namespace Naraka.Config
         public AvatarConfig[] Avatars = Array.Empty<AvatarConfig>();
         public AvatarFrameConfig[] AvatarFrames = Array.Empty<AvatarFrameConfig>();
         public PetConfig[] Pets = Array.Empty<PetConfig>();
+        public MonsterConfig[] Monsters = Array.Empty<MonsterConfig>();
+        public MonsterSkillConfig[] MonsterSkills = Array.Empty<MonsterSkillConfig>();
     }
 
     /// <summary>物品品质。抽奖、商店与仓库共用同一套五档品质。</summary>
@@ -367,6 +369,182 @@ namespace Naraka.Config
         /// <summary>新账号是否默认拥有。</summary>
         public bool DefaultOwned;
         public string UnlockRule = string.Empty;
+        public string Description = string.Empty;
+    }
+
+    /// <summary>
+    /// 怪物技能的颜色标签。这是玩家侧的操作语言：
+    /// 金色可反击、红色不可反击、无色是普通攻击。
+    /// </summary>
+    public static class ConfigMonsterColorTag
+    {
+        /// <summary>普通攻击，没有颜色提示，永远不可反击。</summary>
+        public const string None = "None";
+
+        /// <summary>金色可反击技能。</summary>
+        public const string Gold = "Gold";
+
+        /// <summary>红色不可反击技能。</summary>
+        public const string Red = "Red";
+
+        public static readonly string[] All = { None, Gold, Red };
+    }
+
+    /// <summary>怪物分类。</summary>
+    public static class ConfigMonsterCategory
+    {
+        public const string Normal = "Normal";
+        public const string Elite = "Elite";
+        public const string Boss = "Boss";
+
+        public static readonly string[] All = { Normal, Elite, Boss };
+    }
+
+    /// <summary>
+    /// 数值是否已经过平衡确认。
+    ///
+    /// <see cref="P2Graybox"/> 表示"能跑通战斗闭环的占位值"，不是最终平衡结果；
+    /// 界面、文档与报告都必须按占位值对待，不得当成已确认设计。
+    /// </summary>
+    public static class ConfigBalanceStatus
+    {
+        /// <summary>P2 灰盒调试值，未经平衡确认。</summary>
+        public const string P2Graybox = "P2Graybox";
+
+        /// <summary>已确认的正式平衡值。</summary>
+        public const string Confirmed = "Confirmed";
+
+        public static readonly string[] All = { P2Graybox, Confirmed };
+    }
+
+    /// <summary>
+    /// 怪物基础属性。
+    ///
+    /// 距离与速度的单位是 Unity 世界单位，与玩家的移动速度、冲刺距离同一套刻度
+    /// （见 NARAKA_待确认问题.md 的 Q-021）。生命、护甲、防御与攻击力
+    /// 最终由服务端权威判定，客户端只用于本地灰盒战斗与展示。
+    /// </summary>
+    [Serializable]
+    public sealed class MonsterConfig
+    {
+        public string MonsterId = string.Empty;
+        public string DisplayName = string.Empty;
+        public int SortOrder;
+
+        /// <summary>见 <see cref="ConfigMonsterCategory"/>。</summary>
+        public string Category = string.Empty;
+
+        /// <summary>见 <see cref="ConfigBalanceStatus"/>。</summary>
+        public string BalanceStatus = string.Empty;
+
+        public int Health;
+        public int Armor;
+        public int Defense;
+        public int Attack;
+
+        /// <summary>巡逻速度。</summary>
+        public float PatrolSpeed;
+
+        /// <summary>追击速度。</summary>
+        public float ChaseSpeed;
+
+        /// <summary>巡逻活动半径，以出生点为圆心。</summary>
+        public float PatrolRadius;
+
+        /// <summary>两次巡逻移动之间的停顿时长。</summary>
+        public float PatrolPauseSeconds;
+
+        /// <summary>发现玩家的距离。</summary>
+        public float PerceptionRadius;
+
+        /// <summary>脱离追击的距离。超出后回到巡逻。</summary>
+        public float ChaseRadius;
+
+        /// <summary>普通攻击的可用距离。</summary>
+        public float AttackRange;
+
+        /// <summary>超过这个距离进入休眠，停止高频决策。</summary>
+        public float DormantDistance;
+
+        /// <summary>行为树决策频率（次/秒）。约 5–10Hz，不是每帧。</summary>
+        public int DecisionsPerSecond;
+
+        /// <summary>进入第二阶段的生命比例，例如 0.5 表示半血。</summary>
+        public float PhaseHealthRatio;
+
+        public float NormalAttackMultiplier;
+        public float NormalAttackCooldownSeconds;
+
+        /// <summary>普通攻击前摇。</summary>
+        public float NormalAttackWindupSeconds;
+
+        /// <summary>普通攻击命中窗时长，起点是前摇结束。</summary>
+        public float NormalAttackHitSeconds;
+
+        /// <summary>普通攻击后摇。</summary>
+        public float NormalAttackRecoverySeconds;
+
+        public float HitStunSeconds;
+        public float DeathSeconds;
+
+        /// <summary>表现资源键。正式模型到位前指向灰盒 View。</summary>
+        public string ModelKey = string.Empty;
+        public string Description = string.Empty;
+    }
+
+    /// <summary>
+    /// 怪物技能。颜色标签与可反击标记必须一致：
+    /// 红色技能永远不可反击，金色技能必须可反击，普通攻击不在本表内。
+    /// </summary>
+    [Serializable]
+    public sealed class MonsterSkillConfig
+    {
+        public string SkillId = string.Empty;
+        public string MonsterId = string.Empty;
+        public string DisplayName = string.Empty;
+        public int SortOrder;
+
+        /// <summary>见 <see cref="ConfigBalanceStatus"/>。</summary>
+        public string BalanceStatus = string.Empty;
+
+        /// <summary>见 <see cref="ConfigMonsterColorTag"/>。</summary>
+        public string ColorTag = string.Empty;
+
+        /// <summary>是否带 CounterableSkill 标签。只有它为真时玩家的反击才可能成功。</summary>
+        public bool Counterable;
+
+        public float DamageMultiplier;
+        public float CooldownSeconds;
+
+        /// <summary>可用距离下限。</summary>
+        public float MinRange;
+
+        /// <summary>可用距离上限。</summary>
+        public float MaxRange;
+
+        /// <summary>锥形角度，0 表示不是锥形。</summary>
+        public float ConeAngleDegrees;
+
+        /// <summary>
+        /// 生命比例低于或等于这个值才允许释放。1 表示任何阶段都可以释放。
+        /// </summary>
+        public float RequiresPhaseAtOrBelow;
+
+        /// <summary>预警时长。预警必须先于伤害窗口，玩家才有反应时间。</summary>
+        public float WarningSeconds;
+
+        /// <summary>预警结束之后的前摇。</summary>
+        public float WindupSeconds;
+
+        /// <summary>命中窗时长。</summary>
+        public float HitSeconds;
+
+        /// <summary>后摇。</summary>
+        public float RecoverySeconds;
+
+        /// <summary>最近使用抑制：刚放过的技能在这段时间内不再被选中。</summary>
+        public float RecentUseSuppressionSeconds;
+
         public string Description = string.Empty;
     }
 }

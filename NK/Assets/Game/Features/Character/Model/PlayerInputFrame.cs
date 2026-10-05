@@ -21,7 +21,9 @@ namespace Naraka.Features.Character.Model
             bool attackHeld,
             bool skillFPressed,
             bool skillVPressed,
-            bool cameraMoved)
+            bool cameraMoved,
+            bool counterPressed = false,
+            bool executableTargetAvailable = false)
         {
             MoveX = moveX;
             MoveY = moveY;
@@ -32,6 +34,8 @@ namespace Naraka.Features.Character.Model
             SkillFPressed = skillFPressed;
             SkillVPressed = skillVPressed;
             CameraMoved = cameraMoved;
+            CounterPressed = counterPressed;
+            ExecutableTargetAvailable = executableTargetAvailable;
         }
 
         /// <summary>沿摄像机右方向的输入分量：D 为 +1，A 为 -1。</summary>
@@ -63,6 +67,15 @@ namespace Naraka.Features.Character.Model
         /// 单纯转动摄像机不算角色操作，不重置待机计时。保留它是为了让这条保证可被测试断言。
         /// </summary>
         public bool CameraMoved { get; }
+
+        /// <summary>本帧按下了 Space。反击不消耗体力也没有冷却，只需要一次按下事件。</summary>
+        public bool CounterPressed { get; }
+
+        /// <summary>
+        /// 附近是否有处在处决窗口里的目标。由 View 填入：它知道场景里有谁，
+        /// 状态机不知道。处决由普通攻击触发，因此这只是"这次普通攻击该不该变成处决"。
+        /// </summary>
+        public bool ExecutableTargetAvailable { get; }
 
         /// <summary>摇杆量，钳制在 0–1。键盘斜向输入的模长会超过 1，必须先归一化。</summary>
         public float MoveMagnitude
@@ -103,35 +116,53 @@ namespace Naraka.Features.Character.Model
 
         public PlayerInputFrame WithMove(float moveX, float moveY) => new PlayerInputFrame(
             moveX, moveY, CameraYaw, FacingYaw,
-            SprintHeld, AttackHeld, SkillFPressed, SkillVPressed, CameraMoved);
+            SprintHeld, AttackHeld, SkillFPressed, SkillVPressed, CameraMoved,
+            CounterPressed, ExecutableTargetAvailable);
 
         public PlayerInputFrame WithCameraYaw(float cameraYaw) => new PlayerInputFrame(
             MoveX, MoveY, cameraYaw, FacingYaw,
-            SprintHeld, AttackHeld, SkillFPressed, SkillVPressed, CameraMoved);
+            SprintHeld, AttackHeld, SkillFPressed, SkillVPressed, CameraMoved,
+            CounterPressed, ExecutableTargetAvailable);
 
         public PlayerInputFrame WithFacingYaw(float facingYaw) => new PlayerInputFrame(
             MoveX, MoveY, CameraYaw, facingYaw,
-            SprintHeld, AttackHeld, SkillFPressed, SkillVPressed, CameraMoved);
+            SprintHeld, AttackHeld, SkillFPressed, SkillVPressed, CameraMoved,
+            CounterPressed, ExecutableTargetAvailable);
 
         public PlayerInputFrame WithSprint(bool held) => new PlayerInputFrame(
             MoveX, MoveY, CameraYaw, FacingYaw,
-            held, AttackHeld, SkillFPressed, SkillVPressed, CameraMoved);
+            held, AttackHeld, SkillFPressed, SkillVPressed, CameraMoved,
+            CounterPressed, ExecutableTargetAvailable);
 
         public PlayerInputFrame WithAttack(bool held) => new PlayerInputFrame(
             MoveX, MoveY, CameraYaw, FacingYaw,
-            SprintHeld, held, SkillFPressed, SkillVPressed, CameraMoved);
+            SprintHeld, held, SkillFPressed, SkillVPressed, CameraMoved,
+            CounterPressed, ExecutableTargetAvailable);
 
         public PlayerInputFrame WithSkillF(bool pressed) => new PlayerInputFrame(
             MoveX, MoveY, CameraYaw, FacingYaw,
-            SprintHeld, AttackHeld, pressed, SkillVPressed, CameraMoved);
+            SprintHeld, AttackHeld, pressed, SkillVPressed, CameraMoved,
+            CounterPressed, ExecutableTargetAvailable);
 
         public PlayerInputFrame WithSkillV(bool pressed) => new PlayerInputFrame(
             MoveX, MoveY, CameraYaw, FacingYaw,
-            SprintHeld, AttackHeld, SkillFPressed, pressed, CameraMoved);
+            SprintHeld, AttackHeld, SkillFPressed, pressed, CameraMoved,
+            CounterPressed, ExecutableTargetAvailable);
 
         public PlayerInputFrame WithCameraMoved(bool moved) => new PlayerInputFrame(
             MoveX, MoveY, CameraYaw, FacingYaw,
-            SprintHeld, AttackHeld, SkillFPressed, SkillVPressed, moved);
+            SprintHeld, AttackHeld, SkillFPressed, SkillVPressed, moved,
+            CounterPressed, ExecutableTargetAvailable);
+
+        public PlayerInputFrame WithCounter(bool pressed) => new PlayerInputFrame(
+            MoveX, MoveY, CameraYaw, FacingYaw,
+            SprintHeld, AttackHeld, SkillFPressed, SkillVPressed, CameraMoved,
+            pressed, ExecutableTargetAvailable);
+
+        public PlayerInputFrame WithExecutableTarget(bool available) => new PlayerInputFrame(
+            MoveX, MoveY, CameraYaw, FacingYaw,
+            SprintHeld, AttackHeld, SkillFPressed, SkillVPressed, CameraMoved,
+            CounterPressed, available);
 
         /// <summary>把角度归一化到 (-180, 180]。</summary>
         public static float Normalize(float degrees)

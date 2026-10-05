@@ -1,0 +1,2 @@
+﻿SkillId,MonsterId,DisplayName,SortOrder,BalanceStatus,ColorTag,Counterable,DamageMultiplier,CooldownSeconds,MinRange,MaxRange,ConeAngleDegrees,RequiresPhaseAtOrBelow,WarningSeconds,WindupSeconds,HitSeconds,RecoverySeconds,RecentUseSuppressionSeconds,Description
+monster_skill_wolf_breath,monster_wolf_duskshadow,赤瘴吐息,1,P2Graybox,Red,0,1.8,12.0,0.0,9.0,60.0,0.5,0.8,0.35,0.3,0.9,6.0,红色锥形吐息。不可反击；生命高于一半时不会释放。红色预警先于伤害窗口。

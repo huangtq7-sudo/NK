@@ -29,6 +29,7 @@ namespace Naraka.Infrastructure.Input
         private InputAction _attack;
         private InputAction _skillF;
         private InputAction _skillV;
+        private InputAction _counter;
         private InputAction _debugHit;
         private InputAction _debugDeath;
         private InputAction _debugRevive;
@@ -100,7 +101,12 @@ namespace Naraka.Infrastructure.Input
                 attackHeld: _attack.IsPressed(),
                 skillFPressed: _skillF.WasPressedThisFrame(),
                 skillVPressed: _skillV.WasPressedThisFrame(),
-                cameraMoved: look.sqrMagnitude > 0f);
+                cameraMoved: look.sqrMagnitude > 0f,
+                // 反击是一次按下事件：0.2 秒的判定窗靠"按下的那一帧"起手，
+                // 不能用 IsPressed()，否则按住 Space 会每帧重新起手。
+                counterPressed: _counter != null && _counter.WasPressedThisFrame(),
+                // 附近有没有可处决目标由角色 View 补齐：输入层只认识键位。
+                executableTargetAvailable: false);
         }
 
         public void SetPlayerInputEnabled(bool enabled)
@@ -158,8 +164,9 @@ namespace Naraka.Infrastructure.Input
             _attack = _playerMap.FindAction("Attack", throwIfNotFound: false);
             _skillF = _playerMap.FindAction("SkillF", throwIfNotFound: false);
             _skillV = _playerMap.FindAction("SkillV", throwIfNotFound: false);
+            _counter = _playerMap.FindAction("Counter", throwIfNotFound: false);
             if (_move == null || _cameraLook == null || _sprint == null ||
-                _attack == null || _skillF == null || _skillV == null)
+                _attack == null || _skillF == null || _skillV == null || _counter == null)
             {
                 Debug.LogError($"'{PlayerMapName}' Action Map 缺少必需的 Action。", this);
                 return;

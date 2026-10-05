@@ -1,14 +1,19 @@
+using Naraka.Core.Application.Config;
 using Naraka.Core.Application.Scenes;
 using Naraka.Core.Application.Timing;
 using Naraka.Features.Character.Controller;
 using Naraka.Features.Character.Model;
 using Naraka.Features.Character.View;
 using Naraka.Features.Combat.Controller;
+using Naraka.Features.Combat.View;
+using Naraka.Features.CombatHud.Controller;
 using Naraka.Features.Loading.Controller;
 using Naraka.Features.Loading.View;
 using Naraka.Features.Lobby.Controller;
+using Naraka.Features.Monster.Controller;
 using Naraka.Features.World.Controller;
 using Naraka.Infrastructure.Camera;
+using Naraka.Infrastructure.Config;
 using Naraka.Infrastructure.Input;
 using Naraka.Infrastructure.Scene;
 using Naraka.Infrastructure.Timing;
@@ -97,6 +102,16 @@ namespace Naraka.Boot
 
             builder.Register<IHitResolver, HitResolver>(Lifetime.Singleton);
 
+            // 配置目录挂在持久根上：怪物数值与大厅展示读的是同一份目录，
+            // 而地图场景里并没有 GameLifetimeScope。
+            builder.Register<IGameConfigProvider>(
+                _ => new StreamingAssetsGameConfigProvider(), Lifetime.Singleton);
+
+            // 战斗侧的场景对象登记表。它们只解决"谁在哪"，不持有任何战斗规则。
+            builder.Register<ICombatTargetRegistry, CombatTargetRegistry>(Lifetime.Singleton);
+            builder.Register<IExecutionTargetRegistry, ExecutionTargetRegistry>(Lifetime.Singleton);
+            builder.Register<IMonsterRegistry, MonsterRegistry>(Lifetime.Singleton);
+
             var tuning = playerTuning != null
                 ? playerTuning.ToTuning()
                 : PlayerTuning.CreateBaseline();
@@ -136,6 +151,13 @@ namespace Naraka.Boot
                 Debug.LogError(
                     "AppRootLifetimeScope 未绑定 ThirdPersonCameraRig；第三人称相机不可用。", this);
             }
+
+            // 战斗 HUD 的只读状态。视觉与挂载由用户手工完成，因此这里只注册控制器；
+            // CombatHudView 如果不在场景里（例如还没做 HUD），整块直接不存在，
+            // 不会因为缺一个界面就让容器构建失败。
+            builder.Register<CombatHudController>(Lifetime.Singleton)
+                .AsSelf()
+                .As<ICombatHudController>();
 
             builder.RegisterComponentInHierarchy<LoadingView>();
         }

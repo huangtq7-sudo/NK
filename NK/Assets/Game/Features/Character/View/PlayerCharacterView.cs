@@ -22,22 +22,31 @@ namespace Naraka.Features.Character.View
         MonoBehaviour,
         IView<PlayerPresentationState>,
         IObserver<PlayerPresentationState>,
-        IDamageTaker
+        IDamageTaker,
+        ICombatTarget
     {
         [SerializeField] private PlayerAnimatorProjector animatorProjector;
         [SerializeField] private MeleeHitbox hitbox;
         [SerializeField] private Faction faction = Faction.Player;
 
+        [Tooltip("搜索可处决目标的半径（世界单位）。")]
+        [SerializeField] private float executeSearchRadius = 4f;
+
         private IPlayerController _controller;
         private IPlayerInputSource _input;
         private ICameraOrientation _camera;
         private IHitResolver _hitResolver;
+        private IExecutionTargetRegistry _executionTargets;
+        private ICombatTargetRegistry _combatTargets;
         private CharacterControllerMotor _motor;
         private IDisposable _subscription;
         private PlayerPresentationState _state;
 
         /// <summary>死亡动画播完的一次性通知。场景入口 View 订阅它来触发返回地图一。</summary>
         public event Action DeathSequenceCompleted;
+
+        /// <summary>反击成功的一次性通知，参数是被反击者的标识。</summary>
+        public event Action<int> CounterSucceeded;
 
         public PlayerPresentationState State => _state;
 
@@ -51,17 +60,26 @@ namespace Naraka.Features.Character.View
 
         public bool IsAlive => _controller == null || _controller.Current.IsAlive;
 
+        Transform ICombatTarget.Transform => transform;
+
+        /// <summary>反击成功后目标应该开多久的处决窗口。规则属于玩家配置。</summary>
+        public float CounterExecuteWindowSeconds => Tuning.Counter.ExecuteWindowSeconds;
+
         [Inject]
         public void Construct(
             IPlayerController controller,
             IPlayerInputSource input,
             IHitResolver hitResolver,
-            ICameraOrientation camera = null)
+            ICameraOrientation camera = null,
+            IExecutionTargetRegistry executionTargets = null,
+            ICombatTargetRegistry combatTargets = null)
         {
             _controller = controller;
             _input = input;
             _hitResolver = hitResolver;
             _camera = camera;
+            _executionTargets = executionTargets;
+            _combatTargets = combatTargets;
         }
 
         private void Awake()
@@ -91,6 +109,7 @@ namespace Naraka.Features.Character.View
             _state = _controller.Current;
             _subscription = _controller.Subscribe(this);
             hitbox?.Bind(_hitResolver);
+            _combatTargets?.SetPlayer(this);
         }
 
         private void Update()
@@ -117,7 +136,8 @@ namespace Naraka.Features.Character.View
             var facingYaw = transform.eulerAngles.y;
             var input = (_input?.Sample() ?? PlayerInputFrame.Idle)
                 .WithCameraYaw(_camera?.Yaw ?? facingYaw)
-                .WithFacingYaw(facingYaw);
+                .WithFacingYaw(facingYaw)
+                .WithExecutableTarget(HasExecutableTarget());
             var output = _controller.Tick(input, deltaSeconds);
 
             _motor.Apply(
@@ -139,10 +159,31 @@ namespace Naraka.Features.Character.View
                 }
             }
 
+            if (_controller.ConsumeCounterSuccess(out var counteredId))
+            {
+                CounterSucceeded?.Invoke(counteredId);
+            }
+
             if (_controller.ConsumeDeathCompleted())
             {
                 DeathSequenceCompleted?.Invoke();
             }
+        }
+
+        /// <summary>
+        /// 附近有没有处在处决窗口里的目标。
+        ///
+        /// 登记表为空时整段跳过：绝大多数时间场上没有任何可处决目标，
+        /// 这条判断不该变成一次每帧的物理查询。
+        /// </summary>
+        private bool HasExecutableTarget()
+        {
+            if (_executionTargets == null || _executionTargets.Count == 0)
+            {
+                return false;
+            }
+
+            return _executionTargets.TryFindExecutable(transform.position, executeSearchRadius, out _);
         }
 
         /// <summary>把角色放到出生点。CharacterController 必须先停用再改位置。</summary>
@@ -156,15 +197,30 @@ namespace Naraka.Features.Character.View
 
         public void SetLoading(bool loading) => _controller?.SetLoading(loading);
 
-        public DamageApplication TakeDamage(float amount)
+        /// <summary>
+        /// 调试入口：施加一次没有颜色、不可反击的伤害。
+        /// 参数是<b>扣防御之前</b>的原始伤害。
+        /// </summary>
+        public VitalsDamageResult ApplyDebugRawDamage(float rawDamage) =>
+            _controller == null ? default : _controller.ApplyDamage(rawDamage);
+
+        public DamageApplication TakeDamage(in HitRequest request)
         {
             if (_controller == null)
             {
                 return default;
             }
 
-            var result = _controller.ApplyDamage(amount);
-            return new DamageApplication(result.HealthLost, result.Died);
+            var attack = new IncomingAttack(
+                request.RawDamage, request.ColorTag, request.Counterable, request.HitId.OwnerId);
+            var result = _controller.ApplyIncomingAttack(in attack);
+            if (result.Countered)
+            {
+                return DamageApplication.AsCountered();
+            }
+
+            return new DamageApplication(
+                result.Damage.ArmorLost, result.Damage.HealthLost, result.Damage.Died);
         }
 
         public void Render(PlayerPresentationState state) => _state = state;
@@ -183,18 +239,7 @@ namespace Naraka.Features.Character.View
         {
             _subscription?.Dispose();
             hitbox?.CloseWindow();
+            _combatTargets?.ClearPlayer(this);
         }
-    }
-
-    /// <summary>玩家自己的受伤入口。怪物与调试输入通过它施加伤害。</summary>
-    public interface IDamageTaker
-    {
-        int TargetId { get; }
-
-        Faction Faction { get; }
-
-        bool IsAlive { get; }
-
-        DamageApplication TakeDamage(float amount);
     }
 }

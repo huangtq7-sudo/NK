@@ -16,7 +16,13 @@
     "Game.Features.Combat.View",
     "Game.Infrastructure.Camera",
     "Game.Infrastructure.Input",
-    "VContainer"
+    "VContainer",
+    "Game.Features.Monster.Model",
+    "Game.Features.Monster.Controller",
+    "Game.Features.Monster.View",
+    "Game.Features.Combat.Model",
+    "Game.Features.Combat.Controller",
+    "Game.Features.CombatHud.Controller"
   ],
   "includePlatforms": [
     "Editor"

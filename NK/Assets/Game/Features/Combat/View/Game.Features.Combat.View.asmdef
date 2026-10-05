@@ -4,7 +4,8 @@
   "references": [
     "Game.Core.Application",
     "Game.Features.Combat.Controller",
-    "Game.Features.Combat.Model"
+    "Game.Features.Combat.Model",
+    "VContainer"
   ],
   "autoReferenced": true,
   "overrideReferences": false,

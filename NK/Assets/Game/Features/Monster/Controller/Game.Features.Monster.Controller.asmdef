@@ -1,0 +1,19 @@
+{
+  "name": "Game.Features.Monster.Controller",
+  "rootNamespace": "Naraka.Features.Monster.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Core.Domain",
+    "Game.Features.AI.Model",
+    "Game.Features.Combat.Controller",
+    "Game.Features.Combat.Model",
+    "Game.Features.Monster.Model",
+    "Game.Generated.Config"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

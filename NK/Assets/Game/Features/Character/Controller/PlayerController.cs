@@ -22,7 +22,17 @@ namespace Naraka.Features.Character.Controller
 
         void SetGrounded(bool grounded);
 
-        VitalsDamageResult ApplyDamage(float amount);
+        /// <summary>施加一次扣防御之前的普通伤害。调试与测试入口。</summary>
+        VitalsDamageResult ApplyDamage(float rawDamage);
+
+        /// <summary>施加一次来袭攻击。反击、无敌与重生保护都在这里判定。</summary>
+        IncomingAttackResult ApplyIncomingAttack(in IncomingAttack attack);
+
+        /// <summary>
+        /// 取出一次"反击成功"的事实并得到被反击者的标识。只返回一次 true，
+        /// 因此同一次反击不会让目标反复进入处决窗口。
+        /// </summary>
+        bool ConsumeCounterSuccess(out int attackerId);
 
         void Respawn();
 
@@ -104,16 +114,30 @@ namespace Naraka.Features.Character.Controller
 
         public void SetGrounded(bool grounded) => _core.SetGrounded(grounded);
 
-        public VitalsDamageResult ApplyDamage(float amount)
+        public VitalsDamageResult ApplyDamage(float rawDamage) =>
+            ApplyIncomingAttack(IncomingAttack.Normal(rawDamage)).Damage;
+
+        public IncomingAttackResult ApplyIncomingAttack(in IncomingAttack attack)
         {
             if (_disposed)
             {
                 return default;
             }
 
-            var result = _core.ApplyDamage(amount);
+            var result = _core.ApplyIncomingAttack(in attack);
             Publish();
             return result;
+        }
+
+        public bool ConsumeCounterSuccess(out int attackerId)
+        {
+            if (_disposed)
+            {
+                attackerId = 0;
+                return false;
+            }
+
+            return _core.ConsumeCounterSuccess(out attackerId);
         }
 
         public void Respawn()

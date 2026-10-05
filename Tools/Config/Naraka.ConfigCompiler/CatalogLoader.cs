@@ -4,7 +4,7 @@ using Naraka.ConfigCompiler.Csv;
 namespace Naraka.ConfigCompiler;
 
 /// <summary>
-/// 把 18 张 CSV 源表读成一份 <see cref="NarakaConfigCatalog"/>。
+/// 把 20 张 CSV 源表读成一份 <see cref="NarakaConfigCatalog"/>。
 /// 这里只做逐行解析和逐行的形状校验；跨表引用与业务规则交给 <see cref="CatalogValidator"/>。
 /// </summary>
 public static class CatalogLoader
@@ -24,6 +24,8 @@ public static class CatalogLoader
         "heroes.csv",
         "inventory_capacity.csv",
         "items.csv",
+        "monster_skills.csv",
+        "monsters.csv",
         "pets.csv",
         "shop_products.csv",
         "signin_milestones.csv",
@@ -56,7 +58,9 @@ public static class CatalogLoader
             InventoryCapacities = Read(sourceDirectory, "inventory_capacity.csv", diagnostics, ReadInventoryCapacity),
             Avatars = Read(sourceDirectory, "avatars.csv", diagnostics, ReadAvatar),
             AvatarFrames = Read(sourceDirectory, "avatar_frames.csv", diagnostics, ReadAvatarFrame),
-            Pets = Read(sourceDirectory, "pets.csv", diagnostics, ReadPet)
+            Pets = Read(sourceDirectory, "pets.csv", diagnostics, ReadPet),
+            Monsters = Read(sourceDirectory, "monsters.csv", diagnostics, ReadMonster),
+            MonsterSkills = Read(sourceDirectory, "monster_skills.csv", diagnostics, ReadMonsterSkill)
         };
 
         Sort(catalog);
@@ -92,6 +96,8 @@ public static class CatalogLoader
         catalog.Avatars = Order(catalog.Avatars, value => value.AvatarId);
         catalog.AvatarFrames = Order(catalog.AvatarFrames, value => value.AvatarFrameId);
         catalog.Pets = Order(catalog.Pets, value => value.PetId);
+        catalog.Monsters = Order(catalog.Monsters, value => value.MonsterId);
+        catalog.MonsterSkills = Order(catalog.MonsterSkills, value => value.SkillId);
     }
 
     private static T[] Order<T>(T[] source, Func<T, string> key) =>
@@ -315,6 +321,61 @@ public static class CatalogLoader
         IconKey = row.GetString("IconKey", diagnostics),
         DefaultOwned = row.GetBoolean("DefaultOwned", diagnostics),
         UnlockRule = row.GetRequiredString("UnlockRule", diagnostics),
+        Description = row.GetString("Description", diagnostics)
+    };
+
+    private static MonsterConfig ReadMonster(CsvRecord row, DiagnosticBag diagnostics) => new()
+    {
+        MonsterId = row.GetRequiredString("MonsterId", diagnostics),
+        DisplayName = row.GetRequiredString("DisplayName", diagnostics),
+        SortOrder = row.GetInt32("SortOrder", diagnostics),
+        Category = row.GetRequiredString("Category", diagnostics),
+        BalanceStatus = row.GetRequiredString("BalanceStatus", diagnostics),
+        Health = row.GetInt32("Health", diagnostics),
+        Armor = row.GetInt32("Armor", diagnostics),
+        Defense = row.GetInt32("Defense", diagnostics),
+        Attack = row.GetInt32("Attack", diagnostics),
+        PatrolSpeed = row.GetSingle("PatrolSpeed", diagnostics),
+        ChaseSpeed = row.GetSingle("ChaseSpeed", diagnostics),
+        PatrolRadius = row.GetSingle("PatrolRadius", diagnostics),
+        PatrolPauseSeconds = row.GetSingle("PatrolPauseSeconds", diagnostics),
+        PerceptionRadius = row.GetSingle("PerceptionRadius", diagnostics),
+        ChaseRadius = row.GetSingle("ChaseRadius", diagnostics),
+        AttackRange = row.GetSingle("AttackRange", diagnostics),
+        DormantDistance = row.GetSingle("DormantDistance", diagnostics),
+        DecisionsPerSecond = row.GetInt32("DecisionsPerSecond", diagnostics),
+        PhaseHealthRatio = row.GetSingle("PhaseHealthRatio", diagnostics),
+        NormalAttackMultiplier = row.GetSingle("NormalAttackMultiplier", diagnostics),
+        NormalAttackCooldownSeconds = row.GetSingle("NormalAttackCooldownSeconds", diagnostics),
+        NormalAttackWindupSeconds = row.GetSingle("NormalAttackWindupSeconds", diagnostics),
+        NormalAttackHitSeconds = row.GetSingle("NormalAttackHitSeconds", diagnostics),
+        NormalAttackRecoverySeconds = row.GetSingle("NormalAttackRecoverySeconds", diagnostics),
+        HitStunSeconds = row.GetSingle("HitStunSeconds", diagnostics),
+        DeathSeconds = row.GetSingle("DeathSeconds", diagnostics),
+        ModelKey = row.GetString("ModelKey", diagnostics),
+        Description = row.GetString("Description", diagnostics)
+    };
+
+    private static MonsterSkillConfig ReadMonsterSkill(CsvRecord row, DiagnosticBag diagnostics) => new()
+    {
+        SkillId = row.GetRequiredString("SkillId", diagnostics),
+        MonsterId = row.GetRequiredString("MonsterId", diagnostics),
+        DisplayName = row.GetRequiredString("DisplayName", diagnostics),
+        SortOrder = row.GetInt32("SortOrder", diagnostics),
+        BalanceStatus = row.GetRequiredString("BalanceStatus", diagnostics),
+        ColorTag = row.GetRequiredString("ColorTag", diagnostics),
+        Counterable = row.GetBoolean("Counterable", diagnostics),
+        DamageMultiplier = row.GetSingle("DamageMultiplier", diagnostics),
+        CooldownSeconds = row.GetSingle("CooldownSeconds", diagnostics),
+        MinRange = row.GetSingle("MinRange", diagnostics),
+        MaxRange = row.GetSingle("MaxRange", diagnostics),
+        ConeAngleDegrees = row.GetSingle("ConeAngleDegrees", diagnostics),
+        RequiresPhaseAtOrBelow = row.GetSingle("RequiresPhaseAtOrBelow", diagnostics),
+        WarningSeconds = row.GetSingle("WarningSeconds", diagnostics),
+        WindupSeconds = row.GetSingle("WindupSeconds", diagnostics),
+        HitSeconds = row.GetSingle("HitSeconds", diagnostics),
+        RecoverySeconds = row.GetSingle("RecoverySeconds", diagnostics),
+        RecentUseSuppressionSeconds = row.GetSingle("RecentUseSuppressionSeconds", diagnostics),
         Description = row.GetString("Description", diagnostics)
     };
 }

@@ -1,0 +1,166 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 357ae3f2578b15548a797419b261beb0, type: 3}
+  m_Name: PlayerTuning
+  m_EditorClassIdentifier: 
+  walkSpeed: 5
+  runSpeed: 7.5
+  turnDegreesPerSecond: 720
+  gravity: 25
+  groundSnapSpeed: 2
+  stopWalkSeconds: 1.5
+  stopWalkDistance: 1.439
+  stopRunSeconds: 1.333
+  stopRunDistance: 1.417
+  runTurnbackSeconds: 1.667
+  runTurnbackInputWindowSeconds: 0.25
+  runTurnbackAngleThresholdDegrees: 135
+  moveInputDeadzone: 0.2
+  staminaMax: 20
+  dashStaminaCost: 10
+  staminaRegenPerSecond: 5
+  staminaRegenDelaySeconds: 0.75
+  staminaHitPauseSeconds: 0.5
+  sprintTapMaxSeconds: 0.18
+  dash:
+    clipSeconds: 1.333
+    mainSpeed: 1.6
+    recoverySpeed: 1.6
+    recoveryStartSeconds: 1.333
+    hitWindowStart: 0
+    hitWindowEnd: 0
+    comboWindowStart: 1.333
+    comboWindowEnd: 1.333
+    forwardDisplacement: 12.276
+    displacementClipSeconds: 0.45
+    skillMultiplier: 0
+  idleVariationDelaySeconds: 2.4
+  idleVariationDurationSeconds: 8
+  comboInputBufferSeconds: 0.18
+  comboResetSeconds: 0.8
+  combo1:
+    clipSeconds: 3.033
+    mainSpeed: 1.6
+    recoverySpeed: 2.4
+    recoveryStartSeconds: 1.356
+    hitWindowStart: 0.785
+    hitWindowEnd: 1.356
+    comboWindowStart: 1.07
+    comboWindowEnd: 3.033
+    forwardDisplacement: 0
+    displacementClipSeconds: 0
+    skillMultiplier: 1
+  combo2:
+    clipSeconds: 2.6666667
+    mainSpeed: 1.4
+    recoverySpeed: 2.2
+    recoveryStartSeconds: 1.2802328
+    hitWindowStart: 0.8001455
+    hitWindowEnd: 1.2802328
+    comboWindowStart: 1.0140027
+    comboWindowEnd: 2.6666667
+    forwardDisplacement: 0
+    displacementClipSeconds: 0
+    skillMultiplier: 1.2
+  combo3:
+    clipSeconds: 4.167
+    mainSpeed: 1.6
+    recoverySpeed: 2.4
+    recoveryStartSeconds: 1.987
+    hitWindowStart: 1.282
+    hitWindowEnd: 1.987
+    comboWindowStart: 4.167
+    comboWindowEnd: 4.167
+    forwardDisplacement: 0
+    displacementClipSeconds: 0
+    skillMultiplier: 1.6
+  chargeHoldSeconds: 0.75
+  charge:
+    clipSeconds: 2.2
+    mainSpeed: 1.3
+    recoverySpeed: 2
+    recoveryStartSeconds: 0.974
+    hitWindowStart: 0.55
+    hitWindowEnd: 0.974
+    comboWindowStart: 2.2
+    comboWindowEnd: 2.2
+    forwardDisplacement: 0
+    displacementClipSeconds: 0
+    skillMultiplier: 3
+  reservedChargeTier1Seconds: 0.6
+  reservedChargeTier2Seconds: 1.2
+  skillFCooldownSeconds: 15
+  skillF:
+    clipSeconds: 4.6
+    mainSpeed: 1.5
+    recoverySpeed: 2.4
+    recoveryStartSeconds: 1.84
+    hitWindowStart: 1.073
+    hitWindowEnd: 1.84
+    comboWindowStart: 4.6
+    comboWindowEnd: 4.6
+    forwardDisplacement: 0
+    displacementClipSeconds: 0
+    skillMultiplier: 1.2
+  skillFRadius: 4
+  skillVCooldownSeconds: 40
+  skillV:
+    clipSeconds: 5.567
+    mainSpeed: 1.5
+    recoverySpeed: 2.4
+    recoveryStartSeconds: 2.404
+    hitWindowStart: 1.518
+    hitWindowEnd: 2.404
+    comboWindowStart: 5.567
+    comboWindowEnd: 5.567
+    forwardDisplacement: 17.838
+    displacementClipSeconds: 0.9
+    skillMultiplier: 2.5
+  skillVRadius: 6
+  hitStunSeconds: 2.033
+  deathSeconds: 2.5
+  spawnProtectionSeconds: 3
+  spawnLobbyToMap01:
+    clipSeconds: 5.5
+    mainSpeed: 1
+    recoverySpeed: 2.5
+    recoveryStartSeconds: 2
+    hitWindowStart: 0
+    hitWindowEnd: 0
+    comboWindowStart: 5.5
+    comboWindowEnd: 5.5
+    forwardDisplacement: 0
+    displacementClipSeconds: 0
+    skillMultiplier: 0
+  spawnMap01ToMap02:
+    clipSeconds: 7.233
+    mainSpeed: 1.5
+    recoverySpeed: 3
+    recoveryStartSeconds: 2.5
+    hitWindowStart: 0
+    hitWindowEnd: 0
+    comboWindowStart: 7.233
+    comboWindowEnd: 7.233
+    forwardDisplacement: 0
+    displacementClipSeconds: 0
+    skillMultiplier: 0
+  maxHealth: 1000
+  maxArmor: 500
+  defense: 80
+  reviveArmorRatio: 0.5
+  finalAttack: 220
+  counterWindowSeconds: 0.2
+  counterFailRecoverySeconds: 0.5
+  counterSuccessSuperArmorSeconds: 2
+  counterExecuteWindowSeconds: 1.5
+  executeDurationSeconds: 1
+  executeDamageMultiplier: 1.5

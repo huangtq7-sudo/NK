@@ -1,8 +1,8 @@
 {
-  "SchemaVersion": "1.0.0",
-  "ConfigVersion": "p1-config-5e52cf730692",
-  "ContentSha256": "5e52cf73069228292ede7b8944d424f92752989d0bf6b7085ecb3fda875a377d",
-  "CatalogSha256": "33e22a00de3f0f7f8df79c619b9325d420a96fbf377dfb24889bcb7dc9299fb4",
+  "SchemaVersion": "1.1.0",
+  "ConfigVersion": "p1-config-45539ed9c3ac",
+  "ContentSha256": "45539ed9c3aca2e42224310f7142d83c7d47add71bb1c3386a73495e2f5e3f93",
+  "CatalogSha256": "ca84cff628a612edb7861e56daa38292a9b71fbfbadc634ecd3a8661f3932ce6",
   "Generator": "Naraka.ConfigCompiler",
   "Sources": [
     {
@@ -43,7 +43,7 @@
     },
     {
       "FileName": "heroes.csv",
-      "Sha256": "3ed46bc0f7bbf567f7e22ec6be4210d9c499686d991f7321b29909a2de3e0a8b"
+      "Sha256": "8477bcc9f5cc7b052c4bf6c2cbb89556deb3459c8b0c2b7d9a394cbb26043cda"
     },
     {
       "FileName": "inventory_capacity.csv",
@@ -52,6 +52,14 @@
     {
       "FileName": "items.csv",
       "Sha256": "ce5b4b33f21f4448b39f919fa438feca296f60bfe9dd884fcc6bdb781e6ac53c"
+    },
+    {
+      "FileName": "monster_skills.csv",
+      "Sha256": "f8b2c40dc1b63812173957084e2eee7f7bb1703c90dc1dd7038f901d7c424018"
+    },
+    {
+      "FileName": "monsters.csv",
+      "Sha256": "19468c9de3128048f54c47e7d43500e35ec798f30fd450d0dbb2c16ad9c8071b"
     },
     {
       "FileName": "pets.csv",

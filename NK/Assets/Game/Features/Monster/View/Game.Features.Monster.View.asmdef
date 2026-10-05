@@ -1,0 +1,20 @@
+{
+  "name": "Game.Features.Monster.View",
+  "rootNamespace": "Naraka.Features.Monster.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Combat.Controller",
+    "Game.Features.Combat.Model",
+    "Game.Features.Combat.View",
+    "Game.Features.Monster.Controller",
+    "Game.Features.Monster.Model",
+    "Game.Generated.Config",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

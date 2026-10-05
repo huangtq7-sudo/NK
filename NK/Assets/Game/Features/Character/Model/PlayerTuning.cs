@@ -84,7 +84,7 @@ namespace Naraka.Features.Character.Model
             float comboWindowEnd,
             float forwardDisplacement,
             float displacementClipSeconds,
-            float damage)
+            float skillMultiplier)
         {
             Playback = playback;
             HitWindowStart = hitWindowStart;
@@ -93,7 +93,7 @@ namespace Naraka.Features.Character.Model
             ComboWindowEnd = comboWindowEnd;
             ForwardDisplacement = forwardDisplacement;
             DisplacementClipSeconds = displacementClipSeconds;
-            Damage = damage;
+            SkillMultiplier = skillMultiplier;
         }
 
         public ActionPlayback Playback { get; }
@@ -125,8 +125,12 @@ namespace Naraka.Features.Character.Model
         /// </summary>
         public float DisplacementClipSeconds { get; }
 
-        /// <summary>灰盒基础伤害。正式数值由服务端权威判定。</summary>
-        public float Damage { get; }
+        /// <summary>
+        /// 技能倍率。原始伤害 = <c>FinalAttack × SkillMultiplier</c>，
+        /// 扣防御在受击方那一侧完成。伤害不写成一个绝对数值，
+        /// 否则换武器、换英雄之后每一段攻击都要重填。
+        /// </summary>
+        public float SkillMultiplier { get; }
 
         public float ClipTimeAt(float realElapsed) => Playback.ClipTimeAt(realElapsed);
 
@@ -170,6 +174,10 @@ namespace Naraka.Features.Character.Model
 
             return (ForwardDisplacement / window) * SpeedAt(clipTime);
         }
+
+        /// <summary>本动作扣防御之前的伤害。</summary>
+        public float RawDamage(float finalAttack) =>
+            Naraka.Features.Combat.Model.DamageFormula.Raw(finalAttack, SkillMultiplier);
 
         /// <summary>只播一段动画、没有命中窗与位移的动作（出场动画这类）。</summary>
         public static TimedActionTuning Simple(ActionPlayback playback) => new TimedActionTuning(
@@ -409,10 +417,11 @@ namespace Naraka.Features.Character.Model
 
     public readonly struct VitalsTuning
     {
-        public VitalsTuning(float maxHealth, float maxArmor, float reviveArmorRatio)
+        public VitalsTuning(float maxHealth, float maxArmor, float defense, float reviveArmorRatio)
         {
             MaxHealth = maxHealth;
             MaxArmor = maxArmor;
+            Defense = defense;
             ReviveArmorRatio = reviveArmorRatio;
         }
 
@@ -420,8 +429,64 @@ namespace Naraka.Features.Character.Model
 
         public float MaxArmor { get; }
 
+        /// <summary>防御。最终伤害 = 原始伤害 × 100 / (100 + 防御)。</summary>
+        public float Defense { get; }
+
         /// <summary>重生时护甲恢复比例。</summary>
         public float ReviveArmorRatio { get; }
+    }
+
+
+    /// <summary>
+    /// 反击与处决的规则数值。
+    ///
+    /// 反击不消耗体力、没有冷却，因此唯一的代价就是失败后摇：
+    /// 乱按 Space 会把自己钉在原地半秒。
+    /// </summary>
+    public readonly struct CounterTuning
+    {
+        public CounterTuning(
+            float windowSeconds,
+            float failRecoverySeconds,
+            float successSuperArmorSeconds,
+            float executeWindowSeconds)
+        {
+            WindowSeconds = windowSeconds;
+            FailRecoverySeconds = failRecoverySeconds;
+            SuccessSuperArmorSeconds = successSuperArmorSeconds;
+            ExecuteWindowSeconds = executeWindowSeconds;
+        }
+
+        /// <summary>反击判定窗时长。窗口内吃到金色可反击技能才算成功。</summary>
+        public float WindowSeconds { get; }
+
+        /// <summary>反击失败后的后摇时长。</summary>
+        public float FailRecoverySeconds { get; }
+
+        /// <summary>反击成功后玩家获得的霸体时长。</summary>
+        public float SuccessSuperArmorSeconds { get; }
+
+        /// <summary>反击成功后目标进入的处决窗口时长。</summary>
+        public float ExecuteWindowSeconds { get; }
+
+        /// <summary>反击动作在没有成功时占用的总时长。</summary>
+        public float FailedDurationSeconds => WindowSeconds + FailRecoverySeconds;
+    }
+
+    /// <summary>处决的规则数值。</summary>
+    public readonly struct ExecuteTuning
+    {
+        public ExecuteTuning(float durationSeconds, float damageMultiplier)
+        {
+            DurationSeconds = durationSeconds;
+            DamageMultiplier = damageMultiplier;
+        }
+
+        /// <summary>处决动作时长。全程无敌。</summary>
+        public float DurationSeconds { get; }
+
+        /// <summary>处决基础伤害倍率。</summary>
+        public float DamageMultiplier { get; }
     }
 
     /// <summary>
@@ -441,6 +506,9 @@ namespace Naraka.Features.Character.Model
             IdleTuning idle,
             ReactionTuning reaction,
             VitalsTuning vitals,
+            CounterTuning counter,
+            ExecuteTuning execute,
+            float finalAttack,
             float sprintTapMaxSeconds)
         {
             Locomotion = locomotion;
@@ -453,6 +521,9 @@ namespace Naraka.Features.Character.Model
             Idle = idle;
             Reaction = reaction;
             Vitals = vitals;
+            Counter = counter;
+            Execute = execute;
+            FinalAttack = finalAttack;
             SprintTapMaxSeconds = sprintTapMaxSeconds;
         }
 
@@ -476,6 +547,19 @@ namespace Naraka.Features.Character.Model
         public ReactionTuning Reaction { get; }
 
         public VitalsTuning Vitals { get; }
+
+        public CounterTuning Counter { get; }
+
+        public ExecuteTuning Execute { get; }
+
+        /// <summary>
+        /// 玩家的最终攻击力。所有攻击的原始伤害都是 <c>FinalAttack × SkillMultiplier</c>。
+        ///
+        /// P2 垂直切片取"英雄攻击力 + 武器攻击力"（顾沉岳 100 + 长剑 1 级 120 = 220）。
+        /// 这条合成规则**没有权威文档来源**，是本阶段为了跑通伤害闭环给出的灰盒假设，
+        /// 已登记为待确认项；正式数值最终由服务端权威判定。
+        /// </summary>
+        public float FinalAttack { get; }
 
         /// <summary>Shift 按下后不足这个时长释放算点按，达到则算长按。</summary>
         public float SprintTapMaxSeconds { get; }
@@ -521,36 +605,43 @@ namespace Naraka.Features.Character.Model
                 // Attack01：向下斜斩。攻击不改变坐标，因此位移为 0。
                 step1: new TimedActionTuning(
                     new ActionPlayback(3.033f, 1.6f, 2.4f, 1.356f),
-                    0.785f, 1.356f, 1.070f, 3.033f, 0f, 0f, 100f),
-                // AM_Summon：横扫。
+                    0.785f, 1.356f, 1.070f, 3.033f, 0f, 0f, 1.0f),
+                // AM_Summon：横扫。2026-10-04 换成带头发飘动的新动画后片段从 1.833 变成 2.667 秒，
+                // 窗口按 ×1.4548 等比缩放，前摇/命中/后摇的相对节奏不变。
                 step2: new TimedActionTuning(
-                    new ActionPlayback(1.833f, 1.4f, 2.2f, 0.880f),
-                    0.550f, 0.880f, 0.697f, 1.833f, 0f, 0f, 120f),
+                    new ActionPlayback(2.6666667f, 1.4f, 2.2f, 1.2802328f),
+                    0.8001455f, 1.2802328f, 1.0140027f, 2.6666667f, 0f, 0f, 1.2f),
                 // Attack02：转身斜向上攻击再转身，第三段带蓝色霸体语义。
                 step3: new TimedActionTuning(
                     new ActionPlayback(4.167f, 1.6f, 2.4f, 1.987f),
-                    1.282f, 1.987f, 4.167f, 4.167f, 0f, 0f, 160f)),
+                    1.282f, 1.987f, 4.167f, 4.167f, 0f, 0f, 1.6f)),
             charge: new ChargeTuning(
                 holdSeconds: 0.75f,
                 action: new TimedActionTuning(
                     new ActionPlayback(2.2f, 1.3f, 2.0f, 0.974f),
-                    0.550f, 0.974f, 2.2f, 2.2f, 0f, 0f, 300f),
+                    0.550f, 0.974f, 2.2f, 2.2f, 0f, 0f, 3.0f),
                 reservedTier1Seconds: 0.6f,
                 reservedTier2Seconds: 1.2f),
             skillF: new SkillTuning(
                 cooldownSeconds: 15f,
                 action: new TimedActionTuning(
                     new ActionPlayback(4.6f, 1.5f, 2.4f, 1.840f),
-                    1.073f, 1.840f, 4.6f, 4.6f, 0f, 0f, 200f),
+                    1.073f, 1.840f, 4.6f, 4.6f, 0f, 0f, 1.2f),
                 radius: 4f),
             skillV: new SkillTuning(
                 cooldownSeconds: 40f,
                 // V 技能是位移技能：位移在片段前 0.9 秒内完成。
                 action: new TimedActionTuning(
                     new ActionPlayback(5.567f, 1.5f, 2.4f, 2.404f),
-                    1.518f, 2.404f, 5.567f, 5.567f, 17.838f, 0.9f, 400f),
+                    1.518f, 2.404f, 5.567f, 5.567f, 17.838f, 0.9f, 2.5f),
                 radius: 6f),
-            idle: new IdleTuning(variationDelaySeconds: 5f, variationDurationSeconds: 15.067f),
+            // 2026-10-04：待机动作延迟从 5 秒改为 2.4 秒。
+            // 新 idle 片段（`AM_Stand1_Action03`，2.667 秒）烘焙的头发模拟不闭环，
+            // 每播满一轮就在循环处硬跳 41.9°（见 Q-026）。延迟压到片段长度以内，
+            // Idle 就永远播不到那个边界，跳变看不到了。
+            // 约束：延迟 + 交叉淡入（0.1 秒）必须小于 2.667 秒，所以上限是 2.567；
+            // 取 2.4 留 0.167 秒余量。idle 片段重新导出闭合之后可以调回去。
+            idle: new IdleTuning(variationDelaySeconds: 2.4f, variationDurationSeconds: 8f),
             reaction: new ReactionTuning(
                 hitStunSeconds: 2.033f,
                 deathSeconds: 2.5f,
@@ -561,7 +652,16 @@ namespace Naraka.Features.Character.Model
                 // Burst01：从天而降，整体放快，收招再快一档。
                 spawnMap01ToMap02: TimedActionTuning.Simple(
                     new ActionPlayback(7.233f, 1.5f, 3.0f, 2.5f))),
-            vitals: new VitalsTuning(maxHealth: 1000f, maxArmor: 500f, reviveArmorRatio: 0.5f),
+            vitals: new VitalsTuning(
+                maxHealth: 1000f, maxArmor: 500f, defense: 80f, reviveArmorRatio: 0.5f),
+            counter: new CounterTuning(
+                windowSeconds: 0.2f,
+                failRecoverySeconds: 0.5f,
+                successSuperArmorSeconds: 2f,
+                executeWindowSeconds: 1.5f),
+            // 处决时长 1.0 秒是灰盒占位：没有经过确认的处决动画，也没有权威时长。
+            execute: new ExecuteTuning(durationSeconds: 1f, damageMultiplier: 1.5f),
+            finalAttack: 220f,
             sprintTapMaxSeconds: 0.18f);
     }
 }

@@ -156,7 +156,7 @@ MonoBehaviour:
   autoRun: 1
   autoInjectGameObjects: []
   minimumLoadingSeconds: 2
-  playerTuning: {fileID: 11400000, guid: ba0ef57d7a4ff474591705d3bb338a5b, type: 2}
+  playerTuning: {fileID: 11400000, guid: 73ef54daed3e93b4997640bb9c2e682c, type: 2}
   inputProvider: {fileID: 446722073}
   cameraRig: {fileID: 1098804163}
 --- !u!4 &194063397

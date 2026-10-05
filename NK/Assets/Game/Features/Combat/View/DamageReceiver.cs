@@ -9,7 +9,7 @@ namespace Naraka.Features.Combat.View
     /// 受击盒。挂在可受击目标上，命中盒扫到它之后由 Controller 层决定能否结算。
     /// 它自己不计算伤害，也不决定阵营规则。
     /// </summary>
-    public abstract class DamageReceiver : MonoBehaviour
+    public abstract class DamageReceiver : MonoBehaviour, IDamageTaker
     {
         [SerializeField] private Faction faction = Faction.Enemy;
 
@@ -21,7 +21,7 @@ namespace Naraka.Features.Combat.View
         public abstract bool IsAlive { get; }
 
         /// <summary>施加伤害并返回真正发生的扣血结果。</summary>
-        public abstract DamageApplication Apply(float amount);
+        public abstract DamageApplication TakeDamage(in HitRequest request);
 
         /// <summary>命中已被判定生效时的表现回调。</summary>
         public event Action<float> DamageDisplayed;

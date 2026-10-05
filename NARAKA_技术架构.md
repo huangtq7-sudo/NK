@@ -1,7 +1,7 @@
 # 《NARAKA》技术架构基线
 
-版本：2.8
-更新日期：2026-09-28
+版本：2.9
+更新日期：2026-09-29
 状态：实施权威摘要
 详细来源：`outputs/naraka_design_v2/NARAKA_TDD_技术设计文档_MVC_v2.0.docx`
 
@@ -52,7 +52,10 @@
 - MessagePipe 1.8.2：跨模块离散事件，例如 `AccountAuthenticatedEvent`、`MonsterKilledEvent`、`LootPickedEvent`；通过VContainer注入`IDomainEventBus`，禁止全局总线和Service Locator。
 - R3 1.3.1：只读连续状态和UI订阅；`ReactiveProperty<T>`封装在Application内部的`ReactiveState<T>`中，View只能取得既有`IReadOnlyState<T>`，不得取得可写属性。
 - 自研轻量HFSM（`Game.Features.Character.Model.Hfsm`）：玩家动作和怪物动作状态机。P2明确不引入UnityHFSM，理由与边界见 [ADR-0015](Docs/ADR/0015-p2-player-hfsm-and-animator-projection.md)。
-- 自研/授权行为树适配层：怪物巡逻、追击、技能选择和阶段决策。
+- 自研轻量行为树（`Game.Features.AI.Model`）：怪物巡逻、追击、技能选择和阶段决策。
+  它对上下文类型泛型、`noEngineReferences: true`，节点在构造时建好一次，
+  决策时不创建任何节点或集合。**行为树只产出意图，怪物 HFSM 才是"当前动作"的唯一真相**，
+  见 [ADR-0018](Docs/ADR/0018-monster-behavior-tree-and-hfsm.md)。
 - Input System 1.7.0：键鼠输入、按键重映射和动作上下文。P2接入，版本依据见 [ADR-0014](Docs/ADR/0014-p2-input-system-and-cinemachine.md)。
 - Cinemachine 2.10.1：第三人称镜头、传送和首领镜头；不实现目标锁定。镜头以角色为中心环绕，并为业务层提供只读的`ICameraOrientation.Yaw`作为移动方向基准。P2接入，版本依据见 [ADR-0014](Docs/ADR/0014-p2-input-system-and-cinemachine.md)。
 - Animator、Animation Rigging、Timeline/Playables、Splines：角色、武器、处决和方向修正表现。
@@ -71,7 +74,9 @@
 - Account：登录、会话、账号快照和单账号会话替换。
 - Lobby：英雄、武器、仓库、商店、锻造、签到、抽奖和等级奖励。
 - World：地图、传送、远征、共享时间和天气。
-- Combat：输入、HFSM、伤害、体力、攻击、反击、处决和技能。
+- Combat：命中去重、阵营过滤、权威伤害公式与护甲吸收；战斗侧场景对象登记表。
+- CombatHud：战斗 HUD 的只读 PresentationState 与 uGUI 绑定脚本。
+- Monster：怪物属性、阶段、技能调度、动作 HFSM 与灰盒表现。
 - Character：英雄属性、移动、动画投影和状态标签。
 - Weapon：长剑、太刀、连招、命中窗口、切换和强化表现。
 - AI：感知、行为树、动作状态机、技能调度和休眠。
@@ -91,24 +96,36 @@
 - Locomotion：Idle、IdleVariation、Walk、Run、RunTurnback、StopWalk、StopRun。
   移动是相机相对的，角色先转向目标方向再前进，因此只有一套行进状态与一套前进动画；
   没有后退，也没有原地转身。见 [ADR-0017](Docs/ADR/0017-camera-relative-locomotion.md)。
-- Action：None、SpawnLobbyToMap01、SpawnMap01ToMap02、Dash、AttackCombo1/2/3、Charge、SkillF、SkillV。
-  Counter、Execute、SwitchWeapon、UseItem留到后续阶段。
+- Action：None、SpawnLobbyToMap01、SpawnMap01ToMap02、Dash、AttackCombo1/2/3、Charge、SkillF、SkillV、
+  **Counter、Execute**。SwitchWeapon、UseItem留到后续阶段。
+  反击与处决的规则全部在Model层并有EditMode断言；这两个动作暂时没有对应动画片段，
+  投影层遇到没有State的动画时保持上一个姿态，见 [ADR-0019](Docs/ADR/0019-authoritative-damage-counter-execute.md)。
 - Reaction：None、HitStun、Death。Knockdown留到怪物阶段。
-- Overlay Flags：InputLocked、SuperArmor、SpawnProtection、Loading、Grounded。
-- 霸体屏蔽HitStun但不屏蔽Damage和Death；重生保护期间直接免伤。
-  `Move_F`既无无敌帧也无霸体，因此P2的玩家状态里没有Invulnerable标签。
+- Overlay Flags：InputLocked、SuperArmor、SpawnProtection、Loading、Grounded、**Invulnerable、CounterWindow**。
+  `Invulnerable`只属于处决过程；`Move_F`依然没有无敌帧。
+- 霸体屏蔽HitStun但不屏蔽Damage和Death；重生保护与处决无敌期间直接免伤。
+  `Move_F`既无无敌帧也无霸体。
+- 伤害只有一份实现：`DamageFormula.Raw` / `AfterDefense` 与 `ArmorAbsorption.Absorb`，
+  玩家与怪物共用。**防御在受击方一侧扣**，命中层只做HitId去重、阵营过滤与转发。
+  动作配置保存的是技能倍率而不是绝对伤害。
 - 近战命中使用可配置扇形/胶囊扫掠和Physics NonAlloc查询。
 - 使用 `HitId`、方向点积、高度、阵营、FlyingTag和已命中集合进行二次过滤。
 - 逻辑攻击窗口由可测试的时间轴配置控制，动画事件只用于表现同步，不能是唯一判定来源。
 
 ## 6. 怪物AI与寻路
 
-- 感知层：Jobs/Burst批量完成距离、视野和空间粗筛，近邻再精确检测。
-- 决策层：行为树以约5–10Hz选择巡逻、追击、攻击、技能、撤退和阶段动作。
-- 动作层：HFSM逐帧执行具体技能和动画。
+- 感知层：本阶段由View把距离与夹角翻译成纯数据`MonsterSenses`交给Model；
+  Jobs/Burst批量粗筛留到怪物数量真的变多、并有Profiler证据之后再引入。
+- 决策层：行为树以约5–10Hz选择巡逻、感知、追击、普通攻击、技能、脱战和休眠**意图**。
+  决策间隔由配置的`DecisionsPerSecond`决定，配置编译器强制它落在5–10；
+  休眠时间隔拉长到1秒，因此"远离玩家降低决策频率"是可断言的行为。
+- 动作层：HFSM逐帧执行具体动作，状态为Idle/Move/Attack/Skill/HitStun/Knockdown/Death。
+  **动作层不空闲时行为树的结果不生效**，因此正在挥出去的一下必须打完。
 - 调度层：按距离、冷却、权重、颜色标签、50%生命阶段和最近使用抑制选择技能。
 - 休眠层：远离玩家的怪物进入Dormant并停止高频决策。
-- 地面单位使用AI Navigation/NavMesh；飞行单位使用3D航点或导航体积。
+- 地面单位使用Unity 2021.3**自带**的NavMesh（`com.unity.modules.ai`），不引入第三方AI包，
+  也不新增`com.unity.ai.navigation`；没有烘焙导航数据时退回直线推进。
+  飞行单位使用3D航点或导航体积。
 - 玩家脱战自动寻路通过NavMeshPath/A*得到路径，再用盒式检测验证安全通道、点积删除冗余拐点，并用样条和预瞄点平滑移动。
 - 运行时按“局部重算→完整重算→停止并提示”处理偏离和卡住。
 
@@ -117,6 +134,9 @@
 - UI仍严格属于MVC的View层，Atomic Design只作为组件制作规范。
 - 大厅、英雄、仓库、商店、锻造、抽奖、签到和设置优先使用UI Toolkit；若Unity 2021.3具体控件或性能不足，则通过同一View接口切换uGUI实现。
 - 战斗HUD、世界空间UI、背包、大地图、弹窗、死亡和结算使用uGUI。
+  战斗HUD的唯一数据来源是`CombatHudPresentationState`；View只把字段写到Text/Image/Slider上，
+  不读Model、不读Animator、也不去场景里找怪物。视觉与挂载由用户手工完成，
+  步骤见`Docs/UI/p22-combat-hud-manual-setup.md`。
 - Bento只用于大厅的信息布局方式，不成为业务架构。
 - UI Controller从领域Model生成只读 `PresentationState`，View使用R3订阅。
 - 所有界面、Prefab、锚点、资源绑定和事件绑定通过C# Editor工具生成或校验，减少人工拖拽。
@@ -169,6 +189,9 @@ P1新增大厅业务按ADR-0007从适配边界扩展应用消息，不解冻Lega
   Luban 不纳入本项目；Unity 运行时**不读 xlsx**，云主机**不跑配置编译**。
 - 配置数据模型只在 `Shared/Config/NarakaConfigModels.cs` 写一份，服务端直接链接原文件，编译器镜像到 Unity；
   `--check` 作为 CI 门禁，生成物与源表不一致就直接失败。
+- 怪物数值走同一条管线：源表为`Config/Source/monsters.csv`与`monster_skills.csv`，
+  生成物`SchemaVersion`为`1.1.0`。客户端手感数值（镜头阻尼、转向角速度、播放速度）
+  仍留在`PlayerTuningAsset`，不进CSV。
 - 服务端配置是**经济判定的唯一权威**；客户端加载同一份配置只用于展示，价格、概率与奖励一律以服务端返回值为准。
 - 版本分为ClientVersion、CodeHotfixVersion、ResourceVersion、ConfigVersion和ProtocolVersion。
 - P0使用Host的`GET /bootstrap/config-version`返回ConfigVersion、客户端最低/最高版本和ProtocolVersion；客户端Bootstrap MVC必须在注册或登录前完成兼容性检查，失败时保持Account入口阻塞并允许重试。
@@ -241,6 +264,9 @@ P1新增大厅业务按ADR-0007从适配边界扩展应用消息，不解冻Lega
 - P0 基础：仓库、Unity/服务端骨架、MVC、CI、网络适配、登录和空大厅；已关闭。
 - P1 大厅与账号长期系统：按P1.0至P1.9依次完成共享契约与数据库迁移、账号快照与货币、英雄/兵器/宠物选择、仓库与装备、商店、锻造、抽奖、签到/账号等级奖励/红点、好友与一对一文字聊天，最后执行大厅联合验收。
 - P2 战斗垂直切片：1英雄、1武器、1怪物、HUD和完整伤害循环。P2第一阶段已把原属P3的两图灰盒、固定传送门、异步加载与死亡返回一并纳入，以便移动/镜头/状态机在真实场景流转下验收；范围调整见 [ADR-0016](Docs/ADR/0016-p2-persistent-app-root-and-real-scene-progress.md)。
+  P2.2完成单怪物战斗闭环、权威伤害规则、怪物AI与战斗HUD代码接口，见
+  [ADR-0018](Docs/ADR/0018-monster-behavior-tree-and-hfsm.md) 与
+  [ADR-0019](Docs/ADR/0019-authoritative-damage-counter-execute.md)。
 - P3 远征闭环：两图抽象、传送、临时掉落、死亡、异常结算和幂等。
 - P4 内容系统：2英雄、2武器、10怪物、任务、物品、魂玉、护甲、消耗品和宠物内容扩充；锻造基础能力已前置到P1。
 - P5 联网展示与热更：10人移动、共享时间天气、HybridCLR和Addressables。

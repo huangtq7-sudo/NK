@@ -27,6 +27,8 @@ namespace Naraka.Core.Application.Config
         private readonly Dictionary<string, AvatarConfig> _avatars;
         private readonly Dictionary<string, AvatarFrameConfig> _avatarFrames;
         private readonly Dictionary<string, PetConfig> _pets;
+        private readonly Dictionary<string, MonsterConfig> _monsters;
+        private readonly Dictionary<string, MonsterSkillConfig[]> _skillsByMonster;
 
         public GameConfigCatalog(NarakaConfigCatalog catalog)
         {
@@ -42,6 +44,23 @@ namespace Naraka.Core.Application.Config
             _avatars = Index(catalog.Avatars, value => value.AvatarId);
             _avatarFrames = Index(catalog.AvatarFrames, value => value.AvatarFrameId);
             _pets = Index(catalog.Pets, value => value.PetId);
+            _monsters = Index(catalog.Monsters, value => value.MonsterId);
+
+            _skillsByMonster = new Dictionary<string, MonsterSkillConfig[]>(StringComparer.Ordinal);
+            foreach (var monster in catalog.Monsters)
+            {
+                var skills = new List<MonsterSkillConfig>();
+                foreach (var skill in catalog.MonsterSkills)
+                {
+                    if (string.Equals(skill.MonsterId, monster.MonsterId, StringComparison.Ordinal))
+                    {
+                        skills.Add(skill);
+                    }
+                }
+
+                skills.Sort((left, right) => left.SortOrder.CompareTo(right.SortOrder));
+                _skillsByMonster[monster.MonsterId] = skills.ToArray();
+            }
 
             _skillsByHero = new Dictionary<string, HeroSkillConfig[]>(StringComparer.Ordinal);
             foreach (var hero in catalog.Heroes)
@@ -88,6 +107,7 @@ namespace Naraka.Core.Application.Config
             AvatarsInDisplayOrder = SortByOrder(catalog.Avatars, value => value.SortOrder);
             AvatarFramesInDisplayOrder = SortByOrder(catalog.AvatarFrames, value => value.SortOrder);
             PetsInDisplayOrder = SortByOrder(catalog.Pets, value => value.SortOrder);
+            MonstersInDisplayOrder = SortByOrder(catalog.Monsters, value => value.SortOrder);
             ShopProductsInDisplayOrder = SortByOrder(catalog.ShopProducts, value => value.SortOrder);
             AchievementsInDisplayOrder = SortByOrder(catalog.Achievements, value => value.SortOrder);
             CurrenciesInDisplayOrder = SortByOrder(catalog.Currencies, value => value.SortOrder);
@@ -139,6 +159,8 @@ namespace Naraka.Core.Application.Config
         public string DefaultAvatarFrameId => AvatarFramesInDisplayOrder[0].AvatarFrameId;
 
         public IReadOnlyList<PetConfig> PetsInDisplayOrder { get; }
+
+        public IReadOnlyList<MonsterConfig> MonstersInDisplayOrder { get; }
 
         public IReadOnlyList<ShopProductConfig> ShopProductsInDisplayOrder { get; }
 
@@ -211,6 +233,15 @@ namespace Naraka.Core.Application.Config
 
         public bool TryGetPet(string petId, out PetConfig pet) =>
             _pets.TryGetValue(petId ?? string.Empty, out pet);
+
+        public bool TryGetMonster(string monsterId, out MonsterConfig monster) =>
+            _monsters.TryGetValue(monsterId ?? string.Empty, out monster);
+
+        /// <summary>取一只怪物的技能表，按 SortOrder 排列。未知怪物返回空列表。</summary>
+        public IReadOnlyList<MonsterSkillConfig> GetMonsterSkills(string monsterId) =>
+            _skillsByMonster.TryGetValue(monsterId ?? string.Empty, out var skills)
+                ? skills
+                : Array.Empty<MonsterSkillConfig>();
 
         /// <summary>物品显示名。未知 ID 直接回显 ID，便于定位配置缺失而不是显示空白。</summary>
         public string GetItemDisplayName(string itemId) =>

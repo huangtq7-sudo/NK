@@ -1,0 +1,22 @@
+{
+  "name": "Game.Features.CombatHud.View",
+  "rootNamespace": "Naraka.Features.CombatHud.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Character.Controller",
+    "Game.Features.Character.Model",
+    "Game.Features.Combat.Model",
+    "Game.Features.CombatHud.Controller",
+    "Game.Features.Monster.Controller",
+    "Game.Features.Monster.Model",
+    "Unity.TextMeshPro",
+    "VContainer",
+    "Game.Features.Combat.Controller"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

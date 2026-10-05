@@ -34,7 +34,11 @@
     "Game.Features.Character.Controller",
     "Game.Features.Combat.Model",
     "Game.Features.Combat.Controller",
-    "Game.Features.World.Controller"
+    "Game.Features.World.Controller",
+    "Game.Features.AI.Model",
+    "Game.Features.Monster.Model",
+    "Game.Features.Monster.Controller",
+    "Game.Features.CombatHud.Controller"
   ],
   "includePlatforms": [
     "Editor"

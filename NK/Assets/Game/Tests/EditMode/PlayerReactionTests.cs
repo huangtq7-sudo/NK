@@ -103,7 +103,7 @@ namespace Naraka.P2.Tests
             var core = NewCore();
             core.Tick(PlayerInputFrame.Idle.WithSkillV(true), Frame);
 
-            core.ApplyDamage(core.MaxHealth + core.MaxArmor);
+            core.ApplyDamage(Lethal(core));
 
             Assert.That(core.Reaction, Is.EqualTo(ReactionState.Death));
         }
@@ -137,7 +137,7 @@ namespace Naraka.P2.Tests
         public void HitStunCannotInterruptDeath()
         {
             var core = NewCore();
-            core.ApplyDamage(core.MaxHealth + core.MaxArmor);
+            core.ApplyDamage(Lethal(core));
             Assert.That(core.Reaction, Is.EqualTo(ReactionState.Death));
 
             core.ApplyDamage(50f);
@@ -149,7 +149,7 @@ namespace Naraka.P2.Tests
         public void DeathCannotBeInterruptedByOrdinaryStates()
         {
             var core = NewCore();
-            core.ApplyDamage(core.MaxHealth + core.MaxArmor);
+            core.ApplyDamage(Lethal(core));
 
             // 死亡期间持续输入移动、攻击与技能，全部不得生效。
             PlayerLocomotionTests.Hold(
@@ -166,7 +166,7 @@ namespace Naraka.P2.Tests
         public void DeathLocksInputAndOutputsZeroMotion()
         {
             var core = NewCore();
-            core.ApplyDamage(core.MaxHealth + core.MaxArmor);
+            core.ApplyDamage(Lethal(core));
 
             var output = core.Tick(PlayerInputFrame.Idle.WithMove(1f, 1f), Frame);
 
@@ -180,7 +180,7 @@ namespace Naraka.P2.Tests
         public void DeathCompletionSignalsExactlyOnce()
         {
             var core = NewCore();
-            core.ApplyDamage(core.MaxHealth + core.MaxArmor);
+            core.ApplyDamage(Lethal(core));
 
             var signals = 0;
             var elapsed = 0f;
@@ -204,7 +204,7 @@ namespace Naraka.P2.Tests
             var core = NewCore();
             core.Tick(PlayerInputFrame.Idle.WithSkillF(true), Frame);
             PlayerLocomotionTests.Hold(core, PlayerInputFrame.Idle, 2.0f);
-            core.ApplyDamage(core.MaxHealth + core.MaxArmor);
+            core.ApplyDamage(Lethal(core));
             Assert.That(core.Reaction, Is.EqualTo(ReactionState.Death));
 
             core.Respawn();
@@ -299,5 +299,14 @@ namespace Naraka.P2.Tests
             Assert.That(core.Action, Is.EqualTo(ActionState.None));
             Assert.That(core.SkillFCooldownRemaining, Is.EqualTo(0f), "锁定期间不得偷偷消耗冷却。");
         }
+
+        /// <summary>
+        /// 一次必定致命的**原始**伤害。
+        ///
+        /// 原始伤害要先过防御再扣护甲，因此"刚好等于生命加护甲"是打不死的：
+        /// 防御 80 时它只剩 55.6%。测试要表达的是"打死"，不是某个具体数字。
+        /// </summary>
+        private static float Lethal(PlayerCore core) =>
+            (core.MaxHealth + core.MaxArmor) * (100f + core.Defense) / 100f;
     }
 }

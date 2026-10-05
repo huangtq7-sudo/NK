@@ -1,3 +1,4 @@
+using Naraka.Features.Character.Model;
 using Naraka.Features.Combat.Controller;
 using Naraka.Features.Combat.Model;
 using NUnit.Framework;
@@ -103,6 +104,79 @@ namespace Naraka.P2.Tests
         }
 
         [Test]
+        public void AHitAbsorbedEntirelyByArmorStillCounts()
+        {
+            var resolver = new HitResolver();
+            var dummy = new DamageableModel(1000f, maxArmor: 500f);
+
+            var result = resolver.Resolve(Request(1, 200f), Apply(dummy));
+
+            Assert.That(result.Accepted, Is.True, "护甲吃满伤害也是一次真实命中。");
+            Assert.That(result.ArmorLost, Is.EqualTo(200f));
+            Assert.That(result.HealthLost, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void ACounteredHitDealsNoDamageAndIsReported()
+        {
+            var resolver = new HitResolver();
+            var counteredIds = 0;
+            resolver.HitLanded += _ => counteredIds++;
+
+            var result = resolver.Resolve(
+                Request(1, 200f),
+                (in HitRequest _) => DamageApplication.AsCountered());
+
+            Assert.That(result.Accepted, Is.False);
+            Assert.That(result.Rejection, Is.EqualTo(HitRejection.Countered));
+            Assert.That(counteredIds, Is.Zero, "被反击的一刀不产生命中事实。");
+        }
+
+        [Test]
+        public void HitLandedCarriesTheTargetFactionSoTheHudCanTellWhoWasHit()
+        {
+            var resolver = new HitResolver();
+            var dummy = new DamageableModel(1000f);
+            HitLandedEvent captured = default;
+            resolver.HitLanded += hit => captured = hit;
+
+            resolver.Resolve(Request(1, 120f), Apply(dummy));
+
+            Assert.That(captured.TargetFaction, Is.EqualTo(Faction.Enemy));
+            Assert.That(captured.Damage, Is.EqualTo(120f));
+        }
+
+        [Test]
+        public void ANormalAttackCanNeverBeFlaggedCounterable()
+        {
+            var request = new HitRequest(
+                new HitId(Attacker, 1),
+                Faction.Enemy,
+                Target,
+                Faction.Player,
+                100f,
+                AttackColorTag.None,
+                counterable: true);
+
+            Assert.That(request.Counterable, Is.False, "普通攻击永远不可反击。");
+        }
+
+        [Test]
+        public void ARedSkillCanNeverBeFlaggedCounterable()
+        {
+            var request = new HitRequest(
+                new HitId(Attacker, 1),
+                Faction.Enemy,
+                Target,
+                Faction.Player,
+                100f,
+                AttackColorTag.Red,
+                counterable: true);
+
+            Assert.That(request.Counterable, Is.False, "红色技能不可反击。");
+        }
+
+        [Test]
         public void ReleasingAnAttackFreesItsDeduplicationEntry()
         {
             var registry = new HitRegistry();
@@ -121,23 +195,23 @@ namespace Naraka.P2.Tests
         [Test]
         public void ArmorAbsorbsDamageBeforeHealth()
         {
-            var vitals = new Naraka.Features.Character.Model.PlayerVitals(
-                new Naraka.Features.Character.Model.VitalsTuning(1000f, 500f, 0.5f));
+            // 防御 0：最终伤害等于原始伤害，这是公式的边界情况。
+            var vitals = new PlayerVitals(new VitalsTuning(1000f, 500f, 0f, 0.5f));
 
-            var partial = vitals.ApplyDamage(200f);
+            var partial = vitals.ApplyRawDamage(200f);
             Assert.That(partial.ArmorLost, Is.EqualTo(200f));
             Assert.That(partial.HealthLost, Is.EqualTo(0f));
 
-            var overflow = vitals.ApplyDamage(400f);
+            var overflow = vitals.ApplyRawDamage(400f);
             Assert.That(overflow.ArmorLost, Is.EqualTo(300f), "护甲耗尽后溢出部分才扣生命。");
             Assert.That(overflow.HealthLost, Is.EqualTo(100f));
             Assert.That(vitals.Armor, Is.EqualTo(0f), "护甲归零但不销毁。");
         }
 
-        private static ApplyDamageDelegate Apply(DamageableModel model) => amount =>
+        private static ApplyDamageDelegate Apply(DamageableModel model) => (in HitRequest request) =>
         {
-            var lost = model.ApplyDamage(amount);
-            return new DamageApplication(lost, model.IsDead);
+            var result = model.ApplyRawDamage(request.RawDamage);
+            return new DamageApplication(result.ArmorLost, result.HealthLost, result.Died);
         };
     }
 }

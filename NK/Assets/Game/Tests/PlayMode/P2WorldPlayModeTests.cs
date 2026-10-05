@@ -515,7 +515,10 @@ namespace Naraka.P2.PlayMode.Tests
             yield return WaitUntil(
                 () => !player.State.Flags.HasFlag(PlayerOverlayFlags.SpawnProtection), 6f);
 
-            player.TakeDamage(player.State.MaxHealth + player.State.MaxArmor);
+            // 原始伤害要先过防御再扣护甲，"刚好等于生命加护甲"是打不死的。
+            player.ApplyDebugRawDamage(
+                (player.State.MaxHealth + player.State.MaxArmor)
+                * (100f + player.State.Defense) / 100f);
             Assert.That(player.State.Reaction, Is.EqualTo(ReactionState.Death));
 
             var world = Resolve<IWorldFlowController>();
