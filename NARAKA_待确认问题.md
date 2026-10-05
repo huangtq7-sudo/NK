@@ -455,12 +455,13 @@
 - 骨骼与材质：新动画的骨骼曲线 100% 匹配正式模型 `Changli_TPose.fbx`，
   材质仍是 `Changli/Materials` 下的 8 个 `MI_*`（`.meta` 的 `externalObjects` 重映射未改），
   因此**不换模型**。
-- 根位移：新导出把整体位移从水平轴换到了垂直轴，`RootMotionCanceller`
-  因此改为锁住根节点整条位移通道（原来只锁水平、保留垂直）。
+- 根位移：新导出的位移通道同样带有`+90°`轴向与`1/2.54`缩放差异；
+  `PlayerAnimationRootFixup`在导入期统一还原。`RootMotionCanceller`最终只抵消代码已经驱动的水平分量，
+  默认保留蓄力`Attack10`的垂直腾空；垂直净变化不为0的导出残留由导入后处理器压平。
 - 片段长度：只有待机动作（15.067 → 8.000）与第二段普攻（1.833 → 2.667）变了，
   后者的命中窗/连段窗/后摇起点按 ×1.4548 等比缩放，相对节奏不变。
-  动作位移与停止距离从此是纯设计值，工具不再从片段推导。
-- 记录：见 [ADR-0015 的 2026-10-04 修订](Docs/ADR/0015-p2-player-hfsm-and-animator-projection.md)
+  工具不再自动重写动作位移与停止距离；契约测试会断言已验收配置与还原后的实测行程一致。
+- 记录：见 [ADR-0015 的 2026-10-04 第二、第三次修订](Docs/ADR/0015-p2-player-hfsm-and-animator-projection.md)
   与 [Q-026](#q-026-新动画集的三处导出问题)。
 
 ### D-019 P2.2 怪物模块与权威伤害
@@ -497,7 +498,7 @@
 ### D-015 玩家状态机自研，Animator只作单向投影
 
 - 决策：已关闭。不引入UnityHFSM；玩家分层状态机位于`noEngineReferences`的Model程序集，
-  可在EditMode逐帧断言。Animator Controller为20个State、0个Parameter、0条Transition，
+  可在EditMode逐帧断言。经ADR-0017取消后退与原地转身状态后，Animator Controller为18个State、0个Parameter、0条Transition，
   业务层从不读取Animator的State名、Trigger或normalizedTime，也不使用Root Motion。
 - 记录：见 [ADR-0015](Docs/ADR/0015-p2-player-hfsm-and-animator-projection.md)。
 
@@ -510,19 +511,21 @@
 - 附带规则：发起场景切换的场景级对象不得持有该切换的取消权——这次切换会把它自己卸载。
 - 记录：见 [ADR-0016](Docs/ADR/0016-p2-persistent-app-root-and-real-scene-progress.md)。
 
+### Q-028 超过休眠距离时，已交战怪物是回家还是原地休眠
+
+- 状态：**已关闭**，2026-10-05 用户确认采用建议方案。
+- 决策：已交战且远离出生点时，`Leash/Recover`优先于`Dormant`，怪物先脱战回家；
+  只有未交战、也不处于回家过程中的怪物，才因超远玩家进入休眠并降低决策频率。
+- 实现：行为树将`Dormant`移到脱战与持续回家分支之后；新增
+  `AnEngagedWolfBeyondDormantDistanceReturnsHomeBeforeSleeping`边界回归测试。
+- 验收：Unity EditMode **473项，472通过、0失败、1项环境跳过**；PlayMode **27/27通过**。
+
 ## 5. 当前待确认
 
-- **P1界面视觉人工验收**：十个界面的自动化测试已全部通过，但布局、字号、素材位置与动画节奏需要用户在Unity Play Mode人工确认。
-- **P1云端批量部署授权**：本地实现已完成，`Docs/Deployment/p1-cloud-batched-release-checklist.md`列出了部署前需要完成的步骤。部署本身需要用户单独授权。
-- **真实Host端到端冒烟**：需要用户启动Host与MySQL并授权后才能执行。
+- **P2战斗HUD与换版动画人工验收**：P2.2代码与自动化已通过；HUD视觉与挂载由用户在Unity中完成，
+  并需一并查看新动画的实际观感。
+- **P2性能门禁**：尚无本轮Profiler证据，不能只根据代码结构声称稳定态0B GC/frame。
+- **Q-017独立播放器构建**：仍未修复，需单独处理R3依赖问题。
+- **Q-026新动画导出遗留**：Idle不闭环、F技能仍使用旧版、Idle与IdleVariation带重复`W0_`骨架曲线，
+  等待美术重新导出。
 - **抽奖红色卡背素材**：暂用玄夜卡背，等待正式素材。
-- **角色模型**：英雄界面目前只有`HeroModelAnchor`，正式模型到位后再接入。大厅英雄立绘与P2战斗角色是两件事。
-- **P2.1人工验收**：**已通过**。2026-09-29 用户在 Unity 中人工验收 P2 第一阶段并确认没有问题。
-  当前移动、镜头、动画、输入、场景切换与操作手感均为已验收基线，不得擅自重构或重新调参。
-  以下为历史待确认项，保留备查：
-  待确认项：长离模型表现、18个动画观感与循环接缝、镜头手感与指针锁定、
-  相机相对移动的转向角速度（当前720°/秒）与`Run_Turnback`角度阈值（当前135°）、
-  Shift点按边界、连招与蓄力节奏、灰盒摆位、两次切图之间加载界面的连续性。
-- **转向角速度与反向阈值**：720°/秒与135°是初始手感值，不是测量结果，需要实际试过再定。
-- **P2.1提交范围**：当前未提交内容包含P2.1新增代码与场景、用户2026-09-10手工调整的大厅UXML/USS、
-  用户的角色资源与Blender导入工具三类，应分别审查后再决定提交范围。

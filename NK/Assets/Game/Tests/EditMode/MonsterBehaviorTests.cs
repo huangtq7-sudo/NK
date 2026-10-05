@@ -199,6 +199,23 @@ namespace Naraka.P2.Tests
         }
 
         [Test]
+        public void AnEngagedWolfBeyondDormantDistanceReturnsHomeBeforeSleeping()
+        {
+            var core = NewWolf();
+            Hold(core, MonsterSenses.ToTarget(10f), 0.5f);
+            Assert.That(core.Intent, Is.EqualTo(MonsterIntent.Chase));
+
+            // 狼已经追出出生点，玩家又一次跑到休眠距离之外。
+            // 脱战回家应该比原地休眠更优先，否则怪物会永久留在离家很远的位置。
+            Hold(core, new MonsterSenses(true, true, 60f, 0f, 15f), 1.2f);
+
+            Assert.That(
+                core.Intent,
+                Is.EqualTo(MonsterIntent.Recover),
+                "已交战且远离出生点时应先脱战回家；未交战的超远目标才进入休眠。");
+        }
+
+        [Test]
         public void TheBehaviorTreeCannotOverrideAnActionInProgress()
         {
             var core = NewWolf();

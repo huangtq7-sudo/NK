@@ -230,10 +230,6 @@ namespace Naraka.Features.Monster.Model
                 new ConditionNode<MonsterCore>("IsDead", core => core.IsDead),
                 new ActionNode<MonsterCore>("SetDead", core => core.Choose(MonsterIntent.Dead))),
             new SequenceNode<MonsterCore>(
-                "Dormant",
-                new ConditionNode<MonsterCore>("TooFar", core => core.IsBeyondDormantDistance()),
-                new ActionNode<MonsterCore>("SetDormant", core => core.Choose(MonsterIntent.Dormant))),
-            new SequenceNode<MonsterCore>(
                 "Leash",
                 new ConditionNode<MonsterCore>("Engaged", core => core._engaged),
                 new ConditionNode<MonsterCore>("LostTarget", core => core.HasLostTarget()),
@@ -259,6 +255,12 @@ namespace Naraka.Features.Monster.Model
                 new ConditionNode<MonsterCore>("Recovering", core => core._recovering),
                 new ConditionNode<MonsterCore>("AwayFromHome", core => core.IsAwayFromHome()),
                 new ActionNode<MonsterCore>("KeepRecovering", core => core.Choose(MonsterIntent.Recover))),
+            // 休眠放在脱战与持续回家之后：已交战的怪物不能因为玩家跑得更远
+            // 就睡在离家很远的地方。未交战、也不在回家途中的怪物才用休眠降频。
+            new SequenceNode<MonsterCore>(
+                "Dormant",
+                new ConditionNode<MonsterCore>("TooFar", core => core.IsBeyondDormantDistance()),
+                new ActionNode<MonsterCore>("SetDormant", core => core.Choose(MonsterIntent.Dormant))),
             new ActionNode<MonsterCore>("Patrol", core => core.Choose(MonsterIntent.Patrol)));
 
         private BehaviorStatus Choose(MonsterIntent intent)
