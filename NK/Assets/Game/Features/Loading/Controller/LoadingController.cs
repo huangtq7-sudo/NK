@@ -135,7 +135,6 @@ namespace Naraka.Features.Loading.Controller
                 throw new InvalidOperationException("未注入 ISceneLoader，无法加载场景。");
             }
 
-            var startedAt = _clock.NowSeconds;
             _isRunning = true;
             _reportedProgress = 0f;
             SetState(new LoadingPresentationState(true, 0f));
@@ -143,6 +142,18 @@ namespace Naraka.Features.Loading.Controller
             try
             {
                 var operation = _sceneLoader.BeginLoad(sceneName);
+
+                // 最短显示时长从**BeginLoad 返回之后**开始算，而不是从方法入口。
+                //
+                // 原因：`SceneManager.LoadSceneAsync` 在 BeginLoad 里会同步烧掉一段真实时间
+                // （开文件、读头、分配）。正式战斗场景有 38.9 MB，这段时间足够让
+                // "按时间推进"的那一半在**第一次绘制时就已经跑到十几个百分点**，
+                // 于是进度条看起来不是从零开始的。
+                //
+                // 灰盒场景只有 31 KB，BeginLoad 几乎不耗时，所以这个缺陷在 P2.3
+                // 接入正式场景之前一直没露头；单测也没抓到，因为假时钟只在
+                // DelayAsync 里前进，BeginLoad 在测试里永远是零耗时的。
+                var startedAt = _clock.NowSeconds;
                 while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();

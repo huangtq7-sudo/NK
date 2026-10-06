@@ -220,6 +220,67 @@ namespace Naraka.P2.Tests
             });
 
         [UnityTest]
+        public IEnumerator ProgressStartsFromZeroEvenWhenBeginLoadItselfIsSlow() =>
+            UniTask.ToCoroutine(async () =>
+            {
+                // 这条测试对应一个真实缺陷：正式战斗场景有 38.9 MB，
+                // `SceneManager.LoadSceneAsync` 在 BeginLoad 里会同步烧掉一段真实时间。
+                // 若最短显示时长从方法入口就开始计时，这段时间会让"按时间推进"
+                // 的那一半在第一次绘制时就已经跑到十几个百分点，
+                // 玩家看到的就是"进度条不从零开始"。
+                //
+                // 灰盒场景只有 31 KB，所以这个缺陷之前一直没露头。
+                var clock = new FakeGameClock();
+                var loader = new FakeSceneLoader
+                {
+                    // Factory 在 BeginLoad 内部被调用，因此这里推进时间就是
+                    // 在模拟"BeginLoad 自己耗了 1 秒真实时间"。
+                    Factory = _ =>
+                    {
+                        clock.Advance(1.0);
+                        return new FakeSceneLoader.FakeOperation
+                        {
+                            Progress = 1f,
+                            IsReadyToActivate = true
+                        };
+                    }
+                };
+                var controller = new LoadingController(clock, loader, Minimum);
+                var visible = new System.Collections.Generic.List<float>();
+
+                using (controller.Subscribe(new StateRecorder(state =>
+                {
+                    if (state.IsVisible)
+                    {
+                        visible.Add(state.Progress);
+                    }
+                })))
+                {
+                    await controller.LoadSceneAsync(
+                        WorldSceneNames.Map02Combat, CancellationToken.None);
+                }
+
+                Assert.That(visible, Is.Not.Empty);
+                Assert.That(
+                    visible[0], Is.LessThan(0.02f),
+                    $"BeginLoad 耗了 1 秒之后，第一个可见进度是 {visible[0]:0.00}，" +
+                    "进度条必须从零开始。");
+
+                // 修了起点之后，其余保证不能跌：仍然单调，
+                // 且仍然保留完整的最短显示时长（从 BeginLoad 返回后算起）。
+                for (var i = 1; i < visible.Count; i++)
+                {
+                    Assert.That(
+                        visible[i], Is.GreaterThanOrEqualTo(visible[i - 1]),
+                        "进度条不得往回跳。");
+                }
+
+                Assert.That(
+                    clock.NowSeconds, Is.GreaterThanOrEqualTo(1.0 + Minimum),
+                    "最短显示时长必须在 BeginLoad 之后完整计满。");
+            });
+
+        [UnityTest]
         public IEnumerator ProgressNeverRunsAheadOfTheRealOperation() => UniTask.ToCoroutine(async () =>
         {
             // 真实加载很慢时，进度条不能靠时间跑到前面去。

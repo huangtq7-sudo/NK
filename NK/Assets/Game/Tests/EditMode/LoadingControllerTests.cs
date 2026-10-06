@@ -19,6 +19,14 @@ namespace Naraka.P0.Tests
 
         public Action OnDelay { get; set; }
 
+        /// <summary>
+        /// 手动推进虚拟时间，用来模拟**不在 DelayAsync 里**消耗的真实时间，
+        /// 比如 `SceneManager.LoadSceneAsync` 在 BeginLoad 里同步烧掉的那一段。
+        /// 没有这个入口的话，假时钟永远认为 BeginLoad 是零耗时的，
+        /// 于是一整类"进度条不从零开始"的缺陷单测根本抓不到。
+        /// </summary>
+        public void Advance(double seconds) => NowSeconds += seconds;
+
         public UniTask DelayAsync(TimeSpan duration, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)

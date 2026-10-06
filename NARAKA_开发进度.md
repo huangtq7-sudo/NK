@@ -1457,6 +1457,29 @@ x/z 也落在地形中部。
 工具现在是这些坐标的主。要改就改 `P23WorldSceneSetup.AuthoredPlacements` 这张表，
 不要在 Unity 里拖，否则下次装配会被摆回去。地图二仍然走地形采样。
 
+**二、异步加载时进度条不从零开始。**
+
+根因在 `LoadingController.LoadSceneAsync`：最短显示时长的计时起点是**方法入口**，
+而 `BeginLoad` 里的 `SceneManager.LoadSceneAsync` 会同步烧掉一段真实时间
+（开文件、读头、分配）。正式战斗场景有 38.9 MB，这段时间足够让"按时间推进"的那一半
+在**第一次绘制时就已经跑到十几个百分点**，于是进度条看起来不是从零开始的。
+
+计时起点改到 `BeginLoad` 返回**之后**。最短显示时长因此也从"加载真正开始"算起，
+这本来就是它的本意。
+
+为什么此前没被发现，两个原因都值得记下来：
+
+- 灰盒场景只有 31 KB，`BeginLoad` 几乎不耗时，这一项一直约等于 0；
+- **单元测试抓不到**：假时钟只在 `DelayAsync` 里前进，因此 `BeginLoad`
+  在测试里永远是零耗时的。已有的
+  `ProgressGrowsGraduallyEvenWhenTheSceneLoadsInstantly` 断言"第一个采样 < 0.1"
+  并且一直是通过的 —— 它测不到这个缺陷。
+
+因此给假时钟加了 `Advance()`（手动推进不在 `DelayAsync` 里消耗的时间），
+并新增回归测试 `ProgressStartsFromZeroEvenWhenBeginLoadItselfIsSlow`：
+模拟 `BeginLoad` 自己耗 1 秒，断言第一个可见进度 < 0.02，
+同时断言单调性与最短显示时长仍然成立。这条测试在修复前会失败。
+
 ##### 一个会反复出现的 Unity 副作用
 
 打开正式环境场景之后，Unity 会**自行**把一个第三方材质升级格式：
