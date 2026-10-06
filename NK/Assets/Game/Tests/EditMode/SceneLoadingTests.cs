@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Naraka.Core.Application.Scenes;
+using Naraka.Core.Application.Presentation;
 using Naraka.Core.Application.Timing;
 using Naraka.Features.Loading.Controller;
 using Naraka.Features.World.Controller;
@@ -122,6 +123,27 @@ namespace Naraka.P2.Tests
         }
     }
 
+    /// <summary>
+    /// 会真正挂起的帧边界，直接复用 <see cref="PumpableGameClock"/> 的泵。
+    ///
+    /// 用于"切换在途时再次请求"这类并发断言：同步完成的帧等待会让整条异步链
+    /// 一口气跑完，根本观察不到"在途"这个状态。
+    /// </summary>
+    internal sealed class PumpableFrameScheduler : IPresentationFrameScheduler
+    {
+        private readonly PumpableGameClock _clock;
+        private readonly double _tickSeconds;
+
+        public PumpableFrameScheduler(PumpableGameClock clock, double tickSeconds = 1.0 / 60.0)
+        {
+            _clock = clock;
+            _tickSeconds = tickSeconds;
+        }
+
+        public UniTask NextFrameAsync(CancellationToken cancellationToken) =>
+            _clock.DelayAsync(TimeSpan.FromSeconds(_tickSeconds), cancellationToken);
+    }
+
     public sealed class SceneLoadingTests
     {
         private const double Minimum = 2.0;
@@ -131,7 +153,7 @@ namespace Naraka.P2.Tests
         {
             var clock = new FakeGameClock();
             var loader = new FakeSceneLoader();
-            var controller = new LoadingController(clock, loader, Minimum);
+            var controller = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
             var seen = new System.Collections.Generic.List<LoadingPresentationState>();
 
             clock.OnDelay = () =>
@@ -183,7 +205,7 @@ namespace Naraka.P2.Tests
                         IsReadyToActivate = true
                     }
                 };
-                var controller = new LoadingController(clock, loader, Minimum);
+                var controller = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
                 var samples = new System.Collections.Generic.List<(double At, float Progress)>();
 
                 using (controller.Subscribe(new StateRecorder(state =>
@@ -245,7 +267,7 @@ namespace Naraka.P2.Tests
                         };
                     }
                 };
-                var controller = new LoadingController(clock, loader, Minimum);
+                var controller = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
                 var visible = new System.Collections.Generic.List<float>();
 
                 using (controller.Subscribe(new StateRecorder(state =>
@@ -286,7 +308,7 @@ namespace Naraka.P2.Tests
             // 真实加载很慢时，进度条不能靠时间跑到前面去。
             var clock = new FakeGameClock();
             var loader = new FakeSceneLoader();
-            var controller = new LoadingController(clock, loader, Minimum);
+            var controller = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
             var worst = 0f;
 
             clock.OnDelay = () =>
@@ -330,7 +352,7 @@ namespace Naraka.P2.Tests
             {
                 Factory = _ => new FakeSceneLoader.FakeOperation { Progress = 1f, IsReadyToActivate = true }
             };
-            var controller = new LoadingController(clock, loader, Minimum);
+            var controller = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
 
             await controller.LoadSceneAsync(WorldSceneNames.Map01Task, CancellationToken.None);
 
@@ -344,7 +366,7 @@ namespace Naraka.P2.Tests
             {
                 var clock = new FakeGameClock();
                 var loader = new FakeSceneLoader();
-                var controller = new LoadingController(clock, loader, Minimum);
+                var controller = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
                 var maxWhileLoading = 0f;
 
                 clock.OnDelay = () =>
@@ -393,7 +415,7 @@ namespace Naraka.P2.Tests
                         CompletionError = new InvalidOperationException("scene missing")
                     }
                 };
-                var controller = new LoadingController(clock, loader, Minimum);
+                var controller = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
 
                 var thrown = false;
                 try
@@ -420,7 +442,7 @@ namespace Naraka.P2.Tests
         public IEnumerator MissingSceneLoaderIsReportedInsteadOfCrashing() =>
             UniTask.ToCoroutine(async () =>
             {
-                var controller = new LoadingController(new FakeGameClock(), null, Minimum);
+                var controller = new LoadingController(new FakeGameClock(), null, new FakeFrameScheduler(), Minimum);
 
                 var thrown = false;
                 try
@@ -441,7 +463,8 @@ namespace Naraka.P2.Tests
         {
             var clock = new PumpableGameClock();
             var loader = new FakeSceneLoader();
-            var loading = new LoadingController(clock, loader, Minimum);
+            var loading = new LoadingController(
+                clock, loader, new PumpableFrameScheduler(clock), Minimum);
             var world = new WorldFlowController(loading, WorldSceneCatalog.Default);
 
             clock.OnAdvance = () =>
@@ -456,9 +479,15 @@ namespace Naraka.P2.Tests
                 op.IsReadyToActivate = true;
             };
 
-            // 第一次切换挂在时钟上还没跑完。
+            // 第一次切换挂在帧边界上还没跑完。
             var first = world.EnterMap02Async(CancellationToken.None).Preserve();
             Assert.That(first.Status.IsCompleted(), Is.False, "测试前提：第一次切换必须仍在途中。");
+
+            // 加载流程现在先停在"让 0% 过一帧"上，此时 BeginLoad 还没发生。
+            // 先推一帧让它真的开始加载，再发第二次请求 ——
+            // 这样"在途"是真的在途，断言比以前更严。
+            clock.Advance();
+            Assert.That(loader.BeginCount, Is.EqualTo(1), "推过一帧后应该已经开始加载。");
 
             // 途中再发一次：绝不能创建第二个场景切换任务。
             await world.EnterMap02Async(CancellationToken.None);
@@ -481,7 +510,7 @@ namespace Naraka.P2.Tests
         {
             var clock = new FakeGameClock();
             var loader = new FakeSceneLoader();
-            var loading = new LoadingController(clock, loader, Minimum);
+            var loading = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
             var world = new WorldFlowController(loading, WorldSceneCatalog.Default);
             clock.OnDelay = () =>
             {
@@ -515,7 +544,7 @@ namespace Naraka.P2.Tests
                     CompletionError = failing ? new InvalidOperationException("boom") : null
                 }
             };
-            var loading = new LoadingController(clock, loader, Minimum);
+            var loading = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
             var world = new WorldFlowController(loading, WorldSceneCatalog.Default);
 
             try

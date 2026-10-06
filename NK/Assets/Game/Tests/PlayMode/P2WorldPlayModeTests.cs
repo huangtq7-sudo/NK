@@ -165,6 +165,102 @@ namespace Naraka.P2.PlayMode.Tests
         }
 
         [UnityTest]
+        public IEnumerator TheLoadingLabelStartsAtZeroAndClimbsThroughRealRenderFrames()
+        {
+            // 这条测试读的是**真实 LoadingView 的 Label 文本**，不是 Controller 的状态，
+            // 因为用户看到的是前者。它每帧采一次，覆盖的是用户实测到的两种现象：
+            // 进度条"一次性显示完成"，以及"第一次看到就已经在 50% 左右"。
+            //
+            // 场景用的是正式 Map01_Task（High Elves），不缩小规模、不换回灰盒。
+            yield return LoadBootScene();
+
+            var view = Object.FindObjectOfType<LoadingView>(true);
+            Assert.That(view, Is.Not.Null, "持久化 App Root 上必须有 LoadingView。");
+
+            var document = view.GetComponent<UIDocument>();
+            Assert.That(document, Is.Not.Null);
+            var label = document.rootVisualElement.Q<Label>("LoadingPercentLabel");
+            var screen = document.rootVisualElement.Q<VisualElement>("LoadingScreen");
+            Assert.That(label, Is.Not.Null, "LoadingScreen.uxml 必须有 LoadingPercentLabel。");
+            Assert.That(screen, Is.Not.Null);
+
+            var samples = new System.Collections.Generic.List<int>();
+            var fullWhileSceneNotReady = 0;
+
+            var world = Resolve<IWorldFlowController>();
+            var task = world.EnterMap01Async(default).Preserve();
+
+            var deadline = Time.realtimeSinceStartup + SceneLoadTimeoutSeconds;
+            while (!task.Status.IsCompleted() && Time.realtimeSinceStartup < deadline)
+            {
+                if (screen.resolvedStyle.display != DisplayStyle.None &&
+                    TryReadPercent(label.text, out var percent))
+                {
+                    // 只在值变化时记录：同一个值连续多帧不代表进度跳动。
+                    if (samples.Count == 0 || samples[samples.Count - 1] != percent)
+                    {
+                        samples.Add(percent);
+                    }
+
+                    if (percent >= 100 &&
+                        SceneManager.GetActiveScene().name != WorldSceneNames.Map01Task)
+                    {
+                        fullWhileSceneNotReady++;
+                    }
+                }
+
+                yield return null;
+            }
+
+            Assert.That(task.Status.IsCompleted(), Is.True, "进入地图一没有在超时前完成。");
+            Assert.That(samples, Is.Not.Empty, "一帧都没有观察到加载界面上的百分比。");
+
+            // 1) 第一帧必须是 0%。
+            Assert.That(
+                samples[0], Is.Zero,
+                $"第一个观察到的百分比是 {samples[0]}%，必须从 0% 开始。" +
+                $"完整序列：{string.Join(", ", samples)}");
+
+            // 2) 必须出现 1%–99% 的中间值，否则就是"一次性加载完成"。
+            var intermediate = samples.Count(v => v >= 1 && v <= 99);
+            Assert.That(
+                intermediate, Is.GreaterThan(0),
+                "没有观察到任何 1%–99% 的中间值，进度条是一次性跳到完成的。" +
+                $"完整序列：{string.Join(", ", samples)}");
+
+            // 3) 必须出现 100%，并且至少占住一帧（上面按变化记录，出现即说明被画过）。
+            Assert.That(
+                samples, Does.Contain(100),
+                $"从未观察到 100%。完整序列：{string.Join(", ", samples)}");
+
+            // 4) 单调不回退。
+            for (var i = 1; i < samples.Count; i++)
+            {
+                Assert.That(
+                    samples[i], Is.GreaterThanOrEqualTo(samples[i - 1]),
+                    $"百分比回退了：{samples[i - 1]}% -> {samples[i]}%。" +
+                    $"完整序列：{string.Join(", ", samples)}");
+            }
+
+            // 5) 场景真正就绪之前不得显示 100%。
+            Assert.That(
+                fullWhileSceneNotReady, Is.Zero,
+                "场景还没切到 Map01_Task 就已经显示 100%。");
+        }
+
+        private static bool TryReadPercent(string text, out int percent)
+        {
+            percent = 0;
+            if (string.IsNullOrEmpty(text))
+            {
+                return false;
+            }
+
+            var trimmed = text.EndsWith("%") ? text.Substring(0, text.Length - 1) : text;
+            return int.TryParse(trimmed, out percent);
+        }
+
+        [UnityTest]
         public IEnumerator PlayerSpawnsAtTheEntryPointAndPlaysTheLobbyBurst()
         {
             yield return LoadBootScene();

@@ -41,16 +41,22 @@ namespace Naraka.Features.Loading.Controller
 
         private readonly IGameClock _clock;
         private readonly ISceneLoader _sceneLoader;
+        private readonly IPresentationFrameScheduler _frames;
         private readonly double _minimumSeconds;
         private readonly ReactiveState<LoadingPresentationState> _state;
         private bool _isRunning;
         private bool _disposed;
         private float _reportedProgress;
 
-        public LoadingController(IGameClock clock, ISceneLoader sceneLoader, double minimumSeconds)
+        public LoadingController(
+            IGameClock clock,
+            ISceneLoader sceneLoader,
+            IPresentationFrameScheduler frames,
+            double minimumSeconds)
         {
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             _sceneLoader = sceneLoader;
+            _frames = frames ?? throw new ArgumentNullException(nameof(frames));
             _minimumSeconds = minimumSeconds < 0d ? 0d : minimumSeconds;
             _state = new ReactiveState<LoadingPresentationState>(LoadingPresentationState.Hidden);
         }
@@ -141,37 +147,48 @@ namespace Naraka.Features.Loading.Controller
 
             try
             {
+                // 先让 0% 真的过一帧，**再**开始加载。
+                //
+                // 写 PresentationState 只是改内存值，不等于屏幕已经显示。
+                // 原来的实现写完 0% 立刻调 BeginLoad，而 BeginLoad 里
+                // `SceneManager.LoadSceneAsync` 会同步烧掉真实时间（开文件、读头、分配），
+                // 正式战斗场景 38.9 MB，这一下就把 0% 那一帧吃掉了 ——
+                // 玩家第一次看到进度条时它已经不在零上。
+                await _frames.NextFrameAsync(cancellationToken);
+
                 var operation = _sceneLoader.BeginLoad(sceneName);
 
-                // 最短显示时长从**BeginLoad 返回之后**开始算，而不是从方法入口。
+                // 显示进度按**已经真正走过的帧数**推进，不按墙钟。
                 //
-                // 原因：`SceneManager.LoadSceneAsync` 在 BeginLoad 里会同步烧掉一段真实时间
-                // （开文件、读头、分配）。正式战斗场景有 38.9 MB，这段时间足够让
-                // "按时间推进"的那一半在**第一次绘制时就已经跑到十几个百分点**，
-                // 于是进度条看起来不是从零开始的。
-                //
-                // 灰盒场景只有 31 KB，BeginLoad 几乎不耗时，所以这个缺陷在 P2.3
-                // 接入正式场景之前一直没露头；单测也没抓到，因为假时钟只在
-                // DelayAsync 里前进，BeginLoad 在测试里永远是零耗时的。
-                var startedAt = _clock.NowSeconds;
+                // 主线程卡在场景反序列化里的时候，墙钟照走而屏幕一帧没刷；
+                // 按墙钟算，恢复后第一次能画的时候进度会一口气跳到一半。
+                // 按帧算，卡顿期间进度条跟着停住，恢复后从下一小步继续 ——
+                // 停住可以接受，跳一半不可以。
+                var visualElapsed = 0d;
                 while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var elapsed = _clock.NowSeconds - startedAt;
                     var ready = operation.IsReadyToActivate;
                     SetState(new LoadingPresentationState(
-                        true, SceneProgress(operation.Progress, ready, elapsed)));
-                    if (ready && elapsed >= _minimumSeconds)
+                        true, SceneProgress(operation.Progress, visualElapsed)));
+                    if (ready && visualElapsed >= _minimumSeconds)
                     {
                         break;
                     }
 
-                    await _clock.DelayAsync(TimeSpan.FromSeconds(TickSeconds), cancellationToken);
+                    await _frames.NextFrameAsync(cancellationToken);
+
+                    // 一次成功的帧等待只推进一个固定步长，无论它实际花了多久。
+                    visualElapsed += TickSeconds;
                 }
 
                 operation.Activate();
                 await operation.WaitForCompletionAsync(cancellationToken);
+
+                // 100% 必须自己占住一帧，否则它和"隐藏界面"落在同一帧里，
+                // 玩家永远看不到满进度。
                 SetState(new LoadingPresentationState(true, 1f));
+                await _frames.NextFrameAsync(cancellationToken);
                 SetState(new LoadingPresentationState(false, 1f));
             }
             catch (OperationCanceledException)
@@ -247,20 +264,22 @@ namespace Naraka.Features.Loading.Controller
         /// - 任何情况下都不会在真实加载完成之前显示 100%。
         ///
         /// 结果还会做单调处理：真实进度的抖动不该让进度条往回跳。
+        ///
+        /// <paramref name="visualElapsed"/> 是**视觉时间**：每成功等过一帧加一个
+        /// 固定步长，与墙钟无关。因此主线程卡顿不会让进度条跳跃。
         /// </summary>
-        private float SceneProgress(float rawProgress, bool ready, double elapsed)
+        private float SceneProgress(float rawProgress, double visualElapsed)
         {
             var real = rawProgress < 0f ? 0f : rawProgress > 1f ? 1f : rawProgress;
 
-            var timeRatio = _minimumSeconds <= 0d ? 1d : elapsed / _minimumSeconds;
+            var timeRatio = _minimumSeconds <= 0d ? 1d : visualElapsed / _minimumSeconds;
             var byTime = timeRatio <= 0d ? 0f : timeRatio >= 1d ? 1f : (float)timeRatio;
 
+            // 循环里**永远**封顶 99%。100% 只在 Activate 之后、场景真正切换完成之后写一次，
+            // 并且自己占住一帧。否则"资源就绪"那一刻就会先闪一个 100%，
+            // 而场景其实还没切过去。
             var value = real < byTime ? real : byTime;
-            if (!ready || byTime < 1f)
-            {
-                // 资源没就绪，或者最短显示时长还没走完，都不允许显示 100%。
-                value = value < IncompleteCeiling ? value : IncompleteCeiling;
-            }
+            value = value < IncompleteCeiling ? value : IncompleteCeiling;
 
             if (value < _reportedProgress)
             {

@@ -1,4 +1,5 @@
 using Naraka.Core.Application.Config;
+using Naraka.Core.Application.Presentation;
 using Naraka.Core.Application.Scenes;
 using Naraka.Core.Application.Timing;
 using Naraka.Features.Character.Controller;
@@ -88,6 +89,11 @@ namespace Naraka.Boot
         {
             builder.Register<IGameClock, UnityGameClock>(Lifetime.Singleton);
             builder.Register<ISceneLoader, UnitySceneLoader>(Lifetime.Singleton);
+
+            // 加载界面按真正走过的帧数推进进度，因此它需要一个帧边界来源。
+            // 实现用 PlayerLoop；Controller 只看到接口，不知道 Unity 的存在。
+            builder.Register<IPresentationFrameScheduler, UnityPresentationFrameScheduler>(
+                Lifetime.Singleton);
 
             // MapId 到 Unity 场景名的只读映射。注册成单例是为了让它成为
             // 整个运行时唯一的翻译点；Default 里没有灰盒场景，

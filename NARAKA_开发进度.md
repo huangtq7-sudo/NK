@@ -1502,14 +1502,95 @@ Unity 自己动的受保护文件，每轮都要查一遍。
 | 项目 | 结果 |
 | --- | --- |
 | Unity 编译 | 退出码 0，**0 条 `error CS`** |
-| **Unity EditMode** | **507 总数 / 506 通过 / 0 失败 / 1 跳过**（基线 486 → **+21**） |
-| **Unity PlayMode** | **37 / 37 通过 / 0 失败** |
+| **Unity EditMode** | **519 总数 / 518 通过 / 0 失败 / 1 跳过**（基线 486 → **+33**） |
+| **Unity PlayMode** | **38 / 38 通过 / 0 失败** |
 | 战斗稳定态 GC（正式环境） | 相对空闲基线增量 **0 B/帧**（预算 ≤ 512 B） |
 | 第三方源场景 | Aquarius 与 PureNature **0 改动**（git 与工具双重确认） |
 | `Map01_Task` 场景 GUID | `8a14712c40bf4ef47a7687e21bc6033f`，**未变** |
 | Build Settings | SampleScene（第一项）、Map01_Task、Map02_Combat 启用；Map02_CombatGraybox 禁用；**0 个 Demo 源场景** |
 | 服务端 / 数据库 / 配置 | `Server/`、`Shared/`、`Config/` **0 改动** |
 | 用户 UI | UXML / USS **0 改动** |
+
+##### 可复现性与加载时序（2026-10-06 第二轮）
+
+**一、High Elves 依赖此前根本没有被 Git 跟踪。**
+
+`Map01_Task` 引用了 High Elves 目录里 **156 个 GUID**，而 `.gitignore` 把整个目录排除掉了，
+Git 里跟踪的文件数是 **0**。本机能跑是因为文件在磁盘上 —— 但**干净检出复现不出来**，
+场景会打开成一片 Missing Prefab。这是上一轮提交的真实缺口：
+提交了场景，没提交它依赖的东西。
+
+用户已授权提交这些素材。现在跟踪的是**依赖闭包**，不是整包：
+
+| | |
+| --- | --- |
+| 闭包资产 | 368 个（连 `.meta` 与父目录 meta 共 **769** 条） |
+| Git LFS | 154 个文件，**916.9 MB** |
+| 普通 Git | **6.3 MB** |
+| 整包对比 | 1,175 个文件、约 1.4 GB |
+| 省下 | 约 400 MB —— 排除了第二个演示场景（Elven Misc Playground，含它 8.2 MB 的 LightingData）、39 张未用到的大贴图、23 个未用到的 FBX |
+
+闭包由 `AssetDatabase.GetDependencies` 递归求出，**不是手写的** ——
+手写必然漏，而漏掉的那一个在干净检出里就是一个缺失的引用。
+两个闭包根回答两个不同问题：`Map01_Task` 是"跑起来需要什么"，
+源场景是"从源场景重建需要什么"。每个资产自己的 `.meta` 与**所有父目录的 meta**
+也一并列入：少了目录 meta，Unity 会给那个目录重新生成一个新 GUID，
+于是指向它的引用在别人机器上全部指错。
+
+清单：[p23-high-elves-dependencies.txt](Docs/Scenes/p23-high-elves-dependencies.txt)，
+生成器 `NARAKA/Setup/Generate P2.3 Scene Dependency Manifest`。
+
+`Tools/CI/Test-TrackedUnitySceneDependencies.ps1` 按 **Git 的视角**校验可复现性，
+而不是文件系统的视角：每一条都存在、没被 ignore、确实被跟踪、`.meta` 也被跟踪、
+场景引用的每个外部 GUID 都能解析到被跟踪的资产，以及每个该走 LFS 的文件在索引里
+**真的是指针而不是大 blob** —— 磁盘上 LFS 文件看起来就是真二进制，只有索引能区分。
+
+**仍留在工作区未跟踪的有 407 个文件、407.6 MB**（闭包之外的素材）。
+它们不再被 ignore，因此在本仓库里执行 `git add -A` 会把这 408 MB 一起加进来。
+动手之前要知道这件事。
+
+**二、正式任务场景里躺着一个演示第一人称角色。**
+
+求闭包时发现 `Map01_Task` 里还有一个激活的 `AQM_FPS_Character`，
+挂着 `DemoCharacter.cs` —— 一个完整的演示第一人称控制器，读鼠标、驱动自己的
+`CharacterController`、处理跳跃与重力。它活在正式场景里会和 NARAKA 自己的玩家抢输入与镜头。
+
+第一轮派生漏了它，而当时的汇报把清理说得比实际干净。漏的原因值得记：
+剥离只找相机、AudioListener、EventSystem 与漫游脚本，而演示角色的相机只是它的**子对象** ——
+把那个相机停用之后，场景通过了"没有生效的相机"这条断言，整个演示角色却留着。
+
+现在按**来源 Prefab 的路径**判定演示内容（住在第三方演示目录里的 Prefab 就是演示内容），
+这条规则在脚本被摘掉之后依然有效，而按"有没有演示脚本"判定则不然。
+`NoFormalSceneCarriesDemoControlLogic` 守住这一点。
+
+要说清楚的是：`AQM_FPS_Character.prefab` 与 `DemoCharacter.cs` **仍然是被跟踪的资产**，
+因为 `Map01_Task` 通过烘焙的 `LightingData.asset` 还依赖它们 ——
+烘焙记录了当时在场的每一个渲染器。场景里的**实例**已经没了，所以没有任何东西在运行。
+
+Pure Nature 的 `EnvironmentManager` 与 `CloudsVolume` 查过之后刻意保留：
+它们只把风参数写进全局 shader 属性、驱动云层渲染，不读输入、不碰玩法，而植被需要它们。
+
+**三、加载进度条仍会从约 50% 开始，或者一次性显示完成。**
+
+上一轮把计时起点挪到 `BeginLoad` 之后并没有解决。真正的原因有三层：
+
+1. 写 `PresentationState` 只是改内存值，**不等于屏幕已经显示**。
+   原实现写完 0% 立刻调 `BeginLoad`，而 `BeginLoad` 会同步烧掉真实时间，
+   那一帧 0% 根本没机会被画出来。
+2. 显示进度依赖**墙钟**。主线程卡在场景反序列化里的时候墙钟照走、屏幕一帧没刷，
+   恢复后第一次能画时就按那段墙钟算成了一半。
+3. 写 100% 之后立刻写隐藏，两个状态落在同一帧里，玩家永远看不到满进度。
+
+所以显示进度改成按**已经真正走过的帧数**推进：每成功等过一帧只加一个固定步长，
+无论那一帧实际花了多久。新增 `IPresentationFrameScheduler` 抽象，
+Unity 实现用 `UniTask.NextFrame`（刻意不用 `Delay`，计时器在主线程卡住时照样到期，
+那又回到按时间跳进度）。Controller 仍然不认识 MonoBehaviour、UIDocument 或 SceneManager。
+
+新时序：显示 0% → **等一帧** → `BeginLoad` → 按帧推进，循环内**永远封顶 99%** →
+`Activate` → 等场景真正完成 → 显示 100% → **等一帧** → 隐藏。
+
+"主线程卡住时进度条也跟着停住"是可以接受的；"恢复后一口气跳到 50%"不可以。
+代价是最短显示时长现在以帧计（120 帧），低帧率机器上加载界面会停留更久。
 
 #### 人工验收待执行项
 
