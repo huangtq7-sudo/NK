@@ -1,8 +1,8 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.20
+版本：1.21
 更新日期：2026-10-05
-当前阶段：P1已关闭；P2.1已于2026-09-29通过用户人工验收；P2.2（单怪物战斗闭环、权威伤害规则、怪物AI与战斗HUD代码接口）已完成实现与自动化验收；2026-10-04按用户要求把全部玩家动画换成带头发飘动的新版本，并修掉新导出带来的四个缺陷（Root 旋转与缩放、裁剪范围被帧率腰斩、根位移轴向、垂直位移残留），蓄力的腾空已恢复；2026-10-05 完成正式暮影妖狼的资源受控导入与表现层接入，视觉验收已于 2026-10-05 通过并修掉验收中报出的"怪物推着角色移动"
+当前阶段：P1已关闭；P2.1已于2026-09-29通过用户人工验收；P2.2（单怪物战斗闭环、权威伤害规则、怪物AI与战斗HUD代码接口）已完成实现与自动化验收；2026-10-04按用户要求把全部玩家动画换成带头发飘动的新版本，并修掉新导出带来的四个缺陷（Root 旋转与缩放、裁剪范围被帧率腰斩、根位移轴向、垂直位移残留），蓄力的腾空已恢复；2026-10-05 完成正式暮影妖狼的资源受控导入与表现层接入，视觉验收已于 2026-10-05 通过并修掉验收中报出的"怪物推着角色移动"；同日关闭 Q-017（R3 依赖），Windows x64 独立构建与客户端启动均已通过
 
 ## 1. 当前状态
 
@@ -1212,6 +1212,48 @@ PlayMode `TheWolfStopsShortInsteadOfPushingThePlayer`（跨过一整个
 15. 场景中只有一只狼。
 16. 咬击/吐息的动画与配置时长差 10–14%，是否需要调播放速度由你决定。
 
+
+#### Q-017 关闭：补齐 R3 缺失的第四个依赖（2026-10-05）
+
+用户视觉验收通过后批准继续，本轮完成 Q-017、独立构建与性能采集。
+
+`NK/Assets/Plugins/R3/` 原本只有 `R3.dll` 与三个依赖，**唯独缺**
+`System.Runtime.CompilerServices.Unsafe.dll`，而 `R3.dll` 的引用表里确实有它。
+编辑器与 EditMode/PlayMode 一直正常，是因为 Editor 的 Mono BCL 自带这个程序集。
+
+| 文件 | 字节数 | SHA-256（前 16 位） | 与 vendor 目录 |
+| --- | --- | --- | --- |
+| `Microsoft.Bcl.AsyncInterfaces.dll` | 16,000 | `5705d245072d3eb7` | 逐字节相同 |
+| `Microsoft.Bcl.TimeProvider.dll` | 32,416 | `d9941b9603506c46` | 逐字节相同 |
+| `System.Threading.Channels.dll` | 75,952 | `31c7e3704c0477c5` | 逐字节相同 |
+| **`System.Runtime.CompilerServices.Unsafe.dll`** | **18,024** | **`01748200f2400c74`** | **本轮补齐** |
+
+三个既有依赖与 vendor 目录逐字节相同，因此来源无歧义。补齐方式：
+
+- **没有升级 R3**、没有替换其他依赖、**没有复制 XML 文档**（构建不需要它）。
+- 新 GUID `01748200f2400c742aa689f1f5101bd6` 取该 DLL 自身 SHA-256 的前 32 位：
+  可复现、不复用任何现有 GUID，已核对与工程内 2,184 个 GUID 零冲突。
+- `PluginImporter` 与同目录三个依赖**除 guid 外完全一致**：
+  Any 启用、Editor 禁用、Windows Store Apps 禁用、`validateReferences: 1`。
+
+#### Windows x64 独立播放器构建与客户端启动（2026-10-05，实际执行）
+
+| 项目 | 结果 |
+| --- | --- |
+| 导入/编译预热 | 退出码 0，**0 条 `error CS`** |
+| 构建 | `-buildWindows64Player`，`Exiting batchmode successfully now!`，**返回码 0** |
+| Unsafe 程序集 | 日志出现 `Dependency assembly - System.Runtime.CompilerServices.Unsafe.dll` 与 `CopyFiles .../Managed/System.Runtime.CompilerServices.Unsafe.dll`；产物里那份 DLL 与源**同一 SHA-256** |
+| 构建错误 | `error CS` 0、"not allowed to be included / could not be found" 0、程序集冲突 0 |
+| 产物 | `artifacts/build/win64/NARAKA.exe`（653,824 字节）+ `UnityPlayer.dll` + `NARAKA_Data`（`artifacts/` 已被 `.gitignore` 排除） |
+| 客户端启动 | 运行 25 秒**不退出、不崩溃**；`MonoManager ReloadAssembly` 成功完成（15.6 秒） |
+| 启动日志 | Unsafe/R3 加载异常 0、Missing Script 0、Exception 0、crash 0 |
+| 识别到的设备 | Direct3D 11.0 [level 11.1]、NVIDIA GeForce RTX 3050 Laptop GPU |
+
+唯一告警是与本轮无关的既有项：`WindowsVideoMedia error unhandled Color Standard: 0`
+（大厅背景视频 `Lobby_Animation.mp4` 的已知问题）。
+
+SSH 隧道未开启，因此版本预检/登录不可用 —— 按既定规则这不算失败，
+也**没有修改**服务器 IP、端口、协议或登录逻辑。
 
 #### 人工验收待执行项
 

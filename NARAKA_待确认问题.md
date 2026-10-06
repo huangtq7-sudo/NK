@@ -1,6 +1,6 @@
 # 《NARAKA》待确认问题与决策记录
 
-版本：1.18
+版本：1.19
 更新日期：2026-10-05
 说明：本文件只保存尚未确认、需要外部素材/权限或会影响实施的事项。已确认玩法不得重新列为问题。
 
@@ -147,29 +147,38 @@
 
 ### Q-017 Windows独立播放器构建被R3依赖阻断
 
-- 状态：**根因已定位，未修复**（2026-09-29 更新）。
-- 根因（已逐字节确认，不是推测）：`NK/Assets/Plugins/R3/` 里有
-  `R3.dll`、`Microsoft.Bcl.AsyncInterfaces.dll`、`Microsoft.Bcl.TimeProvider.dll`、
-  `System.Threading.Channels.dll`，**唯独缺 `System.Runtime.CompilerServices.Unsafe.dll`**，
-  而 `R3.dll` 的程序集引用表里确实含有这个名字。
-  编辑器导入与 EditMode/PlayMode 正常，是因为 Editor 的 Mono BCL 自带这个程序集
-  （`MonoBleedingEdge/lib/mono/4.5/`）；独立播放器构建才要求工程里真的有这份托管 DLL。
-- 补齐文件已经在仓库里，来源无歧义：
-  `.tools/vendor-r3-1.3.1/src/R3.Unity/Assets/Packages/`
-  `System.Runtime.CompilerServices.Unsafe.6.0.0/lib/netstandard2.0/System.Runtime.CompilerServices.Unsafe.dll`
-  （18,024 字节，SHA-256 `01748200f2400c742aa689f1f5101bd6298efdfd92c00c18f4fa473847235ba9`）。
-  现有三个依赖 DLL 已核对与该 vendor 目录**逐字节相同**，说明 `Assets/Plugins/R3/`
-  本来就是从这份 R3 1.3.1 Unity 包里取的，只是漏了第四个。
-- 修复步骤（未执行）：把上述 DLL 复制到 `NK/Assets/Plugins/R3/`，
-  `.meta` 按同目录三个 DLL 的 `PluginImporter` 设置复制（Any 平台启用、Editor 关闭），
-  按 ADR-0003 记录 SHA-256，然后执行一次 Windows 独立播放器构建验证。
-- **本轮没有执行**：修复必须由独立播放器构建验证，而 [Q-025](#q-025-unity-编辑器许可证在本机失效)
-  使本机无法构建；并且 Q-017 要作为独立提交，不与怪物 AI 大改混在一起。
-- 现象：以`-buildWindows64Player`构建Windows独立播放器失败，报`The Assembly System.Runtime.CompilerServices.Unsafe is referenced by R3 ('Assets/Plugins/R3/R3.dll'). But the dll is not allowed to be included or could not be found.`，构建结果为Failure、退出码1。
-- 范围：与本轮登录界面无关；Editor导入、EditMode与PlayMode均正常，只有独立播放器构建路径受影响。P0从未把独立播放器构建列入退出条件，因此不属于回归。
-- 影响：在修复前无法用已构建客户端做人工验收或发布验证，人工Play Mode验收只能在Unity编辑器内进行。
-- 后续需要：确认按ADR-0003的内嵌包基线补齐`System.Runtime.CompilerServices.Unsafe`托管DLL及其导入平台设置，或改用其他受支持的引入方式；修复必须单独提交并重新执行Unity编译与测试。
-- 附带记录：该次失败的构建尝试曾把`NK/ProjectSettings/UnityConnectSettings.asset`的`m_Enabled`改为1，已在本轮还原为0。
+- 状态：**已关闭**（2026-10-05 修复，并由一次真实的 Windows x64 独立构建验证）。
+- 根因（此前已逐字节确认）：`NK/Assets/Plugins/R3/` 有 `R3.dll` 与三个依赖，
+  **唯独缺** `System.Runtime.CompilerServices.Unsafe.dll`，而 `R3.dll` 的程序集
+  引用表里确实有它。编辑器导入与 EditMode/PlayMode 一直正常，是因为 Editor 的
+  Mono BCL 自带这个程序集；独立播放器构建才要求工程里真的有这份托管 DLL。
+- 修法：从仓库内的
+  `.tools/vendor-r3-1.3.1/src/R3.Unity/Assets/Packages/System.Runtime.CompilerServices.Unsafe.6.0.0/lib/netstandard2.0/`
+  复制该 DLL（18,024 字节，SHA-256
+  `01748200f2400c742aa689f1f5101bd6298efdfd92c00c18f4fa473847235ba9`）到
+  `NK/Assets/Plugins/R3/`。
+  **没有升级 R3**，**没有替换其他依赖**，**没有复制 XML 文档**。
+  新 `.meta` 的 GUID 是 `01748200f2400c742aa689f1f5101bd6`（取该 DLL 自身 SHA-256
+  的前 32 位，可复现、不复用任何现有 GUID，已核对与工程内 2,184 个 GUID 零冲突）；
+  `PluginImporter` 设置与同目录三个依赖**除 guid 外完全一致**
+  （Any 启用、Editor 禁用、Windows Store Apps 禁用、`validateReferences: 1`）。
+- 来源无歧义的证据：三个既有依赖与同一个 vendor 目录下的对应文件**逐字节相同**
+  （`Microsoft.Bcl.AsyncInterfaces` 16,000、`Microsoft.Bcl.TimeProvider` 32,416、
+  `System.Threading.Channels` 75,952）。
+- 构建验证（实际执行）：Unity 2021.3.45f2c1 以 `-buildWindows64Player` 构建，
+  日志出现 `Dependency assembly - System.Runtime.CompilerServices.Unsafe.dll` 与
+  `CopyFiles .../NARAKA_Data/Managed/System.Runtime.CompilerServices.Unsafe.dll`
+  —— 它被解析并打进了播放器，产物里那份 DLL 与源**同一 SHA-256**。
+  `Exiting batchmode successfully now!`、返回码 0、0 条 `error CS`、
+  0 条 "not allowed to be included / could not be found"、0 条程序集冲突。
+- 客户端启动验证（实际执行）：启动构建出的 `NARAKA.exe` 并运行 25 秒不退出，
+  `MonoManager ReloadAssembly` 成功完成（这正是缺这个程序集时会失败的地方），
+  日志中 Unsafe/R3 加载异常、Missing Script、Exception、crash **各 0 处**。
+  仅有一条与本轮无关的既有告警：`WindowsVideoMedia error unhandled Color Standard: 0`
+  —— 大厅背景视频 `Lobby_Animation.mp4` 的已知问题。
+- SSH 隧道未开启，因此版本预检/登录不可用；按既定规则这不算失败，
+  也**没有修改**服务器 IP、端口、协议或登录逻辑。
+- 记录：[ADR-0003 的 2026-10-05 记录](Docs/ADR/0003-embedded-unity-packages.md)。
 
 ## 4. 玩法中暂未最终绑定的内容
 
@@ -572,7 +581,6 @@
   本轮**没有缩放狼**，也没有动攻击距离 3.2 与感知距离 14 —— 这两项属于已验收配置。
   需要用户看过实际画面后决定是否调整模型比例。
 - **P2性能门禁**：尚无本轮Profiler证据，不能只根据代码结构声称稳定态0B GC/frame。
-- **Q-017独立播放器构建**：仍未修复，需单独处理R3依赖问题。
 - **Q-026新动画导出遗留**：Idle不闭环、F技能仍使用旧版、Idle与IdleVariation带重复`W0_`骨架曲线，
   等待美术重新导出。
 - **抽奖红色卡背素材**：暂用玄夜卡背，等待正式素材。
