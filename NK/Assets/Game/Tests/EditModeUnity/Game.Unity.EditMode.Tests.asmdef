@@ -3,6 +3,8 @@
   "rootNamespace": "Naraka.Unity.EditMode.Tests",
   "references": [
     "Game.Core.Application",
+    "Game.Boot",
+    "Game.Features.World.View",
     "Game.Generated.Config",
     "Game.Infrastructure.Config",
     "Game.Features.Bootstrap.Controller",

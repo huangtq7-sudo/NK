@@ -34,6 +34,13 @@ NK/Packages/com.cysharp.r3/** -whitespace
 # for ordinary Git history. Their Unity .meta files remain normal text.
 NK/Assets/Game/Art/**/*.png filter=lfs diff=lfs merge=lfs -text
 
+# The project-owned combat scene is derived from the Pure Nature demo scene and is
+# therefore the same order of magnitude (~39 MB). It is a text scene, but far too large
+# for ordinary Git history, so it follows the same LFS rule as its source.
+NK/Assets/Game/Scenes/World/Map02_Combat.unity filter=lfs diff=lfs merge=lfs -text
+# Its baked NavMesh covers the whole 1000x1000 terrain and is ~33 MB of binary data.
+NK/Assets/Game/Scenes/World/Map02_Combat/NavMesh.asset filter=lfs diff=lfs merge=lfs -text
+
 # Large, vendored PureNature scene payloads are immutable source assets and are
 # stored in LFS without changing Unity's scene or terrain contents.
 NK/Assets/PureNature/Scenes/Scene_Demo/Scene_Demo.unity filter=lfs diff=lfs merge=lfs -text

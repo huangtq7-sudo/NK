@@ -89,6 +89,11 @@ namespace Naraka.Boot
             builder.Register<IGameClock, UnityGameClock>(Lifetime.Singleton);
             builder.Register<ISceneLoader, UnitySceneLoader>(Lifetime.Singleton);
 
+            // MapId 到 Unity 场景名的只读映射。注册成单例是为了让它成为
+            // 整个运行时唯一的翻译点；Default 里没有灰盒场景，
+            // 因此正式流转根本无法解析到它。
+            builder.RegisterInstance<IWorldSceneCatalog>(WorldSceneCatalog.Default);
+
             builder.Register<LoadingController>(Lifetime.Singleton)
                 .AsSelf()
                 .As<ILoadingController>()

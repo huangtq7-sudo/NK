@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections;
 using Cysharp.Threading.Tasks;
 using Naraka.Boot;
@@ -15,6 +16,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using VContainer;
+using Naraka.Core.Application.Scenes;
 
 namespace Naraka.P2.PlayMode.Tests
 {
@@ -283,13 +285,23 @@ namespace Naraka.P2.PlayMode.Tests
         {
             yield return EnterMap02();
 
-            var target = Object.FindObjectOfType<CounterTrainingTarget>();
+            // 包含停用对象：P2.3 把训练靶收进了默认停用的 DevOnly 节点下，
+            // 因此 FindObjectOfType 看不到它。要断言的两件事没变：它必须存在，
+            // 而且必须在名字上标明自己是测试对象。
+            var target = Object.FindObjectsOfType<CounterTrainingTarget>(true)
+                .FirstOrDefault();
 
             Assert.That(target, Is.Not.Null, "反击训练靶必须存在，否则反击成功路径无法人工验证。");
             Assert.That(
                 target.name,
                 Does.Contain("Training"),
                 "开发测试对象必须在名字上标明自己是测试对象。");
+
+            // 新增的保证：它默认不影响正式流程。停用的对象不渲染、不跑 Update，
+            // 也不会被战斗登记表找到，因此玩家在正式环境里不会撞上三个灰色假人。
+            Assert.That(
+                target.gameObject.activeInHierarchy, Is.False,
+                "训练靶是开发用对象，必须默认停用。");
         }
 
         [UnityTest]
@@ -689,7 +701,7 @@ namespace Naraka.P2.PlayMode.Tests
             Assert.That(task.Status.IsCompleted(), Is.True, "进入地图二没有在超时前完成。");
             Assert.That(
                 SceneManager.GetActiveScene().name,
-                Is.EqualTo(WorldMapIds.Map02CombatGraybox));
+                Is.EqualTo(WorldSceneNames.Map02Combat));
 
             yield return WaitUntil(
                 () => Object.FindObjectOfType<PlayerCharacterView>() != null &&

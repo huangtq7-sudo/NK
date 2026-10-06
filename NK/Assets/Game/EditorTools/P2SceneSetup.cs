@@ -10,6 +10,7 @@ using Naraka.Features.Character.View;
 using Naraka.Features.Combat.Model;
 using Naraka.Features.Combat.View;
 using Naraka.Features.Loading.View;
+using Naraka.Core.Application.Scenes;
 using Naraka.Features.World.Controller;
 using Naraka.Features.World.View;
 using Naraka.Infrastructure.Camera;
@@ -37,14 +38,21 @@ namespace Naraka.EditorTools
     {
         public const string BootScenePath = "Assets/Scenes/SampleScene.unity";
         public const string Map01ScenePath = "Assets/Game/Scenes/World/Map01_Task.unity";
-        public const string Map02ScenePath = "Assets/Game/Scenes/World/Map02_CombatGraybox.unity";
+        public const string Map02ScenePath = "Assets/Game/Scenes/World/Map02_Combat.unity";
+
+        /// <summary>
+        /// 灰盒战斗场景。保留为**开发回退资产**：
+        /// 它不是任何 MapId 的解析结果，正式流转无法走到它。
+        /// </summary>
+        public const string Map02GrayboxScenePath =
+            "Assets/Game/Scenes/World/Map02_CombatGraybox.unity";
 
         private const string SettingsDirectory = "Assets/Game/Settings";
         private const string PlayerSettingsDirectory = SettingsDirectory + "/Player";
         private const string InputAssetPath = SettingsDirectory + "/Input/NarakaPlayerControls.inputactions";
         public const string PlayerTuningPath = PlayerSettingsDirectory + "/PlayerTuning.asset";
         private const string CameraSettingsPath = PlayerSettingsDirectory + "/ThirdPersonCameraSettings.asset";
-        private const string PlayerPrefabPath = PlayerSettingsDirectory + "/Changli_Player.prefab";
+        public const string PlayerPrefabPath = PlayerSettingsDirectory + "/Changli_Player.prefab";
         private const string GraySurfaceMaterialPath = PlayerSettingsDirectory + "/GrayboxSurface.mat";
         private const string GrayDummyMaterialPath = PlayerSettingsDirectory + "/GrayboxDummy.mat";
 
@@ -77,8 +85,19 @@ namespace Naraka.EditorTools
             var playerPrefab = EnsurePlayerPrefab(controller, report);
 
             EnsureBootScene(tuning, cameraSettings, report);
-            EnsureWorldScene(Map01ScenePath, WorldMapIds.Map01Task, playerPrefab, true, report);
-            EnsureWorldScene(Map02ScenePath, WorldMapIds.Map02CombatGraybox, playerPrefab, false, report);
+            EnsureWorldScene(
+                Map01ScenePath, WorldMapIds.Map01, playerPrefab,
+                withPortal: true, withGrayboxEnvironment: false, report);
+            EnsureWorldScene(
+                Map02ScenePath, WorldMapIds.Map02, playerPrefab,
+                withPortal: false, withGrayboxEnvironment: false, report);
+
+            // 灰盒战斗场景作为开发回退资产继续维护，仍用灰盒地面与假人。
+            // 它和正式战斗场景共用业务 MapId Map02：
+            // MapId 表达"这是地图二"，而哪个场景文件承载它由目录决定。
+            EnsureWorldScene(
+                Map02GrayboxScenePath, WorldMapIds.Map02, playerPrefab,
+                withPortal: false, withGrayboxEnvironment: true, report);
             EnsureBuildSettings(report);
 
             AssetDatabase.SaveAssets();
@@ -351,13 +370,24 @@ namespace Naraka.EditorTools
             if (gameScope != null)
             {
                 var serialized = new SerializedObject(gameScope);
-                var mapName = serialized.FindProperty("map1SceneName");
+                var mapName = serialized.FindProperty("map1MapId")
+                              ?? serialized.FindProperty("map1SceneName");
+
+                // 只在它仍然是已知的历史值时矫正，不覆盖用户自己填的值：
+                // "Map1" 是 P0 时期并不存在的场景名，
+                // "Map01_Task" 是 P2.2 时期把场景名当业务 ID 用的遗留值。
                 if (mapName != null &&
-                    (string.IsNullOrWhiteSpace(mapName.stringValue) || mapName.stringValue == "Map1"))
+                    (string.IsNullOrWhiteSpace(mapName.stringValue) ||
+                     mapName.stringValue == "Map1" ||
+                     mapName.stringValue == WorldSceneNames.Map01Task))
                 {
-                    mapName.stringValue = WorldMapIds.Map01Task;
+                    var previous = string.IsNullOrWhiteSpace(mapName.stringValue)
+                        ? "(空)"
+                        : mapName.stringValue;
+                    mapName.stringValue = WorldMapIds.Map01;
                     serialized.ApplyModifiedPropertiesWithoutUndo();
-                    report.AppendLine($"  [Bootstrap] 开始游戏目标场景由 Map1 纠正为 {WorldMapIds.Map01Task}。");
+                    report.AppendLine(
+                        $"  [Bootstrap] 开始游戏目标由 {previous} 矫正为业务 MapId {WorldMapIds.Map01}。");
                 }
             }
 
@@ -392,6 +422,7 @@ namespace Naraka.EditorTools
             string mapId,
             GameObject playerPrefab,
             bool withPortal,
+            bool withGrayboxEnvironment,
             StringBuilder report)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(scenePath) ?? string.Empty);
@@ -404,6 +435,29 @@ namespace Naraka.EditorTools
                 report.AppendLine($"  [场景] 新建 {scenePath}");
             }
 
+            EnsureWorldBusinessLayer(
+                scene, mapId, playerPrefab, withPortal, withGrayboxEnvironment, report);
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, scenePath);
+        }
+
+        /// <summary>
+        /// 在**已经打开的**场景里补齐世界业务层，不负责打开也不负责保存。
+        ///
+        /// 拆出来是为了让 P2.3 的正式场景派生工具复用同一套业务装配：
+        /// 派生场景必须在"环境已就位、业务已装配"之后**一次**写入磁盘，
+        /// 否则中途失败就会留下一个半成品场景。
+        /// 幂等性跟之前一样：只补缺失的对象与引用，不重建也不重摆位。
+        /// </summary>
+        public static void EnsureWorldBusinessLayer(
+            Scene scene,
+            string mapId,
+            GameObject playerPrefab,
+            bool withPortal,
+            bool withGrayboxEnvironment,
+            StringBuilder report)
+        {
             EnsureSceneLighting(scene, report);
 
             var scopeObject = FindRoot(scene, WorldScopeName) ?? new GameObject(WorldScopeName);
@@ -417,32 +471,38 @@ namespace Naraka.EditorTools
 
             EnsureSpawnPoint(scene, "SpawnPoint_Entry", PlayerSpawnPoint.SpawnKind.Entry,
                 new Vector3(0f, 0.1f, 0f), report);
-            if (mapId == WorldMapIds.Map01Task)
+            if (mapId == WorldMapIds.Map01)
             {
                 EnsureSpawnPoint(scene, "SpawnPoint_Respawn", PlayerSpawnPoint.SpawnKind.Respawn,
                     new Vector3(-4f, 0.1f, 0f), report);
             }
 
-            EnsureGround(scene, report);
+            if (withGrayboxEnvironment)
+            {
+                EnsureGround(scene, report);
+                EnsureTrainingDummies(scene, report);
+            }
 
             if (withPortal)
             {
                 EnsurePortal(scene, report);
             }
-            else
-            {
-                EnsureTrainingDummies(scene, report);
-            }
-
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene, scenePath);
         }
 
         private static void EnsureSceneLighting(Scene scene, StringBuilder report)
         {
-            if (FindRoot(scene, "Directional Light") != null)
+            // 按组件找，不按名字找。正式环境场景的方向光可能叫任何名字、
+            // 也可能藏在 Lighting 这类分组节点下（Pure Nature 就是这样）。
+            // 按名字找会让装配工具给每个派生场景再加一盏方向光。
+            foreach (var root in scene.GetRootGameObjects())
             {
-                return;
+                foreach (var existing in root.GetComponentsInChildren<Light>(true))
+                {
+                    if (existing != null && existing.type == LightType.Directional)
+                    {
+                        return;
+                    }
+                }
             }
 
             var lightObject = new GameObject("Directional Light");
@@ -582,11 +642,84 @@ namespace Naraka.EditorTools
                 added.Add(path);
             }
 
+            // 灰盒战斗场景降级为开发回退资产：条目保留（仍然看得见、能手动打开），
+            // 但禁用。禁用后它不计入 SceneManager.sceneCountInBuildSettings，
+            // 因此 UnitySceneLoader 根本找不到它 —— 这比“约定不要用”更硬。
+            var grayboxIndex = scenes.FindIndex(
+                s => string.Equals(s.path, Map02GrayboxScenePath, StringComparison.OrdinalIgnoreCase));
+            if (grayboxIndex >= 0 && scenes[grayboxIndex].enabled)
+            {
+                scenes[grayboxIndex] = new EditorBuildSettingsScene(Map02GrayboxScenePath, false);
+                report.AppendLine(
+                    $"  [Build] 灰盒战斗场景降级为已禁用的开发回退资产：{Map02GrayboxScenePath}");
+            }
+
+            // 第三方 Demo 源场景绝不进构建列表。这里不是“从没加过”就不用管：
+            // 双击一个 Demo 场景再点 Build Settings 就会把它加进来，所以每次装配都清一遍。
+            var removedDemo = new List<string>();
+            for (var i = scenes.Count - 1; i >= 0; i--)
+            {
+                if (IsThirdPartyDemoScene(scenes[i].path))
+                {
+                    removedDemo.Add(scenes[i].path);
+                    scenes.RemoveAt(i);
+                }
+            }
+
+            if (removedDemo.Count > 0)
+            {
+                report.AppendLine(
+                    $"  [Build] 移除 {removedDemo.Count} 个第三方 Demo 场景：{string.Join("、", removedDemo)}");
+            }
+
+            // Bootstrap 必须是第一项，否则启动进的是地图而不是登录。
+            var bootIndex = scenes.FindIndex(
+                s => string.Equals(s.path, BootScenePath, StringComparison.OrdinalIgnoreCase));
+            if (bootIndex > 0)
+            {
+                var boot = scenes[bootIndex];
+                scenes.RemoveAt(bootIndex);
+                scenes.Insert(0, boot);
+                report.AppendLine($"  [Build] {BootScenePath} 移回第一项。");
+            }
+
             EditorBuildSettings.scenes = scenes.ToArray();
             report.AppendLine(added.Count == 0
                 ? $"  [Build] 场景列表已包含全部必需场景（共 {scenes.Count} 项）。"
                 : $"  [Build] 新增 {added.Count} 项：{string.Join("、", added)}");
         }
+
+        /// <summary>
+        /// 第三方素材包里的源场景。按目录判定而不是按文件名：
+        /// 素材包可能有多个演示场景，而它们全部只读。
+        /// </summary>
+        public static bool IsThirdPartyDemoScene(string scenePath)
+        {
+            if (string.IsNullOrEmpty(scenePath))
+            {
+                return false;
+            }
+
+            var normalized = scenePath.Replace('\\', '/');
+            foreach (var root in ThirdPartySourceRoots)
+            {
+                if (normalized.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>只读的第三方素材根目录。</summary>
+        public static readonly string[] ThirdPartySourceRoots =
+        {
+            "Assets/Aquarius Fantasy - High Elves/",
+            "Assets/PureNature/",
+            "Assets/Imported/CharliShader/",
+            "Assets/Polygonal Creatures Pack/"
+        };
 
         private static void ApplyMaterial(GameObject target, string materialPath, Color color)
         {

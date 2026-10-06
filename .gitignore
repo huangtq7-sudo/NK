@@ -78,3 +78,8 @@ Desktop.ini
 # Accidental root-level runtime logs are local diagnostics, never release inputs.
 /access_*.log
 /error_*.log
+
+# Unity PlayMode test framework temp scenes. It creates these per run and does not
+# always clean them up, so they must never reach a commit.
+NK/Assets/InitTestScene*.unity
+NK/Assets/InitTestScene*.unity.meta

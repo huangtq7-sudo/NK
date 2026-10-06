@@ -1,7 +1,7 @@
 # 《NARAKA》技术架构基线
 
-版本：2.9
-更新日期：2026-09-29
+版本：3.0
+更新日期：2026-10-06
 状态：实施权威摘要
 详细来源：`outputs/naraka_design_v2/NARAKA_TDD_技术设计文档_MVC_v2.0.docx`
 
@@ -59,7 +59,7 @@
 - Input System 1.7.0：键鼠输入、按键重映射和动作上下文。P2接入，版本依据见 [ADR-0014](Docs/ADR/0014-p2-input-system-and-cinemachine.md)。
 - Cinemachine 2.10.1：第三人称镜头、传送和首领镜头；不实现目标锁定。镜头以角色为中心环绕，并为业务层提供只读的`ICameraOrientation.Yaw`作为移动方向基准。P2接入，版本依据见 [ADR-0014](Docs/ADR/0014-p2-input-system-and-cinemachine.md)。
 - Animator、Animation Rigging、Timeline/Playables、Splines：角色、武器、处决和方向修正表现。
-- Addressables：场景、Prefab、UI、音频和特效资源管理。**P2明确暂缓**：场景继续通过 `ISceneLoader` 抽象后的 `SceneManager.LoadSceneAsync` 加载，该抽象就是后续迁移边界，见 [ADR-0016](Docs/ADR/0016-p2-persistent-app-root-and-real-scene-progress.md)。
+- Addressables：场景、Prefab、UI、音频和特效资源管理。**P2明确暂缓**：场景继续通过 `ISceneLoader` 抽象后的 `SceneManager.LoadSceneAsync` 加载，该抽象就是后续迁移边界，见 [ADR-0016](Docs/ADR/0016-p2-persistent-app-root-and-real-scene-progress.md)。P2.3 接入正式场景后结论不变，追加理由与迁移注意点见 [ADR-0020](Docs/ADR/0020-p2-formal-world-scene-binding.md)。
 - HybridCLR：业务程序集热更新。
 - 配置编译器（`Tools/Config/Naraka.ConfigCompiler`）：CSV源表校验并生成双端共享的规范化JSON。取代早期方案中的 Luban，见 ADR-0010。
 - Odin Inspector/Validator：配置编辑和批量校验；若无授权则使用自研 EditorWindow/PropertyDrawer 替代。
@@ -74,6 +74,11 @@
 - Account：登录、会话、账号快照和单账号会话替换。
 - Lobby：英雄、武器、仓库、商店、锻造、签到、抽奖和等级奖励。
 - World：地图、传送、远征、共享时间和天气。
+  **业务地图 ID 与 Unity 场景名必须分离**：Controller 只持有 `WorldMapIds`
+  （`Map01`、`Map02`），翻译成场景名只在场景加载边界发生一次
+  （`IWorldSceneCatalog`）。远征、数据库与协议里的地图字段只能存业务 MapId，
+  不得存场景文件名、场景下标或场景 GUID，见
+  [ADR-0020](Docs/ADR/0020-p2-formal-world-scene-binding.md)。
 - Combat：命中去重、阵营过滤、权威伤害公式与护甲吸收；战斗侧场景对象登记表。
 - CombatHud：战斗 HUD 的只读 PresentationState 与 uGUI 绑定脚本。
 - Monster：怪物属性、阶段、技能调度、动作 HFSM 与灰盒表现。
@@ -267,7 +272,12 @@ P1新增大厅业务按ADR-0007从适配边界扩展应用消息，不解冻Lega
   P2.2完成单怪物战斗闭环、权威伤害规则、怪物AI与战斗HUD代码接口，见
   [ADR-0018](Docs/ADR/0018-monster-behavior-tree-and-hfsm.md) 与
   [ADR-0019](Docs/ADR/0019-authoritative-damage-counter-execute.md)。
+  P2.3把地图一与地图二绑定到正式环境素材（High Elves Sanctuary 与 Pure Nature），
+  第三方源场景保持只读，业务跑在项目自有的派生场景上，并拆分稳定 MapId
+  与场景名，见 [ADR-0020](Docs/ADR/0020-p2-formal-world-scene-binding.md)。
+  这是为 P3 做的前置：远征的坐标、寻路异常分支与性能预算在灰盒地板上都不成立。
 - P3 远征闭环：两图抽象、传送、临时掉落、死亡、异常结算和幂等。
 - P4 内容系统：2英雄、2武器、10怪物、任务、物品、魂玉、护甲、消耗品和宠物内容扩充；锻造基础能力已前置到P1。
 - P5 联网展示与热更：10人移动、共享时间天气、HybridCLR和Addressables。
-- P6 打磨发布：地图素材绑定、性能、音频、可访问性、测试和发布。
+- P6 打磨发布：剩余地图素材绑定、性能、音频、可访问性、测试和发布。
+  地图一与地图二的素材绑定已提前到 P2.3，理由见上。

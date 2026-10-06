@@ -33,7 +33,9 @@ using Naraka.Features.Shop.View;
 using Naraka.Infrastructure.Config;
 using Naraka.Infrastructure.Messaging;
 using Naraka.Infrastructure.Network;
+using Naraka.Core.Application.Scenes;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VContainer;
 using VContainer.Unity;
 
@@ -41,14 +43,19 @@ namespace Naraka.Boot
 {
     public sealed class GameLifetimeScope : LifetimeScope
     {
-        private const string DefaultMapSceneName = "Map01_Task";
+        /// <summary>
+        /// 大厅"开始游戏"的目标地图。这是稳定业务 MapId，不是 Unity 场景名：
+        /// 换正式场景素材不应该让这里跟着改。
+        /// </summary>
+        private const string DefaultMapId = WorldMapIds.Map01;
 
         [SerializeField] private string serverAddress = "127.0.0.1";
         [SerializeField] private int serverPort = 8011;
         [SerializeField] private string bootstrapBaseUrl = "http://127.0.0.1:5222";
         [SerializeField] private string configVersion = "p1-config-1";
         [SerializeField] private string protocolVersion = "LegacyNetworkV1";
-        [SerializeField] private string map1SceneName = DefaultMapSceneName;
+        [FormerlySerializedAs("map1SceneName")]
+        [SerializeField] private string map1MapId = DefaultMapId;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -95,14 +102,16 @@ namespace Naraka.Boot
 
             builder.Register<LobbyModel>(Lifetime.Singleton);
 
-            // 只把地图场景名注入LobbyController，不向容器注册裸string。
-            var mapSceneName = string.IsNullOrWhiteSpace(map1SceneName)
-                ? DefaultMapSceneName
-                : map1SceneName;
+            // 只把目标地图的业务 MapId 注入 LobbyController，不向容器注册裸 string。
+            // 历史序列化值可能还是场景名（例如 Map01_Task），
+            // 那不是合法 MapId，这里直接退回默认值，并由装配工具矫正资产。
+            var mapId = WorldSceneCatalog.Default.TryResolveSceneName(map1MapId, out _)
+                ? map1MapId
+                : DefaultMapId;
             builder.Register<LobbyController>(Lifetime.Singleton)
                 .AsSelf()
                 .As<ILobbyController>()
-                .WithParameter("mapSceneName", mapSceneName);
+                .WithParameter("mapSceneName", mapId);
 
             // 装备控制器只读订阅大厅状态，出战选择的权威副本仍然只有账号资料一份。
             builder.Register<LoadoutController>(Lifetime.Singleton)

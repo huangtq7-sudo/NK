@@ -152,11 +152,11 @@ namespace Naraka.P2.Tests
 
             using (controller.Subscribe(new StateRecorder(seen.Add)))
             {
-                await controller.LoadSceneAsync("Map01_Task", CancellationToken.None);
+                await controller.LoadSceneAsync(WorldSceneNames.Map01Task, CancellationToken.None);
             }
 
             Assert.That(loader.BeginCount, Is.EqualTo(1));
-            Assert.That(loader.LastSceneName, Is.EqualTo("Map01_Task"));
+            Assert.That(loader.LastSceneName, Is.EqualTo(WorldSceneNames.Map01Task));
             Assert.That(loader.Last.Activated, Is.True);
 
             // 未就绪时绝不显示 100%。
@@ -194,7 +194,7 @@ namespace Naraka.P2.Tests
                     }
                 })))
                 {
-                    await controller.LoadSceneAsync("Map01_Task", CancellationToken.None);
+                    await controller.LoadSceneAsync(WorldSceneNames.Map01Task, CancellationToken.None);
                 }
 
                 Assert.That(samples.Count, Is.GreaterThan(10), "应该有足够多的中间进度采样。");
@@ -253,7 +253,7 @@ namespace Naraka.P2.Tests
                 }
             })))
             {
-                await controller.LoadSceneAsync("Map01_Task", CancellationToken.None);
+                await controller.LoadSceneAsync(WorldSceneNames.Map01Task, CancellationToken.None);
             }
 
             Assert.That(
@@ -271,7 +271,7 @@ namespace Naraka.P2.Tests
             };
             var controller = new LoadingController(clock, loader, Minimum);
 
-            await controller.LoadSceneAsync("Map01_Task", CancellationToken.None);
+            await controller.LoadSceneAsync(WorldSceneNames.Map01Task, CancellationToken.None);
 
             Assert.That(clock.NowSeconds, Is.GreaterThanOrEqualTo(Minimum),
                 "资源秒加载完也必须保留最短显示时间，避免闪屏。");
@@ -310,7 +310,7 @@ namespace Naraka.P2.Tests
                     }
                 })))
                 {
-                    await controller.LoadSceneAsync("Map02_CombatGraybox", CancellationToken.None);
+                    await controller.LoadSceneAsync(WorldSceneNames.Map02Combat, CancellationToken.None);
                 }
 
                 Assert.That(clock.NowSeconds, Is.GreaterThanOrEqualTo(6.0));
@@ -364,7 +364,7 @@ namespace Naraka.P2.Tests
                 var thrown = false;
                 try
                 {
-                    await controller.LoadSceneAsync("Map01_Task", CancellationToken.None);
+                    await controller.LoadSceneAsync(WorldSceneNames.Map01Task, CancellationToken.None);
                 }
                 catch (InvalidOperationException)
                 {
@@ -381,7 +381,7 @@ namespace Naraka.P2.Tests
             var clock = new PumpableGameClock();
             var loader = new FakeSceneLoader();
             var loading = new LoadingController(clock, loader, Minimum);
-            var world = new WorldFlowController(loading);
+            var world = new WorldFlowController(loading, WorldSceneCatalog.Default);
 
             clock.OnAdvance = () =>
             {
@@ -411,7 +411,7 @@ namespace Naraka.P2.Tests
             await first;
 
             Assert.That(loader.BeginCount, Is.EqualTo(1));
-            Assert.That(world.Current.CurrentMapId, Is.EqualTo(WorldMapIds.Map02CombatGraybox));
+            Assert.That(world.Current.CurrentMapId, Is.EqualTo(WorldMapIds.Map02));
             Assert.That(world.Current.IsTransitioning, Is.False);
         });
 
@@ -421,7 +421,7 @@ namespace Naraka.P2.Tests
             var clock = new FakeGameClock();
             var loader = new FakeSceneLoader();
             var loading = new LoadingController(clock, loader, Minimum);
-            var world = new WorldFlowController(loading);
+            var world = new WorldFlowController(loading, WorldSceneCatalog.Default);
             clock.OnDelay = () =>
             {
                 if (loader.Last == null)
@@ -433,7 +433,7 @@ namespace Naraka.P2.Tests
                 loader.Last.IsReadyToActivate = true;
             };
 
-            await world.LoadMapAsync(WorldMapIds.Map01Task, CancellationToken.None);
+            await world.LoadMapAsync(WorldMapIds.Map01, CancellationToken.None);
 
             Assert.That(world.ConsumeArrival(), Is.EqualTo(WorldArrival.LobbyToMap01));
             Assert.That(world.ConsumeArrival(), Is.EqualTo(WorldArrival.None),
@@ -455,7 +455,7 @@ namespace Naraka.P2.Tests
                 }
             };
             var loading = new LoadingController(clock, loader, Minimum);
-            var world = new WorldFlowController(loading);
+            var world = new WorldFlowController(loading, WorldSceneCatalog.Default);
 
             try
             {

@@ -547,7 +547,7 @@ namespace Naraka.EditorTools
 
             var scene = EditorSceneManager.OpenScene(P2SceneSetup.Map02ScenePath, OpenSceneMode.Single);
 
-            var spawnerObject = FindRoot(scene, SpawnerName);
+            var spawnerObject = FindInScene(scene, SpawnerName);
             if (spawnerObject == null)
             {
                 spawnerObject = new GameObject(SpawnerName);
@@ -565,7 +565,7 @@ namespace Naraka.EditorTools
             // 本阶段不做刷新：死了就没了，重新进场景才会再有一只。
             SetField(spawner, "respawnSeconds", 0f);
 
-            var trainingObject = FindRoot(scene, TrainingTargetName);
+            var trainingObject = FindInScene(scene, TrainingTargetName);
             if (trainingObject == null)
             {
                 trainingObject = new GameObject(TrainingTargetName);
@@ -688,6 +688,29 @@ namespace Naraka.EditorTools
             var created = new GameObject(name);
             created.transform.SetParent(parent, false);
             return created.transform;
+        }
+
+        /// <summary>
+        /// 在整个场景里按名字找对象，包括子节点与停用对象。
+        ///
+        /// 不能只找根对象：P2.3 把训练靶这类开发用对象收进了 DevOnly 节点下，
+        /// 只找根的话装配工具会以为它不存在，然后再建一个 ——
+        /// 这正是幂等性测试抱住的那个缺陷。
+        /// </summary>
+        private static GameObject FindInScene(Scene scene, string name)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                foreach (var transform in root.GetComponentsInChildren<Transform>(true))
+                {
+                    if (transform != null && transform.name == name)
+                    {
+                        return transform.gameObject;
+                    }
+                }
+            }
+
+            return null;
         }
 
         private static GameObject FindRoot(Scene scene, string name)

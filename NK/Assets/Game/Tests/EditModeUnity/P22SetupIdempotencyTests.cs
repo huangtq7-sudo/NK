@@ -43,33 +43,78 @@ namespace Naraka.Unity.EditMode.Tests
 
             var scene = EditorSceneManager.OpenScene(
                 P2SceneSetup.Map02ScenePath, OpenSceneMode.Single);
-            var roots = scene.GetRootGameObjects();
 
+            // 按整个场景数，不按根对象数。P2.3 把训练靶收进了 DevOnly 节点下，
+            // 只数根对象会把"它被搭到子节点了"误报成"它不存在"；
+            // 而且数全场景比只数根**更严**，它还能抓到建在子节点上的重复对象。
             Assert.That(
-                roots.Count(go => go.name == P22CombatSetup.SpawnerName),
+                CountInScene(scene, P22CombatSetup.SpawnerName),
                 Is.EqualTo(1),
                 "重复执行不得产生第二个生成点。");
             Assert.That(
-                roots.Count(go => go.name == P22CombatSetup.TrainingTargetName),
+                CountInScene(scene, P22CombatSetup.TrainingTargetName),
                 Is.EqualTo(1),
                 "重复执行不得产生第二个训练靶。");
-            Assert.That(
-                roots.Count(go => go.name == P22CombatSetup.NavigationRootName),
-                Is.EqualTo(1));
 
-            var spawner = roots
-                .First(go => go.name == P22CombatSetup.SpawnerName)
+            // NavigationArea 是灰盒导航底板，只属于灰盒回退场景；
+            // 正式战斗场景的 NavMesh 烘在真实地形上，由
+            // P23FormalWorldSceneTests.TheFormalCombatSceneHasABakedNavMeshOnTheRealTerrain 守。
+            var graybox = EditorSceneManager.OpenScene(
+                P2SceneSetup.Map02GrayboxScenePath, OpenSceneMode.Single);
+            Assert.That(
+                CountInScene(graybox, P22CombatSetup.NavigationRootName),
+                Is.EqualTo(1),
+                "灰盒回退场景必须保留恰好一个导航底板。");
+
+            scene = EditorSceneManager.OpenScene(
+                P2SceneSetup.Map02ScenePath, OpenSceneMode.Single);
+
+            var spawner = FindInScene(scene, P22CombatSetup.SpawnerName)
                 .GetComponent<MonsterSpawner>();
             Assert.That(spawner, Is.Not.Null);
 
-            var training = roots
-                .First(go => go.name == P22CombatSetup.TrainingTargetName)
+            var training = FindInScene(scene, P22CombatSetup.TrainingTargetName)
                 .GetComponent<CounterTrainingTarget>();
             Assert.That(training, Is.Not.Null);
             Assert.That(
                 P22CombatSetup.TrainingTargetName,
                 Does.Contain("DevOnly"),
                 "开发测试对象必须在名字上标明自己不是正式内容。");
+        }
+
+        private static int CountInScene(UnityEngine.SceneManagement.Scene scene, string name)
+        {
+            var count = 0;
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                foreach (var transform in root.GetComponentsInChildren<Transform>(true))
+                {
+                    if (transform != null && transform.name == name)
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        private static GameObject FindInScene(
+            UnityEngine.SceneManagement.Scene scene, string name)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                foreach (var transform in root.GetComponentsInChildren<Transform>(true))
+                {
+                    if (transform != null && transform.name == name)
+                    {
+                        return transform.gameObject;
+                    }
+                }
+            }
+
+            Assert.Fail($"场景 {scene.name} 里找不到 {name}。");
+            return null;
         }
 
         [Test]

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Naraka.Core.Application.Scenes;
 using Naraka.Features.Character.Model;
 using Naraka.Features.Character.View;
 using Naraka.Features.World.Controller;
@@ -22,7 +23,8 @@ namespace Naraka.Features.World.View
     /// </summary>
     public sealed class WorldSceneEntry : MonoBehaviour
     {
-        [SerializeField] private string mapId = WorldMapIds.Map01Task;
+        [Tooltip("稳定业务地图 ID，不是 Unity 场景名。")]
+        [SerializeField] private string mapId = WorldMapIds.Map01;
 
         [SerializeField] private GameObject playerPrefab;
 

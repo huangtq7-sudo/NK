@@ -382,7 +382,7 @@ namespace Naraka.P2.PlayMode.Tests
                           $"（实际基线 {baseline.Frames} 帧、战斗 {combat.Frames} 帧）");
             sb.AppendLine($"  采样覆盖的动作路径    {coverage.Describe()}");
             sb.AppendLine();
-            sb.AppendLine("  场景 Map02_CombatGraybox，1 名玩家 + 1 只正式暮影妖狼。");
+            sb.AppendLine("  场景 Map02_Combat，1 名玩家 + 1 只正式暮影妖狼。");
             sb.AppendLine("  战斗阶段先把狼打到半血以下，因此同时覆盖普攻与红色吐息两条路径。");
 
             sb.AppendLine();

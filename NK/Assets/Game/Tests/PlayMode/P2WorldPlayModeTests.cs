@@ -18,6 +18,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using VContainer;
+using Naraka.Core.Application.Scenes;
 
 namespace Naraka.P2.PlayMode.Tests
 {
@@ -160,7 +161,7 @@ namespace Naraka.P2.PlayMode.Tests
             Assert.That(maxProgress, Is.GreaterThan(0f), "真实加载进度必须推进。");
             Assert.That(loading.Current.HasError, Is.False);
             Assert.That(
-                SceneManager.GetActiveScene().name, Is.EqualTo(WorldMapIds.Map01Task));
+                SceneManager.GetActiveScene().name, Is.EqualTo(WorldSceneNames.Map01Task));
         }
 
         [UnityTest]
@@ -469,10 +470,10 @@ namespace Naraka.P2.PlayMode.Tests
             yield return WaitUntil(() => portal == null || portal.IsLocked, 3f, "portal-locked");
 
             yield return WaitUntil(
-                () => SceneManager.GetActiveScene().name == WorldMapIds.Map02CombatGraybox,
+                () => SceneManager.GetActiveScene().name == WorldSceneNames.Map02Combat,
                 SceneLoadTimeoutSeconds);
             Assert.That(
-                SceneManager.GetActiveScene().name, Is.EqualTo(WorldMapIds.Map02CombatGraybox));
+                SceneManager.GetActiveScene().name, Is.EqualTo(WorldSceneNames.Map02Combat));
 
             yield return WaitUntil(
                 () => Object.FindObjectOfType<PlayerCharacterView>() != null, 6f, "map02-player");
@@ -527,7 +528,7 @@ namespace Naraka.P2.PlayMode.Tests
                 SceneLoadTimeoutSeconds, "death-arrival");
 
             yield return WaitUntil(
-                () => SceneManager.GetActiveScene().name == WorldMapIds.Map01Task &&
+                () => SceneManager.GetActiveScene().name == WorldSceneNames.Map01Task &&
                       Object.FindObjectOfType<PlayerCharacterView>() != null &&
                       Object.FindObjectOfType<PlayerCharacterView>().State.IsAlive,
                 SceneLoadTimeoutSeconds, "death-respawn");
@@ -584,7 +585,7 @@ namespace Naraka.P2.PlayMode.Tests
 
             Assert.That(task.Status.IsCompleted(), Is.True, "进入地图一没有在超时前完成。");
             Assert.That(
-                SceneManager.GetActiveScene().name, Is.EqualTo(WorldMapIds.Map01Task),
+                SceneManager.GetActiveScene().name, Is.EqualTo(WorldSceneNames.Map01Task),
                 "地图一必须加载成功。");
             yield return WaitUntil(() => Object.FindObjectOfType<PlayerCharacterView>() != null, 6f);
         }

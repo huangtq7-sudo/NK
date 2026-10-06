@@ -3,6 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Naraka.Core.Application.MVC;
 using Naraka.Core.Application.Presentation;
+using Naraka.Core.Application.Scenes;
 using Naraka.Features.Loading.Controller;
 using Naraka.Features.Lobby.Controller;
 
@@ -10,10 +11,13 @@ namespace Naraka.Features.World.Controller
 {
     public interface IWorldFlowController : IReadOnlyState<WorldPresentationState>
     {
-        /// <summary>从大厅进入地图一。与大厅"开始游戏"走同一条路径。</summary>
+        /// <summary>进入地图一（<see cref="WorldMapIds.Map01"/>）。与大厅"开始游戏"走同一条路径。</summary>
         UniTask EnterMap01Async(CancellationToken cancellationToken);
 
-        /// <summary>进入地图二。传送门只允许触发一次，重复请求直接被拒绝。</summary>
+        /// <summary>
+        /// 进入地图二（<see cref="WorldMapIds.Map02"/>）。
+        /// 传送门只允许触发一次，重复请求直接被拒绝。
+        /// </summary>
         UniTask EnterMap02Async(CancellationToken cancellationToken);
 
         /// <summary>死亡后异步返回地图一重生点。</summary>
@@ -29,6 +33,11 @@ namespace Naraka.Features.World.Controller
     /// 它同时实现 <see cref="ILobbySceneGateway"/>：大厅的"开始游戏"按钮因此不需要知道
     /// 加载界面、真实进度或出场动画的存在，只调用既有的网关接口。
     ///
+    /// 这里是 MapId 与 Unity 场景名之间的**唯一**翻译点：对外、对状态、对未来的服务端
+    /// 一律只用稳定 MapId；只有在把加载请求交给 <c>ILoadingController</c> 的那一行
+    /// 才通过 <see cref="IWorldSceneCatalog"/> 换成场景名。
+    /// 因此换美术素材（灰盒战斗场景换成正式战斗场景）不会改变任何业务状态值。
+    ///
     /// 重复触发防护有两层：<see cref="WorldPresentationState.IsTransitioning"/> 对外可见，
     /// 内部 <c>_isTransitioning</c> 保证即使同一帧连续调用也只会创建一个切换任务。
     /// </summary>
@@ -36,15 +45,17 @@ namespace Naraka.Features.World.Controller
         IController, IWorldFlowController, ILobbySceneGateway, IDisposable
     {
         private readonly ILoadingController _loading;
+        private readonly IWorldSceneCatalog _sceneCatalog;
         private readonly ReactiveState<WorldPresentationState> _state;
         private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
         private bool _isTransitioning;
         private bool _disposed;
         private WorldArrival _pendingArrival;
 
-        public WorldFlowController(ILoadingController loading)
+        public WorldFlowController(ILoadingController loading, IWorldSceneCatalog sceneCatalog)
         {
             _loading = loading ?? throw new ArgumentNullException(nameof(loading));
+            _sceneCatalog = sceneCatalog ?? throw new ArgumentNullException(nameof(sceneCatalog));
             _state = new ReactiveState<WorldPresentationState>(WorldPresentationState.Initial);
         }
 
@@ -64,23 +75,23 @@ namespace Naraka.Features.World.Controller
         }
 
         /// <summary>
-        /// 大厅"开始游戏"的落点。场景名由组合根注入大厅控制器，这里只负责实际流转。
+        /// 大厅"开始游戏"的落点。大厅只转发一个它从不解释的标识符，
+        /// 该标识符是 <see cref="WorldMapIds"/> 里的业务 MapId，由组合根注入。
         /// </summary>
-        public UniTask LoadMapAsync(string sceneName, CancellationToken cancellationToken) =>
-            TransitionAsync(sceneName, WorldArrival.LobbyToMap01, cancellationToken);
+        public UniTask LoadMapAsync(string mapId, CancellationToken cancellationToken) =>
+            TransitionAsync(mapId, WorldArrival.LobbyToMap01, cancellationToken);
 
         public UniTask EnterMap01Async(CancellationToken cancellationToken) =>
-            TransitionAsync(WorldMapIds.Map01Task, WorldArrival.LobbyToMap01, cancellationToken);
+            TransitionAsync(WorldMapIds.Map01, WorldArrival.LobbyToMap01, cancellationToken);
 
         public UniTask EnterMap02Async(CancellationToken cancellationToken) =>
-            TransitionAsync(
-                WorldMapIds.Map02CombatGraybox, WorldArrival.Map01ToMap02, cancellationToken);
+            TransitionAsync(WorldMapIds.Map02, WorldArrival.Map01ToMap02, cancellationToken);
 
         public UniTask ReturnToMap01AfterDeathAsync(CancellationToken cancellationToken) =>
-            TransitionAsync(WorldMapIds.Map01Task, WorldArrival.DeathToMap01, cancellationToken);
+            TransitionAsync(WorldMapIds.Map01, WorldArrival.DeathToMap01, cancellationToken);
 
         private async UniTask TransitionAsync(
-            string sceneName,
+            string mapId,
             WorldArrival arrival,
             CancellationToken cancellationToken)
         {
@@ -89,6 +100,10 @@ namespace Naraka.Features.World.Controller
                 // 已有切换在途：绝不创建第二个场景切换任务。
                 return;
             }
+
+            // 先解析再置位。未登记的 MapId 必须在把界面切进"正在加载"之前就失败，
+            // 否则加载界面会为一个根本不存在的目标亮起来。
+            var sceneName = _sceneCatalog.ResolveSceneName(mapId);
 
             _isTransitioning = true;
             _pendingArrival = arrival;
@@ -101,7 +116,8 @@ namespace Naraka.Features.World.Controller
                     await _loading.LoadSceneAsync(sceneName, linked.Token);
                 }
 
-                SetState(new WorldPresentationState(sceneName, arrival, false));
+                // 写进状态的是 MapId，不是刚刚加载的场景名。
+                SetState(new WorldPresentationState(mapId, arrival, false));
             }
             catch (OperationCanceledException)
             {
