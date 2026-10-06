@@ -42,7 +42,7 @@ namespace Naraka.P2.PlayMode.Tests
     /// </summary>
     public sealed class P2PerformanceProfileTests
     {
-        private const string OutputPath = "artifacts/p2-performance-profile.txt";
+        private const string OutputRelativePath = "artifacts/p2-performance-profile.txt";
         private const float SceneLoadTimeoutSeconds = 30f;
 
         /// <summary>预热时长。首次场景加载、Shader 编译与资源初始化都要落在这段里。</summary>
@@ -179,7 +179,7 @@ namespace Naraka.P2.PlayMode.Tests
                 delta, Is.LessThanOrEqualTo(CombatAllocationBudgetBytes),
                 $"战斗相对空闲基线每帧多分配 {delta} 字节（基线 {baseline.MedianGcBytes}、" +
                 $"战斗 {combat.MedianGcBytes}），说明战斗路径里有每帧垃圾。" +
-                $"完整数据见 {OutputPath}。");
+                $"完整数据见 {ResolveOutputPath()}。");
         }
 
         // ------------------------------------------------------------------ 采样
@@ -374,7 +374,8 @@ namespace Naraka.P2.PlayMode.Tests
             sb.AppendLine($"  分辨率                {Screen.width}×{Screen.height}");
             sb.AppendLine($"  运行容器              " +
                           $"{(Application.isEditor ? "Editor PlayMode（不是 Development Build）" : "独立播放器")}");
-            sb.AppendLine($"  Development Build     {Debug.isDebugBuild}");
+            sb.AppendLine($"  Development Build     " +
+                          $"{(Application.isEditor ? "不适用（当前为 Editor PlayMode）" : Debug.isDebugBuild.ToString())}");
             sb.AppendLine("  Deep Profile          关闭（本自动化从不开启）");
             sb.AppendLine($"  预热时长              {warmupSeconds:F2} 秒（要求 ≥ {WarmupSeconds:F0}）");
             sb.AppendLine($"  每阶段采样            ≥ {SampleFrames} 帧且 ≥ {MinSampleSeconds:F0} 秒" +
@@ -434,9 +435,22 @@ namespace Naraka.P2.PlayMode.Tests
             sb.AppendLine("  连到已构建的 Development Build 上采集（Deep Profile 保持关闭、");
             sb.AppendLine("  预热与采样分开、至少 300 帧稳定战斗）。本文件给出的 GC 结论不受此影响。");
 
-            Directory.CreateDirectory(Path.GetDirectoryName(OutputPath) ?? ".");
-            File.WriteAllText(OutputPath, sb.ToString(), new UTF8Encoding(false));
-            Debug.Log($"[性能采集] 已写出 {OutputPath}\n{sb}");
+            var outputPath = ResolveOutputPath();
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
+            File.WriteAllText(outputPath, sb.ToString(), new UTF8Encoding(false));
+            Debug.Log($"[性能采集] 已写出 {outputPath}\n{sb}");
+        }
+
+        private static string ResolveOutputPath()
+        {
+            var projectDirectory = Directory.GetParent(Application.dataPath)?.FullName;
+            var repositoryDirectory = projectDirectory != null
+                ? Directory.GetParent(projectDirectory)?.FullName
+                : null;
+
+            Assert.That(repositoryDirectory, Is.Not.Null.And.Not.Empty,
+                "无法从 Unity Application.dataPath 定位仓库根目录。");
+            return Path.Combine(repositoryDirectory, OutputRelativePath);
         }
 
         // ------------------------------------------------------------------ 场景

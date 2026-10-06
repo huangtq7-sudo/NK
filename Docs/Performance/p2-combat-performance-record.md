@@ -96,3 +96,16 @@ pwsh Tools/CI/Invoke-UnityTests.ps1 -TestPlatform PlayMode
 
 采集代码按开发规范放在 Tests 里，**不进入正式业务运行路径**，也不改变玩法：
 它只读 `ProfilerRecorder`、传送玩家、并按配置值对怪物施加一次伤害来覆盖受击路径。
+
+## 7. 2026-10-06 Codex独立复验
+
+- Git LFS `fsck`：通过，正式狼FBX与贴图对象完整。
+- Unity导入/编译：退出码0，零C#编译错误。
+- EditMode：486总计、485通过、0失败、1项环境联网测试跳过。
+- PlayMode：37/37通过。
+- 再次采集：空闲基线21,480帧、战斗21,070帧；两边GC中位数与峰值均为
+  `1,001 B / 615,465 B`，战斗相对基线新增分配仍为`0 B/frame`。
+- 主线程战斗中位数`0.347 ms`、峰值`2.372 ms`，仍只作无图形Editor环境参考。
+- 修正采集器的两处记录错误：报告现在确定写到仓库根`artifacts/p2-performance-profile.txt`；
+  Editor PlayMode不再因`Debug.isDebugBuild`而被误标成Development Build。
+- 渲染线程、GPU与1920×1080总帧预算仍未验证，结论没有被放宽。
