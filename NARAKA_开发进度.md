@@ -1,8 +1,8 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.19
+版本：1.20
 更新日期：2026-10-05
-当前阶段：P1已关闭；P2.1已于2026-09-29通过用户人工验收；P2.2（单怪物战斗闭环、权威伤害规则、怪物AI与战斗HUD代码接口）已完成实现与自动化验收；2026-10-04按用户要求把全部玩家动画换成带头发飘动的新版本，并修掉新导出带来的四个缺陷（Root 旋转与缩放、裁剪范围被帧率腰斩、根位移轴向、垂直位移残留），蓄力的腾空已恢复
+当前阶段：P1已关闭；P2.1已于2026-09-29通过用户人工验收；P2.2（单怪物战斗闭环、权威伤害规则、怪物AI与战斗HUD代码接口）已完成实现与自动化验收；2026-10-04按用户要求把全部玩家动画换成带头发飘动的新版本，并修掉新导出带来的四个缺陷（Root 旋转与缩放、裁剪范围被帧率腰斩、根位移轴向、垂直位移残留），蓄力的腾空已恢复；2026-10-05 完成正式暮影妖狼的资源受控导入与表现层接入，视觉验收已于 2026-10-05 通过并修掉验收中报出的"怪物推着角色移动"
 
 ## 1. 当前状态
 
@@ -979,6 +979,238 @@ PlayMode 第一次在带怪物的地图二上跑完，暴露出一个布置问�
 | Unity PlayMode | **total=27，passed=27，failed=0，skipped=0** |
 | 装配工具幂等 | 三个工具各再跑一遍，10 个产物**逐字节相同** |
 | 动画 `.meta` 改动 | 仍是 3 个文件各 1 行（`lastFrame`），本轮没有新增 |
+
+
+#### 正式暮影妖狼表现层接入（2026-10-05）
+
+此前场上是明确命名的 `GrayboxWolf` 方块替身（ADR-0018 刻意如此，避免让人误以为美术已接入）。
+用户 2026-10-05 确认素材包可用于本项目并授权导入暮影妖狼所需资源，本轮完成接入。
+
+##### 受控导入：12 个资产，不是整包
+
+| 项 | 值 |
+| --- | --- |
+| 素材包 | `Unity Asset Polygonal - Creatures Pack v1.0.unitypackage` |
+| 字节数 / SHA-256 | 38,110,997 / `70b6b6a423bac0080227f816c19c94b3133eb90b90b8b860528c7284a0412f18` |
+| 包内条目 | 524（10 个生物目录） |
+| 暮影妖狼目录真实条数 | 50（路径与用户清单一致） |
+| **实际导入** | **12 个资产 + 4 个目录 meta** |
+| GUID | 原样保留；全工程 2,184 个 GUID **零重复** |
+
+导入由 `Tools/import_polygonal_wolf.py` 执行，不是手工勾选：白名单写在代码里，
+运行时先校验包的字节数与 SHA-256，对不上直接拒绝导入。`.unitypackage` 本身不进仓库。
+
+导入的 12 个：`Polygonal Wolf.FBX`、`Base.FBX`、7 个动画
+（`@Idle`、`@Walk Forward WO Root`、`@Run Forward WO Root`、`@Bite Attack`、
+`@Breath Attack`、`@Take Damage`、`@Die`）、`Polygonal Wolf Black.mat`、
+`Polygonal Wolf Black.png`、`Polygonal Wolf Black Glow.png`。
+
+**与用户清单的两处差异**（都已排除）：包内实际是 **21 个 FBX**
+（本体 + `Base` + **19** 个动画，不是 18）；另有清单未提到的
+`PPP/Post Processing.asset`、`FBX/Rotate.anim`、`Materials/Demo Ground.mat`
+与两个说明文本。
+
+**连 Black 的第三方 Prefab 也没有导入**：实测它除 FBX 之外只依赖内建 `Standard`
+材质（URP 下粉色，必须换）与 `Animators/Polygonal Wolf.controller`（演示控制器，已排除），
+导入它只会留下一个必然缺失的引用；而它能提供的（53 节点骨架 + 单个
+`SkinnedMeshRenderer` + Avatar）直接实例化 FBX 就有，它自己也没有任何碰撞体。
+
+##### 导入核查（`NARAKA/Diag/Duskshadow Wolf Asset Audit`，实测）
+
+| 项 | 结果 |
+| --- | --- |
+| `animationType` / `avatarSetup` | Generic / `CreateFromThisModel` |
+| `rootMotionBoneName` | 空 —— 没有 Root Motion 节点 |
+| Transform / 蒙皮骨骼 / Renderer | 53 / 37 / 1 个 `SkinnedMeshRenderer` |
+| 第三方自带 Collider | **0**（因此命中与阻挡只能用项目自有对象） |
+| 7 个动画的曲线路径 | **510–520 条全部匹配模型骨架，0 条对不上** |
+| 根位移净变化 | 6 个为 0；`@Die` 为 (−0.328, 0.064, −0.046)（倒地自然位移，不移动 GameObject） |
+| Idle 姿态脚底 / 肩高 | y ≈ **−0.072**（基本贴地）/ 0.693 |
+| 体长 Z / 体宽 X | 1.539 / 0.497，体长沿 **+Z**，不需要旋转补偿 |
+| 嘴部骨骼 | `RigJaw` (0, 0.396, 0.697)、`RigHead` (0, 0.567, 0.691) |
+| 第三方材质 Shader | **`Standard`** → URP 下是粉色，必须建适配层 |
+| 演示场景 / 演示 Animator | 工程里 **0 个**；Build Settings 只有工程自己的 3 个场景 |
+
+> 绑定姿态的包围盒报脚底 −0.427，那是作者烘焙的绑定姿态数据，不能用来摆碰撞体。
+> 上表取的是把 Idle 采样到模型之后的骨骼世界坐标。
+
+##### 表现层：业务路径一行未改
+
+意图选择、HFSM、技能调度、阶段门控、伤害、命中去重、脱战、休眠、两张 CSV、
+生成点上限与 HUD 接口**全部未动**。补的两件事都是纯表现：
+
+1. **新增 `MonsterAnimatorProjector`**，把 `MonsterFrameOutput.Animation`
+   投到同名 Animator State。这个字段从 P2.2 第一天就由 HFSM 产出，
+   只是方块替身没有 Animator、没人消费它。形态与玩家投影器完全一致：
+   **7 个 State、0 个 Parameter、0 条 Transition**，默认 `Idle`，
+   `CrossFadeInFixedTime` + 缓存 Hash，运行期无字符串查找。
+2. **颜色反馈从单个 Renderer 改成全部身体 Renderer**（排除预警面片，
+   它被染色就看不出预警了），仍用 `MaterialPropertyBlock`，不生成材质实例。
+
+`GrayboxWolfView` → **`DuskshadowWolfView`**（用户选择方案 A），
+`.cs.meta` 的 GUID `2df49a30f96d7e7408808ba379d27c05` 原样保留，
+两个 Prefab 的脚本引用都没断，0 处残留引用。
+
+##### 动画映射
+
+| 业务动作 | Animator State | 第三方 FBX | 长度 | 循环 | 配置动作时长 |
+| --- | --- | --- | --- | --- | --- |
+| Idle | `Idle` | `@Idle` | 1.333 | 是 | — |
+| Walk（巡逻/回家） | `Walk` | `@Walk Forward WO Root` | 1.167 | 是 | — |
+| Run（追击） | `Run` | `@Run Forward WO Root` | 0.667 | 是 | — |
+| Attack（普攻） | `Attack` | `@Bite Attack` | 1.167 | 否 | 1.30 |
+| Skill（赤瘴吐息） | `Skill` | `@Breath Attack` | 1.333 | 否 | 1.55 |
+| HitStun（受击） | `HitStun` | `@Take Damage` | 0.667 | 否 | 0.60 |
+| Death（死亡） | `Death` | `@Die` | 2.000 | 否 | 2.00 |
+
+只用 `WO Root` 那一套移动动画，Animator 的 `applyRootMotion` 关闭，
+`rootMotionBoneName` 本来也是空 —— 三重保证不出现双倍位移。
+
+**播放速度一律保持 1**：片段长度与配置动作时长差 10–14%
+（咬击短 10%、吐息短 14%、受击长 11%、死亡正好一致）。
+调速属于允许的表现层适配，但按 Q-020 立下的"不擅自发明速度值"交人工验收决定。
+
+##### 正式 Prefab 结构（项目自有 / 第三方边界清晰）
+
+```text
+DuskshadowWolf.prefab                   项目自有  layer = Enemy
+├── [DuskshadowWolfView] [CapsuleCollider] [NavMeshAgent] [MonsterAnimatorProjector]
+├── Model                               第三方    FBX 的嵌套 Prefab 实例
+│   └── [Animator]                      项目自有的 Controller，Root Motion 关闭
+├── Hitbox  [MeleeHitbox]               项目自有  localOffset (0, 0.5, 1.2), radius 1.4
+└── Warning [MonsterWarningView]        项目自有  Quad
+```
+
+- 碰撞体按实测体型重新给过（`direction=Z`、height 1.5、radius 0.33、center (0,0.42,0)），
+  **没有照抄**方块替身那套 1.6 高的立方体尺寸。`NavMeshAgent` radius 0.35、height 0.9。
+- 命中盒的**前向偏移 1.2 与半径 1.4 与方块替身完全一致** —— 这两项决定咬击能不能
+  打到玩家，动它们等于动已验收的战斗手感。只把高度 0.8 → 0.5 对齐实测嘴部高度。
+- 材质：第三方 `Standard` → 项目自有 `Universal Render Pipeline/Lit` 适配层
+  （`DuskshadowWolfBody.mat`，引用同样的 Base 与 Glow 贴图，`_EMISSION` 开启）。
+  **第三方源材质未被修改**，并有契约测试断言它仍然是 `Standard`。
+- 方块替身仍由装配工具生成，但只作为**开发回退资产**；正式场景不引用它。
+
+##### 顺带修掉一个一直是空操作的设置
+
+装配工具里两处 `agent.updateRotation = false` 从来没有写进过资产 ——
+实测 `updateRotation` 在 Unity 2021.3 里**不是序列化字段**
+（Prefab 的 YAML 里没有 `m_UpdateRotation`）。一直没出问题是因为真正拦住 Agent 的
+是序列化的 `angularSpeed = 0`。现在把 `updateRotation` 放到
+`DuskshadowWolfView.Awake` 里运行期关闭，装配工具只负责那个确实会被序列化的字段，
+契约测试也改成断言后者 —— 在 Prefab 上断言前者只会断言 Unity 的运行期默认值。
+
+##### 本轮新增测试（19 条）
+
+EditModeUnity（`DuskshadowWolfSetupTests`，11 条）：
+正式 Prefab 存在且用了导入的模型、场景生成点引用正式狼而不是方块、
+正式 Prefab 没有活动的 Cube 本体、有 Animator 且 Root Motion 关闭且绑的是项目自有 Controller、
+七个动画片段全部存在、七个动作各自映射到同名 State 且 Animator 0 Parameter／0 Transition／默认 Idle、
+全部 Renderer 有可用的 URP 材质且第三方源材质未被改写、
+Collider／NavMeshAgent／Hitbox／Warning／bodyRenderers 全部绑定且不依赖第三方碰撞体、
+连续两次装配 5 个产物逐字节相同、场景无重复狼／重复生成点／Missing Script、
+演示场景与演示 Animator 既没导入也没进 Build Settings。
+
+PlayMode（追加到 `P22CombatPlayModeTests`，8 条）：
+生成的是正式模型且没有方块本体、巡逻播 Walk、追击播 Run、普攻播 Bite、
+半血吐息播 Breath 且预警先于伤害窗口、受击播 Take Damage、死亡播 Die、
+以及**动画投影不改变 HFSM 输出**（强行往 Animator 投一个"死亡"动画，
+动作与意图都不变、狼也没死，下一帧投影自己纠回业务状态要求的动画）。
+
+> 一次失败值得记下来：这 8 条最初在"切换的同一帧"就断言 Animator 状态，
+> 结果 5 条失败 —— `CrossFadeInFixedTime` 只是把切换排进队列，要到下一次
+> Animator 求值才生效。巡逻那条侥幸通过是因为它已经播了很多帧。
+> 契约是"投影会到达 Animator"而不是"同一帧到达"，因此改成等待式断言。
+
+##### 本轮实测结果（实际执行，非推断）
+
+| 项目 | 结果 |
+| --- | --- |
+| 受控导入 | 12 个资产 + 4 个目录 meta；GUID 零重复（2,184/2,184） |
+| Unity 导入预热 | 退出码 0，零 C# 编译错误 |
+| 配置编译器 `--check` | **通过**：`ConfigVersion=p1-config-45539ed9c3ac`，`SchemaVersion=1.1.0`（与基线一致，本轮未动配置） |
+| `NARAKA/Setup/Apply P2.2 Combat Setup` | 成功；Animator **7 State / 0 Parameter / 0 Transition**，NavMesh 检测到已有数据后跳过烘焙 |
+| Unity EditMode | **total=484，passed=483，failed=0，skipped=1** |
+| Unity PlayMode | **total=35，passed=35，failed=0，skipped=0** |
+| 装配工具幂等 | P2 场景装配 + P2.2 战斗装配连续执行，10 个产物**逐字节相同**（含正式狼 Prefab／Controller／材质） |
+| 第三方演示内容 | 演示场景 0 个、演示 Animator 0 个、Build Settings 无第三方场景 |
+| 服务端 / 数据库 / 云端 / LegacyNetworkV1 | **零改动**，未提交、未推送、未部署 |
+
+唯一跳过项仍是需要真实 Host 的 `LegacyClientLiveSmokeTests`。
+
+##### 视觉验收反馈：怪物推着角色移动（2026-10-05，已修）
+
+用户视觉验收通过，但报出一个行为问题：
+
+> 怪物攻击角色后，且处于攻击范围内，怪物会处于追击状态推着角色移动，
+> 而不是在原地攻击角色，这个可能是碰撞体的问题。
+
+**不是碰撞体的问题**，碰撞体只是让它看得见。成因是三件事串起来：
+
+1. 普攻冷却是 2 秒，而 `IsInNormalAttackRange()` 同时要求"冷却结束"与"在攻击距离内"。
+   冷却期间 `NormalAttack` 分支不成立，行为树落到下一个分支 **`Chase`**；
+2. `Chase` 的移动目标是**玩家坐标本身**，而 View 原来的到达判定是 `arriveDistance = 0.6`
+   —— 比两边胶囊半径之和（狼 0.33 + 玩家 0.32 ≈ 0.65）还小，因此永远判定不出"到达"；
+3. 玩家每帧用 `CharacterController.Move` 落重力，于是被穿透解算挤开。
+
+**顺带挖出一处数值不自洽**（此前被这个缺陷掩盖着）：
+
+| 项 | 值 |
+| --- | --- |
+| 配置攻击距离 | 3.2 |
+| 命中盒实际触达 | 1.2 + 1.4 + 玩家半径 0.32 = **2.92** |
+| 物理接触 | ≈ 0.65 |
+
+"在 3.2 出手"本身打不到玩家 —— 之所以每次都能打中，正是因为狼先顶到了 0.65。
+因此停止距离不能取攻击距离本身，必须 ≤ 2.92。登记在 [Q-024](NARAKA_待确认问题.md)。
+
+**修法分两半**：
+
+- **View**（几何）：追击停止距离 = `攻击距离 − chaseStopMargin(0.8)` = **2.4**，
+  同时把它交给 `NavMeshAgent.stoppingDistance` 让它自己减速收尾。
+  停多远取决于命中盒的偏移与半径，那是表现层数据，所以由 View 算。
+- **Model**（决定）：View 把结论通过 `MonsterSenses.IsWithinEngageRange` 交给 Model
+  （与 `DistanceFromHome` 同一条通道）。`MonsterIntent.Chase` 在已经到位时产出
+  `Idle` + `MoveTarget.None` + `FaceTarget`，而不是 `Move` + `Run`。
+  **意图仍然是 `Chase`** —— 变的是动作层怎么执行它，这正是 ADR-0018 的分工。
+
+第二步不是可选的：如果只在 View 里停住，动作层仍是 `Move`、动画仍是 `Run`，
+狼会**在原地跑步**，等于用一个可见毛病换另一个。
+
+**没有改动**：攻击距离 3.2、感知 14、脱离 22、休眠 40、普攻冷却 2.0、
+伤害倍率、决策频率 6Hz 全部未动。
+
+新增 3 条测试：EditMode `AWolfAlreadyInEngageRangeWaitsInsteadOfRunningInPlace`、
+`AWolfStillOutOfEngageRangeKeepsChasing`（反面，防止狼在远处站着不动），
+PlayMode `TheWolfStopsShortInsteadOfPushingThePlayer`（跨过一整个
+"攻击 → 冷却期追击 → 再攻击"循环，断言玩家位移 < 0.5、狼最近距离 > 1.2，
+并确认这段时间行为树确实选过 `Chase`，否则测试没覆盖到目标场景）。
+
+| 验收项 | 修复后结果 |
+| --- | --- |
+| Unity EditMode | **total=486，passed=485，failed=0，skipped=1** |
+| Unity PlayMode | **total=36，passed=36，failed=0，skipped=0** |
+
+
+##### 正式狼视觉验收清单（2026-10-05 用户已执行，结论：通过，仅报出上面那一个行为问题）
+
+1. 狼使用 Black 外观，材质与贴图正常，**没有粉色**。
+2. 没有 Missing Material、没有 T 姿势。
+3. 脚底贴地，比例合适 —— **注意**：正式狼肩高约 0.69、体长约 1.54，
+   而玩家模型高约 4.04（Q-021 的比例问题仍未解决）。本轮**没有缩放狼**，
+   也没有动攻击距离 3.2 与感知距离 14。
+4. Idle 循环正常。
+5. 巡逻 Walk 正常。
+6. 追击 Run 正常。
+7. Bite 方向与命中盒一致（命中盒在 (0, 0.5, 1.2)、半径 1.4）。
+8. Breath 方向、动画与红色预警一致。
+9. Take Damage 表现正常。
+10. Die 播放完整。
+11. **不存在 Root Motion 双倍位移或动作后回退**。
+12. 狼能正常巡逻、追击、攻击、脱战回家。
+13. 玩家能够正常攻击并击杀狼。
+14. HUD 目标状态仍正常。
+15. 场景中只有一只狼。
+16. 咬击/吐息的动画与配置时长差 10–14%，是否需要调播放速度由你决定。
 
 
 #### 人工验收待执行项

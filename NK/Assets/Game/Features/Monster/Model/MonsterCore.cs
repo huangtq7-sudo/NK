@@ -373,6 +373,16 @@ namespace Naraka.Features.Monster.Model
                     return BuildOutput(MonsterMoveTarget.None, 0f, true);
 
                 case MonsterIntent.Chase:
+                    if (_senses.IsWithinEngageRange)
+                    {
+                        // 已经站在能出手的位置上了：普攻在冷却，于是行为树仍然选追击，
+                        // 但这时不该再往前挪 —— 再挪就是往玩家身上顶。站住面向他等冷却。
+                        // 不这么做还会多出一个可见的毛病：动作层是 Move、动画是 Run，
+                        // 于是狼在原地跑步。
+                        GoIdle();
+                        return BuildOutput(MonsterMoveTarget.None, 0f, true);
+                    }
+
                     ChangeAction(MonsterActionState.Move, MonsterStateChangeReason.IntentSelected);
                     SetAnimation(MonsterAnimation.Run);
                     return BuildOutput(MonsterMoveTarget.Player, _tuning.ChaseSpeed, true);

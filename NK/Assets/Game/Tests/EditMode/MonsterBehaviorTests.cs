@@ -216,6 +216,52 @@ namespace Naraka.P2.Tests
         }
 
         [Test]
+        public void AWolfAlreadyInEngageRangeWaitsInsteadOfRunningInPlace()
+        {
+            // 2026-10-05 用户报告"怪物攻击角色后、仍在攻击范围内时会推着角色移动"。
+            // 修法的前一半在 View（停在能出手的距离上，不再往玩家身上顶），
+            // 这一半在 Model：普攻冷却期间行为树仍然选追击，但已经到位时
+            // 不该把动作层设成 Move —— 否则动作层是 Move、动画是 Run，狼会原地跑步。
+            var core = NewWolf();
+            var inRange = MonsterSenses.ToTarget(2.4f, withinEngageRange: true);
+
+            // 先打一拍，让普攻进入 2 秒冷却。
+            Hold(core, inRange, 0.5f);
+            Assert.That(core.Action, Is.EqualTo(MonsterActionState.Attack));
+
+            // 普攻动作 1.3 秒、冷却 2.0 秒，因此 t=1.5 落在"动作已结束、冷却未结束"之间。
+            var output = Hold(core, inRange, 1.0f);
+
+            Assert.That(
+                core.Intent, Is.EqualTo(MonsterIntent.Chase),
+                "冷却期间行为树确实落到追击分支 —— 这就是原来推人的那一段。");
+            Assert.That(
+                core.Action, Is.EqualTo(MonsterActionState.Idle),
+                "已经在能出手的距离上时应当站住等冷却，而不是把动作层设成 Move。");
+            Assert.That(
+                output.Animation, Is.EqualTo(MonsterAnimation.Idle),
+                "否则会出现原地跑步的动画。");
+            Assert.That(output.MoveTarget, Is.EqualTo(MonsterMoveTarget.None));
+            Assert.That(output.MoveSpeed, Is.EqualTo(0f));
+            Assert.That(output.FaceTarget, Is.True, "站住也要继续面向玩家。");
+        }
+
+        [Test]
+        public void AWolfStillOutOfEngageRangeKeepsChasing()
+        {
+            // 上一条的反面：没到位就该照常追，否则狼会在远处站着不动。
+            var core = NewWolf();
+
+            var output = Hold(core, MonsterSenses.ToTarget(10f), 1f);
+
+            Assert.That(core.Intent, Is.EqualTo(MonsterIntent.Chase));
+            Assert.That(core.Action, Is.EqualTo(MonsterActionState.Move));
+            Assert.That(output.Animation, Is.EqualTo(MonsterAnimation.Run));
+            Assert.That(output.MoveTarget, Is.EqualTo(MonsterMoveTarget.Player));
+            Assert.That(output.MoveSpeed, Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void TheBehaviorTreeCannotOverrideAnActionInProgress()
         {
             var core = NewWolf();

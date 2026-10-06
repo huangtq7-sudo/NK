@@ -26,13 +26,15 @@ namespace Naraka.Features.Monster.Model
             bool targetIsAlive,
             float distanceToTarget,
             float angleToTargetDegrees,
-            float distanceFromHome)
+            float distanceFromHome,
+            bool isWithinEngageRange = false)
         {
             HasTarget = hasTarget;
             TargetIsAlive = targetIsAlive;
             DistanceToTarget = distanceToTarget;
             AngleToTargetDegrees = angleToTargetDegrees;
             DistanceFromHome = distanceFromHome;
+            IsWithinEngageRange = isWithinEngageRange;
         }
 
         /// <summary>场上有没有一个玩家目标。</summary>
@@ -48,14 +50,31 @@ namespace Naraka.Features.Monster.Model
 
         public float DistanceFromHome { get; }
 
+        /// <summary>
+        /// 已经走到可以出手的位置，不需要再往前挪了。
+        ///
+        /// 这是一个**几何结论**，由 View 算出来再交给 Model —— 和
+        /// <see cref="DistanceFromHome"/> 一样。原因是"多近才够出手"取决于命中盒的
+        /// 偏移与半径，那是表现层的东西：配置里的攻击距离是 3.2，而命中盒的实际触达
+        /// 只到 2.92，所以 Model 自己按攻击距离判断会停在打不到的地方。
+        ///
+        /// Model 用它决定"追击意图该不该真的产生位移"：已经到位时站住面向目标等冷却，
+        /// 而不是把动作层设成 Move 然后原地跑步。
+        /// </summary>
+        public bool IsWithinEngageRange { get; }
+
         /// <summary>有一个可以交战的目标。</summary>
         public bool HasLivingTarget => HasTarget && TargetIsAlive;
 
         /// <summary>没有目标时的空感知。</summary>
         public static MonsterSenses None => default;
 
-        public static MonsterSenses ToTarget(float distance, float angleDegrees = 0f, float fromHome = 0f) =>
-            new MonsterSenses(true, true, distance, angleDegrees, fromHome);
+        public static MonsterSenses ToTarget(
+            float distance,
+            float angleDegrees = 0f,
+            float fromHome = 0f,
+            bool withinEngageRange = false) =>
+            new MonsterSenses(true, true, distance, angleDegrees, fromHome, withinEngageRange);
     }
 
     /// <summary>

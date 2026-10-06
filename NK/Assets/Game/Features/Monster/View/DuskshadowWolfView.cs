@@ -12,19 +12,26 @@ using VContainer;
 namespace Naraka.Features.Monster.View
 {
     /// <summary>
-    /// 暮影妖狼的**灰盒** View。
+    /// 暮影妖狼的表现层。
     ///
-    /// 正式狼模型（Polygonal Creatures Pack 里的 Polygonal Wolf）尚未导入，
-    /// 因此这个对象刻意叫 GrayboxWolf：它是一个可替换的验证用表现层，
-    /// **不是最终美术**。正式模型到位后替换掉子物体与 Animator 即可，
-    /// 业务规则一行都不用动 —— 规则全在 Model 与 Controller 里。
+    /// 2026-10-05 起它承载**正式模型**（Polygonal Creatures Pack 的 Polygonal Wolf，
+    /// Black 外观）。此前它叫 `GrayboxWolfView`，接的是一个方块替身；
+    /// 类名随正式模型接入一并改掉，因为继续叫 Graybox 会让人以为美术还没进来。
+    /// 方块替身仍然保留为 `GrayboxWolf.prefab`，但只作为**开发回退资产**，
+    /// 正式场景不引用它。
     ///
-    /// View 的职责只有三件：把场景里的距离/角度翻译成 <see cref="MonsterSenses"/>、
-    /// 把帧输出投影成移动与命中窗、把表现（颜色、预警）画出来。
-    /// 它不决定意图、伤害、冷却或阶段。
+    /// ADR-0018 当时写的是"换成正式模型时它一行都不用改"。实际换的时候
+    /// 确实没有改动任何业务路径，只补了两件纯表现的事：
+    /// 把 <c>MonsterFrameOutput.Animation</c> 投影到 Animator（动画真相本来就在 Model 层），
+    /// 以及把颜色反馈从单个 Renderer 改成**全部**身体 Renderer
+    /// （正式模型可能不只一个 Renderer，只染第一个会出现"身子变红、尾巴没变"）。
+    ///
+    /// View 的职责仍然只有四件：把场景里的距离/角度翻译成 <see cref="MonsterSenses"/>、
+    /// 把帧输出投影成移动与命中窗、把当前动作投影到 Animator、把表现（颜色、预警）画出来。
+    /// 它不决定意图、伤害、冷却、阶段或死亡。
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GrayboxWolfView : DamageReceiver, IExecutionTarget
+    public sealed class DuskshadowWolfView : DamageReceiver, IExecutionTarget
     {
         [Tooltip("怪物配置 ID。数值全部来自 Config/Source/monsters.csv。")]
         [SerializeField] private string monsterId = "monster_wolf_duskshadow";
@@ -34,7 +41,12 @@ namespace Naraka.Features.Monster.View
         [Tooltip("命中盒相对本体的前向偏移由命中盒自己配置；这里只给技能用的表现根。")]
         [SerializeField] private Transform warningRoot;
 
-        [SerializeField] private Renderer bodyRenderer;
+        [Tooltip("身体 Renderer。正式模型可能有多个，颜色反馈必须作用在全部之上。" +
+                 "留空时自动收集子物体里除预警面片之外的全部 Renderer。")]
+        [SerializeField] private Renderer[] bodyRenderers;
+
+        [Tooltip("动画投影器。留空时自动在本物体与子物体里查找。")]
+        [SerializeField] private MonsterAnimatorProjector animatorProjector;
 
         [SerializeField] private Color normalColor = new Color(0.36f, 0.38f, 0.45f);
 
@@ -47,8 +59,12 @@ namespace Naraka.Features.Monster.View
         [Tooltip("转向角速度（度/秒）。")]
         [SerializeField] private float turnDegreesPerSecond = 360f;
 
-        [Tooltip("到达判定距离（世界单位）。")]
+        [Tooltip("到达判定距离（世界单位）。用于巡逻点与回家。")]
         [SerializeField] private float arriveDistance = 0.6f;
+
+        [Tooltip("追击玩家时停在攻击距离之内多远（世界单位）。" +
+                 "停止距离 = 配置的攻击距离 − 这个余量；攻击距离本身是配置值，这里只读不改。")]
+        [SerializeField] private float chaseStopMargin = 0.8f;
 
         [Tooltip("死亡动画播完后多久移除本体。0 表示保留尸体不移除。")]
         [SerializeField] private float despawnDelaySeconds = 3f;
@@ -107,20 +123,35 @@ namespace Naraka.Features.Monster.View
             _home = transform.position;
             _block = new MaterialPropertyBlock();
             _agent = GetComponent<NavMeshAgent>();
+            if (_agent != null)
+            {
+                // `updateRotation` 在 Unity 2021.3 里**不是序列化字段**
+                // （Prefab 的 YAML 里没有 m_UpdateRotation），所以它只能在运行期关。
+                // 转向由本 View 按配置角速度处理，交给 Agent 会和朝向投影打架。
+                // Prefab 上序列化的 `angularSpeed = 0` 是第二道保险：
+                // 即使这一行哪天被删掉，Agent 也转不动。
+                _agent.updateRotation = false;
+            }
+
             _motor = GetComponent<CharacterController>();
             if (hitbox == null)
             {
                 hitbox = GetComponentInChildren<MeleeHitbox>();
             }
 
-            if (bodyRenderer == null)
-            {
-                bodyRenderer = GetComponentInChildren<Renderer>();
-            }
-
             if (warningRoot != null)
             {
                 _warning = warningRoot.GetComponent<MonsterWarningView>();
+            }
+
+            if (animatorProjector == null)
+            {
+                animatorProjector = GetComponentInChildren<MonsterAnimatorProjector>(true);
+            }
+
+            if (bodyRenderers == null || bodyRenderers.Length == 0)
+            {
+                bodyRenderers = CollectBodyRenderers();
             }
 
             _controller = new MonsterController(ResolveTuning());
@@ -147,7 +178,7 @@ namespace Naraka.Features.Monster.View
             }
 
             Debug.LogError(
-                $"GrayboxWolfView 未能从配置读取怪物 '{monsterId}'，" +
+                $"DuskshadowWolfView 未能从配置读取怪物 '{monsterId}'，" +
                 "退回内置灰盒数值。请检查 Config/Source/monsters.csv 与生成物。",
                 this);
             return MonsterTuning.CreateGrayboxWolf();
@@ -186,6 +217,11 @@ namespace Naraka.Features.Monster.View
 
             ApplyMovement(in output, player, deltaSeconds);
             ApplyHitWindow(in output);
+
+            // 动画真相在 Model 层：`MonsterFrameOutput.Animation` 由 HFSM 产出，
+            // 这里只负责把它交给 Animator，不做任何"现在该播什么"的判断。
+            animatorProjector?.Apply(output.Animation, output.AnimationRestarted);
+
             ApplyPresentation(in output);
             TickDespawn(deltaSeconds);
         }
@@ -209,7 +245,45 @@ namespace Naraka.Features.Monster.View
                 player.IsAlive,
                 distance,
                 angle,
-                HorizontalDistance(transform.position, _home));
+                HorizontalDistance(transform.position, _home),
+                distance <= StopDistanceFor(MonsterMoveTarget.Player));
+        }
+
+        /// <summary>
+        /// 收集身体 Renderer：子物体里除预警面片之外的全部 Renderer。
+        ///
+        /// 预警面片必须排除 —— 它是技能预警的红色提示，被身体颜色染一遍就看不出预警了。
+        /// 只在 Awake 调一次，不在每帧收集。
+        /// </summary>
+        private Renderer[] CollectBodyRenderers()
+        {
+            var all = GetComponentsInChildren<Renderer>(true);
+            var warningRenderer = _warning != null
+                ? _warning.GetComponent<Renderer>()
+                : warningRoot != null
+                    ? warningRoot.GetComponent<Renderer>()
+                    : null;
+
+            var kept = 0;
+            for (var i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && all[i] != warningRenderer)
+                {
+                    kept++;
+                }
+            }
+
+            var result = new Renderer[kept];
+            var next = 0;
+            for (var i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && all[i] != warningRenderer)
+                {
+                    result[next++] = all[i];
+                }
+            }
+
+            return result;
         }
 
         private static float HorizontalDistance(Vector3 a, Vector3 b)
@@ -235,7 +309,8 @@ namespace Naraka.Features.Monster.View
             var destination = ResolveDestination(output.MoveTarget, player);
             var toDestination = destination - transform.position;
             toDestination.y = 0f;
-            if (toDestination.magnitude <= arriveDistance)
+            var stopDistance = StopDistanceFor(output.MoveTarget);
+            if (toDestination.magnitude <= stopDistance)
             {
                 if (output.MoveTarget == MonsterMoveTarget.PatrolPoint)
                 {
@@ -255,7 +330,9 @@ namespace Naraka.Features.Monster.View
             if (_agent != null && _agent.enabled && _agent.isOnNavMesh)
             {
                 // 有 NavMesh 就交给 Unity 2021.3 自带的导航，不引入第三方 AI 包。
+                // 停止距离也交给 Agent：它会自己减速收尾，而不是跑满速再被上面那段硬停。
                 _agent.speed = output.MoveSpeed;
+                _agent.stoppingDistance = stopDistance;
                 _agent.isStopped = false;
                 _agent.SetDestination(destination);
                 return;
@@ -273,6 +350,40 @@ namespace Naraka.Features.Monster.View
                 transform.position += step;
             }
         }
+
+        /// <summary>
+        /// 这一类目标要停在多远。
+        ///
+        /// 追玩家时必须停在**攻击距离以内一点**，而不是停在玩家身上。
+        /// 2026-10-05 用户报告"怪物攻击角色后、仍在攻击范围内时会处于追击状态推着角色移动"，
+        /// 根因不在碰撞体，而在这里：
+        ///
+        /// - 普攻冷却是 2 秒。冷却期间行为树的 `NormalAttack` 分支不成立
+        ///   （`IsInNormalAttackRange` 同时要求"冷却结束"与"在攻击距离内"），
+        ///   于是落到下一个分支 `Chase`；
+        /// - `Chase` 的目标是**玩家的坐标本身**，而原来的到达判定用的是
+        ///   <see cref="arriveDistance"/>（0.6），比两边胶囊半径之和（0.33 + 0.32 ≈ 0.65）
+        ///   还小 —— 所以永远判定不出"到达"，狼会一直往玩家身上顶；
+        /// - 玩家每帧都在用 `CharacterController.Move` 落重力，于是被挤开。
+        ///
+        /// 停在 `攻击距离 − chaseStopMargin` 上同时满足两件事：仍然在普攻距离之内
+        /// （冷却一结束下一拍就能出手），又离接触足够远（2.4 对 0.65）。
+        ///
+        /// 攻击距离、感知距离与冷却都是已验收配置，这里**只读不改** ——
+        /// 停多远属于几何，按 <see cref="MonsterMoveTarget"/> 的分工就该由 View 决定。
+        /// </summary>
+        private float StopDistanceFor(MonsterMoveTarget target)
+        {
+            if (target != MonsterMoveTarget.Player || _controller == null)
+            {
+                return arriveDistance;
+            }
+
+            return Mathf.Max(arriveDistance, _controller.Tuning.AttackRange - chaseStopMargin);
+        }
+
+        /// <summary>追击玩家时的停止距离。测试与调试用。</summary>
+        public float ChaseStopDistance => StopDistanceFor(MonsterMoveTarget.Player);
 
         private Vector3 ResolveDestination(MonsterMoveTarget target, ICombatTarget player)
         {
@@ -459,9 +570,17 @@ namespace Naraka.Features.Monster.View
             _registeredAsExecutable = false;
         }
 
+        /// <summary>
+        /// 把颜色反馈写到**全部**身体 Renderer 上。
+        ///
+        /// 正式模型不保证只有一个 Renderer，只染第一个会出现"身子变红、别的部位没变"。
+        /// 用 <see cref="MaterialPropertyBlock"/> 而不是改材质：不生成材质实例，
+        /// 切场景也不会泄漏材质，而且共享材质不会被一只狼的状态污染到另一只。
+        /// 颜色没变时整段跳过，因此稳定态下这里不产生任何写入。
+        /// </summary>
         private void ApplyColor(Color color)
         {
-            if (bodyRenderer == null || _block == null)
+            if (bodyRenderers == null || bodyRenderers.Length == 0 || _block == null)
             {
                 return;
             }
@@ -474,11 +593,26 @@ namespace Naraka.Features.Monster.View
             _appliedColor = color;
             _hasAppliedColor = true;
 
-            // MaterialPropertyBlock 不生成材质实例，切场景也不会泄漏材质。
-            bodyRenderer.GetPropertyBlock(_block);
-            _block.SetColor(BaseColorId, color);
-            _block.SetColor(ColorId, color);
-            bodyRenderer.SetPropertyBlock(_block);
+            for (var i = 0; i < bodyRenderers.Length; i++)
+            {
+                var renderer = bodyRenderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                renderer.GetPropertyBlock(_block);
+                _block.SetColor(BaseColorId, color);
+                _block.SetColor(ColorId, color);
+                renderer.SetPropertyBlock(_block);
+            }
         }
+
+        /// <summary>身体 Renderer 数量。测试用它断言颜色反馈覆盖了整只狼。</summary>
+        public int BodyRendererCount => bodyRenderers?.Length ?? 0;
+
+        /// <summary>当前投影到 Animator 的动画。PlayMode 测试断言它，而不是去读 Animator 内部。</summary>
+        public MonsterAnimation CurrentAnimation =>
+            animatorProjector != null ? animatorProjector.CurrentAnimation : MonsterAnimation.None;
     }
 }

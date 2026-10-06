@@ -1018,7 +1018,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f0130569eff9a04d8ee56864171ad16, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  monsterPrefab: {fileID: 6620218783037838011, guid: 9820a553b3388294ea49659369919161, type: 3}
+  monsterPrefab: {fileID: 8090636077323179598, guid: 781cca8277c62f549b91c0774e3a5be8, type: 3}
   maxAlive: 1
   respawnSeconds: 0
   spawnOffset: {x: 0, y: 0, z: 0}

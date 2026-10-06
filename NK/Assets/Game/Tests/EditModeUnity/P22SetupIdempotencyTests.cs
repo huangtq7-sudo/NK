@@ -81,7 +81,7 @@ namespace Naraka.Unity.EditMode.Tests
 
             Assert.That(prefab, Is.Not.Null);
             Assert.That(prefab.name, Does.StartWith("Graybox"), "正式狼模型尚未导入，替身必须叫 Graybox。");
-            Assert.That(prefab.GetComponent<GrayboxWolfView>(), Is.Not.Null);
+            Assert.That(prefab.GetComponent<DuskshadowWolfView>(), Is.Not.Null);
             Assert.That(
                 prefab.GetComponentInChildren<MeleeHitbox>(true),
                 Is.Not.Null,

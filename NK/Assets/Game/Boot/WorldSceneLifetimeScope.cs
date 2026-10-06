@@ -29,7 +29,7 @@ namespace Naraka.Boot
             // 同一类型的多次 RegisterComponent 只会让其中一个被解析到，其余拿不到依赖。
             InjectAll(builder, FindObjectsOfType<MapPortal>(true));
             InjectAll(builder, FindObjectsOfType<MonsterSpawner>(true));
-            InjectAll(builder, FindObjectsOfType<GrayboxWolfView>(true));
+            InjectAll(builder, FindObjectsOfType<DuskshadowWolfView>(true));
             InjectAll(builder, FindObjectsOfType<CounterTrainingTarget>(true));
 
             // 战斗 HUD 的视觉与挂载由用户手工完成，因此它可能还不存在。

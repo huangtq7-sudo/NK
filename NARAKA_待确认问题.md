@@ -1,7 +1,7 @@
 # 《NARAKA》待确认问题与决策记录
 
-版本：1.17
-更新日期：2026-10-04
+版本：1.18
+更新日期：2026-10-05
 说明：本文件只保存尚未确认、需要外部素材/权限或会影响实施的事项。已确认玩法不得重新列为问题。
 
 ## 1. 开始P0前需要确认
@@ -53,21 +53,28 @@
 
 ### Q-007 怪物素材实际路径和授权
 
-- 状态：**包内容已完成只读审计，导入本身仍待用户确认。**
-- 来源：`E:\素材\30 Unity Asset Polygonal - Creatures Pack v1.0\Unity Asset Polygonal - Creatures Pack v1.0.unitypackage`（38.1 MB）。
-- 审计方式：`.unitypackage` 本质是 gzip tar，只解出每个条目的 `pathname` 清单，
-  **没有导入工程，也没有把任何文件复制进仓库**。共 524 个条目。
-- 包内共 10 个生物目录，与玩法文档的十类怪物一一对应：
-  Dragon、Giant Bee、Golem、King Cobra、Magma、One Eyed Bat、
-  Spiderling Venom、Treant、Treasure Chest、Wolf。
-- 文件类型统计：FBX 202、png 51、prefab 48、mat 44、controller 36、unity 21、txt 20、asset 10、anim 8、psd 3。
-- 暮影妖狼对应 `Assets/Polygonal Creatures Pack/Polygonal Wolf/`，完整清单见开发进度文档。
-  其中 `Polygonal Wolf@Breath Attack.FBX` 正好对应「红色锥形吐息」，
-  `Polygonal Wolf@Take Damage.FBX` 与 `@Die.FBX` 对应受击与死亡。
-- 发行方为 Meshtint Studio（包内 `Read me.txt` 与 `www.meshtint.com.txt`）。
-  **授权范围仍需用户确认**：包内没有 LICENSE 文件，只有联系方式。
-- 待用户确认后才执行导入，并且只导入 `Polygonal Wolf` 子目录，
-  不整包导入（另外九类怪物属于 P4）。
+- 状态：**导入部分已关闭**（2026-10-05 用户确认授权并完成受控导入）；
+  **正式发行前的分发条款仍待确认**。
+- 来源（已逐字节核对，不是转述）：
+  `E:\素材\30 Unity Asset Polygonal - Creatures Pack v1.0\Unity Asset Polygonal - Creatures Pack v1.0.unitypackage`，
+  **38,110,997 字节**，SHA-256
+  `70b6b6a423bac0080227f816c19c94b3133eb90b90b8b860528c7284a0412f18`，共 524 个条目。
+  包内 10 个生物目录与玩法文档的十类怪物一一对应；暮影妖狼对应
+  `Assets/Polygonal Creatures Pack/Polygonal Wolf/`（50 条，真实路径与用户清单一致）。
+- 本轮只导入 **12 个资产**（模型 + `Base.FBX` + 7 个动画 + Black 材质与两张贴图），
+  保留第三方原始目录与原始 `.meta`／GUID，全工程 2,184 个 GUID **零重复**。
+  导入由 `Tools/import_polygonal_wolf.py` 执行：白名单写在代码里，
+  运行时先校验包的字节数与 SHA-256，对不上直接拒绝。`.unitypackage` 本身不进仓库。
+- 明确排除：其余 9 类怪物（P4）、2 个演示场景、3 个演示 Animator、
+  `Rotate.anim`／`Post Processing.asset`／`Demo Ground.mat`、Brown/White 变体、
+  全部 `W Root` 位移动画、本轮七个状态之外的动画，以及 Black 的第三方 Prefab
+  （它引用已排除的演示 Controller，而本项目自建 Prefab）。
+  完整清单与理由见 [暮影妖狼资源映射说明](Docs/Monster/duskshadow-wolf-asset-mapping.md)。
+- 发行方 Meshtint Studio。包内只有 `Read me.txt` 与 `www.meshtint.com.txt`，
+  **没有 LICENSE 文件**。用户已确认可用于本项目并授权导入，
+  但**正式发行前仍需向 Meshtint Studio 确认分发条款** —— 这一项不因本轮导入而关闭。
+- 记录：[ADR-0003 的 2026-10-05 补充](Docs/ADR/0003-embedded-unity-packages.md)
+  把"第三方美术素材也要固定来源、版本与 SHA-256"写成规则。
 
 ### Q-008 音频素材与Wwise许可
 
@@ -225,6 +232,12 @@
   `GameConfigCatalogTests` 断言它不是 `Confirmed`，因此这些值不可能被静默当成已确认设计。
   完整数值表见开发进度文档。
 - 需要确认：正式平衡值，以及哪些项最终由服务端权威判定（与 Q-019 合并考虑）。
+- **2026-10-05 新发现的一处不自洽**：暮影妖狼的配置攻击距离是 **3.2**，
+  而它命中盒的实际触达只有 **2.92**（`localOffset.z` 1.2 + `radius` 1.4 +
+  玩家胶囊半径 0.32）。也就是说"在 3.2 出手"本身打不到玩家。
+  这一点此前被另一个缺陷掩盖着：狼会一直顶到 0.65 才停，所以每次都打中。
+  当前处理：追击停止距离取 `攻击距离 − 0.8 = 2.4`，稳稳落在触达之内，
+  因此**不影响可玩性**。正式平衡时攻击距离与命中盒尺寸应当一起定。
 
 ### Q-027 蓄力动画想向前跃进 8.47 单位，玩法文档规定它不改变坐标
 
@@ -432,6 +445,34 @@
 - 相关：移动速度（走 5.0 / 跑 7.5）与冲刺距离 12.276 都是按这套单位来的，
   如果决定缩放模型，这些值需要一起重算。
 
+### D-022 正式暮影妖狼表现层接入
+
+- 决策：已关闭。2026-10-05 用户授权导入素材并选择「方案 A」（重命名表现层脚本）。
+- 业务路径**一行未改**：意图选择、HFSM、技能调度、阶段门控、伤害、命中去重、
+  脱战、休眠、两张 CSV、生成点上限与 HUD 接口全部未动。
+- 表现层补了两件纯表现的事：
+  （1）`MonsterAnimatorProjector` 把 `MonsterFrameOutput.Animation`
+  投到同名 Animator State（**7 State / 0 Parameter / 0 Transition**，默认 Idle）——
+  这个字段从 P2.2 第一天就由 HFSM 产出，只是方块替身没有 Animator、没人消费它；
+  （2）颜色反馈从单个 Renderer 改成全部身体 Renderer（排除预警面片），
+  仍用 `MaterialPropertyBlock`，不生成材质实例。
+- `GrayboxWolfView` → `DuskshadowWolfView`，`.cs.meta` 的 GUID 原样保留，
+  两个 Prefab 的脚本引用都没断。方块替身 `GrayboxWolf.prefab` 保留为
+  **开发回退资产**，正式场景不引用它，并有契约测试守住。
+- 材质：第三方源材质是内建 `Standard`（URP 下粉色），
+  只**新建**项目自有的 `Universal Render Pipeline/Lit` 适配材质引用同样的贴图，
+  **不改第三方资产**。
+- 顺带修掉一个一直是空操作的设置：装配工具里的 `agent.updateRotation = false`
+  从来没写进过资产（Unity 2021.3 里它不是序列化字段），
+  真正拦住 Agent 自己转向的是序列化的 `angularSpeed = 0`。
+  现在把 `updateRotation` 放到 `DuskshadowWolfView.Awake` 里运行期关闭，
+  契约测试改成断言那个确实会被序列化的字段。
+- 不因为有动画就改规则：`@Breath Attack` 对应的是**已经存在**的赤瘴吐息技能；
+  没有因为包里还有 `@Howl`／`@Pound Attack`／`@Jump` 就给狼加技能。
+  动画播放速度一律保持 1，调速按 Q-020 的既定做法交人工验收决定。
+- 记录：[ADR-0018 的 2026-10-05 修订](Docs/ADR/0018-monster-behavior-tree-and-hfsm.md)
+  与 [资源映射说明](Docs/Monster/duskshadow-wolf-asset-mapping.md)。
+
 ### D-021 待机动作延迟 5 秒改为 2.4 秒（遮盖 idle 循环缝）
 
 - 决策：已执行。2026-10-04 用户提出"把 5 秒改成 2.7 秒，这样就不会有 idle 突变的突兀感觉"。
@@ -524,6 +565,12 @@
 
 - **P2战斗HUD与换版动画人工验收**：P2.2代码与自动化已通过；HUD视觉与挂载由用户在Unity中完成，
   并需一并查看新动画的实际观感。
+- **正式暮影妖狼视觉验收**：**已于 2026-10-05 通过**。验收中只报出一个行为问题
+  （怪物在攻击冷却期间推着角色移动），已修复并有三条回归测试，见开发进度文档。
+- **狼与玩家的体型比例**：正式狼肩高约 0.69、体长约 1.54，而玩家模型高约 4.04
+  （[Q-021](#q-021-charactercontroller-尺寸与模型比例不符) 的模型比例问题仍未解决）。
+  本轮**没有缩放狼**，也没有动攻击距离 3.2 与感知距离 14 —— 这两项属于已验收配置。
+  需要用户看过实际画面后决定是否调整模型比例。
 - **P2性能门禁**：尚无本轮Profiler证据，不能只根据代码结构声称稳定态0B GC/frame。
 - **Q-017独立播放器构建**：仍未修复，需单独处理R3依赖问题。
 - **Q-026新动画导出遗留**：Idle不闭环、F技能仍使用旧版、Idle与IdleVariation带重复`W0_`骨架曲线，

@@ -322,11 +322,14 @@ MonoBehaviour:
   monsterId: monster_wolf_duskshadow
   hitbox: {fileID: 9095241161280675280}
   warningRoot: {fileID: 5448301066552201098}
-  bodyRenderer: {fileID: 255696851666658224}
+  bodyRenderers:
+  - {fileID: 255696851666658224}
+  animatorProjector: {fileID: 0}
   normalColor: {r: 0.36, g: 0.38, b: 0.45, a: 1}
   enragedColor: {r: 0.62, g: 0.25, b: 0.25, a: 1}
   executableColor: {r: 0.95, g: 0.82, b: 0.32, a: 1}
   deadColor: {r: 0.2, g: 0.2, b: 0.22, a: 1}
   turnDegreesPerSecond: 360
   arriveDistance: 0.6
+  chaseStopMargin: 0.8
   despawnDelaySeconds: 3

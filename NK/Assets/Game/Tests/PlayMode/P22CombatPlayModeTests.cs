@@ -47,7 +47,7 @@ namespace Naraka.P2.PlayMode.Tests
         {
             yield return EnterMap02();
 
-            var wolves = Object.FindObjectsOfType<GrayboxWolfView>();
+            var wolves = Object.FindObjectsOfType<DuskshadowWolfView>();
             Assert.That(wolves.Length, Is.EqualTo(1), "地图二只应该生成一只测试狼。");
 
             var spawner = Object.FindObjectOfType<MonsterSpawner>();
@@ -61,7 +61,7 @@ namespace Naraka.P2.PlayMode.Tests
         {
             yield return EnterMap02();
 
-            var wolf = Object.FindObjectOfType<GrayboxWolfView>();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
             var tuning = wolf.Controller.Tuning;
 
             Assert.That(tuning.MonsterId, Is.EqualTo("monster_wolf_duskshadow"));
@@ -75,7 +75,7 @@ namespace Naraka.P2.PlayMode.Tests
         public IEnumerator TheWolfPatrolsThenPerceivesChasesAndAttacks()
         {
             yield return EnterMap02();
-            var wolf = Object.FindObjectOfType<GrayboxWolfView>();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
             var player = Object.FindObjectOfType<PlayerCharacterView>();
             yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
 
@@ -106,7 +106,7 @@ namespace Naraka.P2.PlayMode.Tests
         public IEnumerator TheWolfDisengagesWhenThePlayerLeaves()
         {
             yield return EnterMap02();
-            var wolf = Object.FindObjectOfType<GrayboxWolfView>();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
             var player = Object.FindObjectOfType<PlayerCharacterView>();
             yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
 
@@ -136,7 +136,7 @@ namespace Naraka.P2.PlayMode.Tests
         public IEnumerator ThePlayerCanDamageAndKillTheWolf()
         {
             yield return EnterMap02();
-            var wolf = Object.FindObjectOfType<GrayboxWolfView>();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
             var player = Object.FindObjectOfType<PlayerCharacterView>();
             var resolver = Resolve<IHitResolver>();
 
@@ -188,7 +188,7 @@ namespace Naraka.P2.PlayMode.Tests
         public IEnumerator TheRedBreathOnlyAppearsBelowHalfHealthAndWarnsFirst()
         {
             yield return EnterMap02();
-            var wolf = Object.FindObjectOfType<GrayboxWolfView>();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
             var player = Object.FindObjectOfType<PlayerCharacterView>();
             yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
 
@@ -250,7 +250,7 @@ namespace Naraka.P2.PlayMode.Tests
         public IEnumerator TheHudStateTracksPlayerAndTarget()
         {
             yield return EnterMap02();
-            var wolf = Object.FindObjectOfType<GrayboxWolfView>();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
             var player = Object.FindObjectOfType<PlayerCharacterView>();
             var hud = Resolve<ICombatHudController>();
 
@@ -301,14 +301,355 @@ namespace Naraka.P2.PlayMode.Tests
             Assert.That(Object.FindObjectsOfType<AppRootLifetimeScope>().Length, Is.EqualTo(1));
             Assert.That(Object.FindObjectsOfType<WorldSceneLifetimeScope>().Length, Is.EqualTo(1));
             Assert.That(Object.FindObjectsOfType<PlayerCharacterView>().Length, Is.EqualTo(1));
-            Assert.That(Object.FindObjectsOfType<GrayboxWolfView>().Length, Is.EqualTo(1));
+            Assert.That(Object.FindObjectsOfType<DuskshadowWolfView>().Length, Is.EqualTo(1));
             Assert.That(Object.FindObjectsOfType<Camera>().Length, Is.EqualTo(1));
+        }
+
+        // ------------------------------------------------------------ 正式模型与动画投影
+        //
+        // 2026-10-05 正式暮影妖狼接入。下面这组断言要回答的是同一个问题：
+        // 换了美术之后，**业务状态仍然是唯一真相，Animator 只是跟着走**。
+        // 因此每一条都同时看两边：HFSM 的当前动作，以及投影到 Animator 的动画。
+
+        [UnityTest]
+        public IEnumerator TheSpawnedWolfUsesTheOfficialModelAndHasNoCubeBody()
+        {
+            yield return EnterMap02();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
+
+            var skinned = wolf.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.That(
+                skinned.Length, Is.GreaterThan(0),
+                "场上的狼必须是带蒙皮网格的正式模型，而不是方块替身。");
+
+            foreach (var filter in wolf.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (filter.sharedMesh == null || !filter.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                Assert.That(
+                    filter.sharedMesh.name, Is.Not.EqualTo("Cube"),
+                    $"场上的狼还带着灰盒方块本体（{filter.gameObject.name}）。");
+            }
+
+            Assert.That(
+                wolf.BodyRendererCount, Is.GreaterThan(0),
+                "颜色反馈必须绑到身体 Renderer 上。");
+
+            var animator = wolf.GetComponentInChildren<Animator>(true);
+            Assert.That(animator, Is.Not.Null, "正式模型必须带 Animator。");
+            Assert.That(
+                animator.applyRootMotion, Is.False,
+                "Root Motion 必须关闭，否则动画会和 NavMeshAgent 一起推坐标。");
+        }
+
+        [UnityTest]
+        public IEnumerator PatrollingPlaysTheWalkAnimation()
+        {
+            yield return EnterMap02();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
+
+            // 把玩家挪远一点但不到休眠距离，让狼安心巡逻。
+            player.TeleportTo(
+                wolf.transform.position + new Vector3(0f, 0f, 30f), Quaternion.identity);
+
+            yield return WaitUntil(
+                () => wolf.Controller.Current.Intent == MonsterIntent.Patrol &&
+                      wolf.Controller.Current.Action == MonsterActionState.Move,
+                10f, "patrol-move");
+
+            Assert.That(
+                wolf.CurrentAnimation, Is.EqualTo(MonsterAnimation.Walk),
+                "巡逻移动时应当播放 Walk。");
+            yield return WaitForAnimatorState(wolf, MonsterAnimatorProjector.StateNames.Walk);
+        }
+
+        [UnityTest]
+        public IEnumerator ChasingPlaysTheRunAnimation()
+        {
+            yield return EnterMap02();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
+
+            // 进感知圈但不进攻击距离：这样它会一直追而不是立刻出手。
+            player.TeleportTo(
+                wolf.transform.position + new Vector3(0f, 0f, 10f), Quaternion.identity);
+
+            yield return WaitUntil(
+                () => wolf.Controller.Current.Intent == MonsterIntent.Chase, 10f, "chase");
+
+            Assert.That(
+                wolf.CurrentAnimation, Is.EqualTo(MonsterAnimation.Run),
+                "追击时应当播放 Run。");
+            yield return WaitForAnimatorState(wolf, MonsterAnimatorProjector.StateNames.Run);
+        }
+
+        [UnityTest]
+        public IEnumerator AttackingPlaysTheBiteAnimation()
+        {
+            yield return EnterMap02();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
+
+            player.TeleportTo(
+                wolf.transform.position + new Vector3(0f, 0f, 2f), Quaternion.identity);
+            yield return WaitUntil(
+                () => wolf.Controller.Current.Action == MonsterActionState.Attack, 10f, "attack");
+
+            Assert.That(
+                wolf.CurrentAnimation, Is.EqualTo(MonsterAnimation.Attack),
+                "普通攻击时应当播放咬击（Attack State 绑的是 @Bite Attack）。");
+            yield return WaitForAnimatorState(wolf, MonsterAnimatorProjector.StateNames.Attack);
+        }
+
+        [UnityTest]
+        public IEnumerator TheRedBreathPlaysTheBreathAnimationAfterItsWarning()
+        {
+            yield return EnterMap02();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
+
+            player.TeleportTo(
+                wolf.transform.position + new Vector3(0f, 0f, 6f), Quaternion.identity);
+            yield return WaitUntil(
+                () => wolf.Controller.Current.Intent != MonsterIntent.Patrol, 10f, "engage");
+
+            // 打到半血以下解锁阶段技能。数值来自配置，不是写死的。
+            var tuning = wolf.Controller.Tuning;
+            var raw = (tuning.MaxArmor + (tuning.MaxHealth * 0.55f)) * (100f + tuning.Defense) / 100f;
+            wolf.Controller.ApplyRawDamage(raw);
+            Assert.That(wolf.Controller.Current.Phase, Is.EqualTo(MonsterPhase.Enraged));
+
+            // 预警必须先出现，然后才是吐息的动画与伤害窗口。
+            yield return WaitUntil(() => wolf.Controller.Current.IsWarningActive, 12f, "warning");
+            Assert.That(
+                wolf.Controller.Current.WarningColorTag, Is.EqualTo(AttackColorTag.Red),
+                "吐息的预警是红色的。");
+            Assert.That(
+                wolf.CurrentAnimation, Is.EqualTo(MonsterAnimation.Skill),
+                "预警期间就已经在播吐息动画（前摇属于技能动作本身）。");
+            yield return WaitForAnimatorState(wolf, MonsterAnimatorProjector.StateNames.Skill);
+
+            var warningEnded = false;
+            var deadline = Time.realtimeSinceStartup + 6f;
+            while (Time.realtimeSinceStartup < deadline && !warningEnded)
+            {
+                var state = wolf.Controller.Current;
+                if (state.Action == MonsterActionState.Skill && !state.IsWarningActive)
+                {
+                    warningEnded = true;
+                    Assert.That(
+                        wolf.CurrentAnimation, Is.EqualTo(MonsterAnimation.Skill),
+                        "进入伤害窗口后仍然是同一段吐息动画。");
+                }
+
+                yield return null;
+            }
+
+            Assert.That(warningEnded, Is.True, "预警之后必须进入伤害窗口。");
+        }
+
+        [UnityTest]
+        public IEnumerator TakingDamagePlaysTheTakeDamageAnimation()
+        {
+            yield return EnterMap02();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            var resolver = Resolve<IHitResolver>();
+            yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
+
+            // 巡逻中的狼没有霸体，因此会进硬直。
+            Hit(resolver, player, wolf, 120f, sequence: 4101);
+            yield return null;
+
+            Assert.That(
+                wolf.Controller.Current.Action, Is.EqualTo(MonsterActionState.HitStun),
+                "没有霸体时受击必须进硬直。");
+            Assert.That(
+                wolf.CurrentAnimation, Is.EqualTo(MonsterAnimation.HitStun),
+                "受击时应当播放 Take Damage。");
+            yield return WaitForAnimatorState(wolf, MonsterAnimatorProjector.StateNames.HitStun);
+        }
+
+        [UnityTest]
+        public IEnumerator DyingPlaysTheDieAnimation()
+        {
+            yield return EnterMap02();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            var resolver = Resolve<IHitResolver>();
+            yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
+
+            var tuning = wolf.Controller.Tuning;
+            var lethal = (tuning.MaxArmor + tuning.MaxHealth) * (100f + tuning.Defense) / 100f * 2f;
+            Hit(resolver, player, wolf, lethal, sequence: 4102);
+            yield return null;
+
+            Assert.That(wolf.Controller.IsDead, Is.True);
+            Assert.That(
+                wolf.Controller.Current.Action, Is.EqualTo(MonsterActionState.Death),
+                "死亡是动作层的终态。");
+            Assert.That(
+                wolf.CurrentAnimation, Is.EqualTo(MonsterAnimation.Death),
+                "死亡时应当播放 Die。");
+            yield return WaitForAnimatorState(wolf, MonsterAnimatorProjector.StateNames.Death);
+        }
+
+        [UnityTest]
+        public IEnumerator TheAnimationProjectionDoesNotChangeTheHfsmOutput()
+        {
+            yield return EnterMap02();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
+
+            // 休眠是一个稳定态：动作不会每帧变，因此可以干净地比较前后。
+            player.TeleportTo(
+                wolf.transform.position + new Vector3(0f, 0f, 200f), Quaternion.identity);
+            yield return WaitUntil(
+                () => wolf.Controller.Current.Intent == MonsterIntent.Dormant, 10f, "dormant");
+
+            var projector = wolf.GetComponentInChildren<MonsterAnimatorProjector>(true);
+            Assert.That(projector, Is.Not.Null);
+
+            var before = wolf.Controller.Current;
+
+            // 强行投一个与业务状态无关的动画。如果 Animator 能回写业务状态，
+            // 这一下就会把 HFSM 带歪 —— 投影是单向的，所以它不会。
+            projector.Apply(MonsterAnimation.Death, restart: true);
+            Assert.That(projector.CurrentAnimation, Is.EqualTo(MonsterAnimation.Death));
+
+            var after = wolf.Controller.Current;
+            Assert.That(after.Action, Is.EqualTo(before.Action), "投影不得改变当前动作。");
+            Assert.That(after.Intent, Is.EqualTo(before.Intent), "投影不得改变行为树意图。");
+            Assert.That(after.IsAlive, Is.True, "投了死亡动画不等于真的死了。");
+
+            // 下一帧投影会按业务状态自己纠回来，不需要任何人去复位。
+            yield return null;
+            Assert.That(
+                wolf.CurrentAnimation, Is.EqualTo(MonsterAnimation.Idle),
+                "下一帧应当回到业务状态要求的动画。");
+        }
+
+        [UnityTest]
+        public IEnumerator TheWolfStopsShortInsteadOfPushingThePlayer()
+        {
+            // 2026-10-05 用户报告："怪物攻击角色后、且处于攻击范围内，
+            // 怪物会处于追击状态推着角色移动，而不是在原地攻击角色。"
+            //
+            // 根因不在碰撞体：普攻冷却是 2 秒，冷却期间行为树的 NormalAttack 分支不成立
+            // （它同时要求"冷却结束"与"在攻击距离内"），于是落到 Chase；
+            // 而 Chase 的目标是玩家的坐标本身，原来的到达判定 0.6 比两边胶囊半径之和
+            // （≈0.65）还小，所以永远判定不出"到达"，狼一直往玩家身上顶。
+            yield return EnterMap02();
+            var wolf = Object.FindObjectOfType<DuskshadowWolfView>();
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
+            yield return WaitUntil(() => !player.State.HasSpawnProtection, 8f, "spawn-protection");
+
+            var tuning = wolf.Controller.Tuning;
+            Assert.That(
+                wolf.ChaseStopDistance, Is.LessThan(tuning.AttackRange),
+                "停止距离必须落在攻击距离之内，否则冷却一结束狼还得再往前挪一步才能出手。");
+            Assert.That(
+                wolf.ChaseStopDistance, Is.GreaterThan(1.5f),
+                "停止距离必须远离接触，否则推人的现象还在。");
+
+            // 放在攻击距离之内，让它立刻出手；接下来要完整跨过一次普攻冷却。
+            player.TeleportTo(
+                wolf.transform.position + new Vector3(0f, 0f, tuning.AttackRange - 0.4f),
+                Quaternion.identity);
+            yield return WaitUntil(
+                () => wolf.Controller.Current.Action == MonsterActionState.Attack, 10f, "first-attack");
+
+            var playerStart = player.transform.position;
+            var closest = float.MaxValue;
+            var sawChase = false;
+
+            // 冷却 2 秒、普攻动作 1.3 秒，因此观察 5 秒足以跨过
+            // "攻击 → 冷却期追击 → 再攻击"一整圈。
+            var deadline = Time.realtimeSinceStartup + 5f;
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                if (wolf.Controller.Current.Intent == MonsterIntent.Chase)
+                {
+                    sawChase = true;
+                }
+
+                closest = Mathf.Min(
+                    closest, Flat(wolf.transform.position, player.transform.position));
+                yield return null;
+            }
+
+            Assert.That(
+                sawChase, Is.True,
+                "普攻冷却期间行为树确实会选追击 —— 这正是原来推人的那一段，" +
+                "如果这里没看到，说明这个测试没有覆盖到目标场景。");
+            Assert.That(
+                Flat(player.transform.position, playerStart), Is.LessThan(0.5f),
+                "怪物不得推着玩家移动。");
+            Assert.That(
+                closest, Is.GreaterThan(1.2f),
+                $"怪物最近贴到了 {closest:F2}，仍然在往玩家身上顶。");
+        }
+
+        /// <summary>水平距离。竖直方向由重力负责，不参与"有没有被推开"的判断。</summary>
+        private static float Flat(Vector3 a, Vector3 b)
+        {
+            a.y = 0f;
+            b.y = 0f;
+            return Vector3.Distance(a, b);
+        }
+
+        /// <summary>
+        /// 等到 Animator 真的进入这个 State。
+        ///
+        /// 要等而不是立即断言：<c>CrossFadeInFixedTime</c> 只是把切换排进队列，
+        /// 要到下一次 Animator 求值才生效。契约是"投影会到达 Animator"，
+        /// 不是"同一帧就到达" —— 立即断言会在刚切换的那一帧必然失败
+        /// （而已经播了很多帧的状态又会侥幸通过，于是测试结果取决于时机）。
+        ///
+        /// 交叉淡入期间"当前 State"还是旧的、"下一个 State"才是新的，因此两边都要看。
+        /// </summary>
+        private static IEnumerator WaitForAnimatorState(
+            DuskshadowWolfView wolf, string stateName, float timeoutSeconds = 2f)
+        {
+            var animator = wolf.GetComponentInChildren<Animator>(true);
+            Assert.That(animator, Is.Not.Null);
+
+            var hash = Animator.StringToHash(stateName);
+            var deadline = Time.realtimeSinceStartup + timeoutSeconds;
+            var matched = false;
+            while (!matched && Time.realtimeSinceStartup < deadline)
+            {
+                matched = animator.GetCurrentAnimatorStateInfo(0).shortNameHash == hash ||
+                          (animator.IsInTransition(0) &&
+                           animator.GetNextAnimatorStateInfo(0).shortNameHash == hash);
+                if (matched)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            Assert.That(
+                matched, Is.True,
+                $"Animator 在 {timeoutSeconds} 秒内没有进入 State「{stateName}」" +
+                "（投影没有到达 Animator）。");
         }
 
         private static void Hit(
             IHitResolver resolver,
             PlayerCharacterView player,
-            GrayboxWolfView wolf,
+            DuskshadowWolfView wolf,
             float rawDamage,
             int sequence)
         {
@@ -352,7 +693,7 @@ namespace Naraka.P2.PlayMode.Tests
 
             yield return WaitUntil(
                 () => Object.FindObjectOfType<PlayerCharacterView>() != null &&
-                      Object.FindObjectOfType<GrayboxWolfView>() != null,
+                      Object.FindObjectOfType<DuskshadowWolfView>() != null,
                 10f, "map02-actors");
         }
 
