@@ -6,7 +6,10 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 *.ps1 text eol=crlf
-*.unity text eol=lf
+# Unity writes trailing spaces on empty-value lines in generated scene YAML, and the
+# Editor restores them on every save. Keep the newline convention, drop the useless
+# trailing-whitespace warning rather than fighting a generator over 50k lines.
+*.unity text eol=lf -whitespace
 *.prefab text eol=lf
 *.asset text eol=lf
 *.uxml text eol=lf
@@ -18,11 +21,23 @@
 NK/Packages/com.cysharp.messagepipe/** -whitespace
 NK/Packages/com.cysharp.messagepipe.vcontainer/** -whitespace
 NK/Packages/com.cysharp.r3/** -whitespace
+# Same reasoning for vendored third-party art packs: their own source files carry
+# trailing spaces, they are read-only to us, and flagging them buries real findings.
+# Patterns with spaces must be quoted here, or Git parses the rest of the line as
+# attribute names and warns on every command.
+"NK/Assets/Aquarius Fantasy - High Elves/**" -whitespace
+NK/Assets/PureNature/** -whitespace
+"NK/Assets/Polygonal Creatures Pack/**" -whitespace
 *.png filter=lfs diff=lfs merge=lfs -text
 *.jpg binary
 *.jpeg binary
 *.webp binary
 *.fbx filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.tga filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.hdr filter=lfs diff=lfs merge=lfs -text
 *.wav binary
 *.mp3 binary
 *.mp4 binary
