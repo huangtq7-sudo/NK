@@ -120,7 +120,14 @@ namespace Naraka.EditorTools
         /// </summary>
         public static readonly string[] DemoControlScriptNames =
         {
-            "FreeCamera"
+            // Pure Nature 的演示漫游相机。
+            "FreeCamera",
+
+            // High Elves 的演示第一人称角色控制器：读鼠标、驱动自己的 CharacterController、
+            // 处理跳跃与重力。它活在正式任务场景里会和 NARAKA 自己的玩家抢输入与镜头。
+            // 第一轮派生漏了它 —— 当时只剥了相机、AudioListener 与漫游脚本，
+            // 而这个演示角色是整个 Prefab 实例，相机只是它的一个子对象。
+            "DemoCharacter"
         };
 
         [MenuItem("NARAKA/Setup/Apply P2.3 Formal World Scenes")]
@@ -374,8 +381,12 @@ namespace Naraka.EditorTools
                         continue;
                     }
 
-                    componentsToDestroy.Add(behaviour);
-                    removedComponents.Add($"{behaviour.gameObject.name}.{typeName}");
+                    // 走 Schedule 而不是直接删组件：演示角色是一整个 Prefab 实例，
+                    // 只摘掉脚本会把那个对象留在场景里（连带它的网格与碰撞体）。
+                    // Schedule 会在"实例根"这种情况下整体移除它。
+                    Schedule(behaviour, typeName,
+                        objectsToDestroy, componentsToDestroy,
+                        removedObjects, removedComponents);
                 }
             }
 
@@ -395,6 +406,7 @@ namespace Naraka.EditorTools
                 }
             }
 
+            RemoveDemoPrefabInstances(scene, report);
             TameRealtimeReflectionProbes(scene, report);
 
             var missingInsidePrefabs = new List<string>();
@@ -441,6 +453,18 @@ namespace Naraka.EditorTools
             }
 
             var target = component.gameObject;
+
+            // Prefab 实例的**最外层根**是可以整个删掉的（删一个实例是合法操作）；
+            // 不允许删的是实例**内部**的子对象。先判断这一层，
+            // 否则演示角色只会被停用而不是真的移除，资产闭环里还会留着它。
+            var outermost = PrefabUtility.GetOutermostPrefabInstanceRoot(target) as GameObject;
+            if (outermost != null && outermost == target)
+            {
+                objectsToDestroy.Add(target);
+                removedObjects.Add($"{target.name}（{label}，Prefab 实例根，整体移除）");
+                return;
+            }
+
             if (PrefabUtility.IsPartOfPrefabInstance(target))
             {
                 // 删组件在这里不管用：实测发现 Save-As 之后
@@ -473,6 +497,94 @@ namespace Naraka.EditorTools
         /// 资产本身，要改就得改第三方资产，而第三方资产是只读的。
         /// 因此这种情况只统计并报告，由人决定怎么办，不静默吞掉。
         /// </summary>
+        /// <summary>
+        /// 移除源自第三方演示目录的 Prefab 实例。
+        ///
+        /// 按**来源 Prefab 的路径**判定，而不是按脚本：演示角色的脚本一旦被摘掉，
+        /// "有没有演示脚本"就再也认不出它了，而那个对象连着网格和碰撞体还留在场景里。
+        /// 这正是第一轮漏掉 High Elves 的 AQM_FPS_Character 的原因。
+        ///
+        /// 规则是"住在演示目录里的 Prefab 就是演示内容"。High Elves 的
+        /// `Demo Scenes/` 下只有这一个 Prefab，其余是地形层、光照贴图与反射探针，
+        /// 都不是 Prefab，因此这条规则不会误伤环境。
+        /// </summary>
+        private static void RemoveDemoPrefabInstances(Scene scene, StringBuilder report)
+        {
+            var targets = new List<GameObject>();
+            var names = new List<string>();
+
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                foreach (var transform in root.GetComponentsInChildren<Transform>(true))
+                {
+                    if (transform == null)
+                    {
+                        continue;
+                    }
+
+                    var instanceRoot =
+                        PrefabUtility.GetOutermostPrefabInstanceRoot(transform.gameObject)
+                            as GameObject;
+                    if (instanceRoot == null || instanceRoot != transform.gameObject)
+                    {
+                        continue;
+                    }
+
+                    var assetPath =
+                        PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(instanceRoot);
+                    if (!IsDemoPrefabPath(assetPath))
+                    {
+                        continue;
+                    }
+
+                    if (!targets.Contains(instanceRoot))
+                    {
+                        targets.Add(instanceRoot);
+                        names.Add($"{instanceRoot.name}（{assetPath}）");
+                    }
+                }
+            }
+
+            foreach (var target in targets)
+            {
+                if (target != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(target);
+                }
+            }
+
+            report.AppendLine(targets.Count == 0
+                ? "    演示 Prefab 实例：无需移除。"
+                : $"    移除演示 Prefab 实例 {targets.Count} 个：{string.Join("、", names)}");
+        }
+
+        /// <summary>来源 Prefab 是否住在第三方素材包的演示目录里。</summary>
+        private static bool IsDemoPrefabPath(string assetPath)
+        {
+            if (string.IsNullOrEmpty(assetPath) ||
+                !assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var normalized = assetPath.Replace('\\', '/');
+            foreach (var root in P2SceneSetup.ThirdPartySourceRoots)
+            {
+                if (!normalized.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (normalized.IndexOf("/Demo Scenes/", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    normalized.IndexOf("/Demo/", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// 把演示场景的**逐帧实时反射探针**改成不自动刷新。
         ///

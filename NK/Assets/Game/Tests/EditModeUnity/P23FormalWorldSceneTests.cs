@@ -57,6 +57,7 @@ namespace Naraka.Unity.EditMode.Tests
             public bool HasGrayboxGround;
             public int Spawners;
             public int AutoRefreshingRealtimeProbes;
+            public readonly List<string> DemoControlScripts = new List<string>();
             // 只存**值**，不存 Transform 引用：打开下一个场景会把上一个场景的
             // 对象全部销毁，等测试读到时引用已经是死的。
             public bool HasEntrySpawn;
@@ -166,6 +167,16 @@ namespace Naraka.Unity.EditMode.Tests
                 probe => probe.mode == UnityEngine.Rendering.ReflectionProbeMode.Realtime &&
                          probe.refreshMode !=
                          UnityEngine.Rendering.ReflectionProbeRefreshMode.ViaScripting);
+
+            foreach (var behaviour in All<MonoBehaviour>(roots))
+            {
+                var typeName = behaviour.GetType().Name;
+                if (Array.IndexOf(P23WorldSceneSetup.DemoControlScriptNames, typeName) >= 0)
+                {
+                    snapshot.DemoControlScripts.Add(
+                        $"{GetPath(behaviour.transform)}.{typeName}");
+                }
+            }
 
             CollectMissingScripts(roots, snapshot.MissingScripts);
             CollectMaterialOffenders(roots, snapshot.MaterialOffenders);
@@ -442,6 +453,24 @@ namespace Naraka.Unity.EditMode.Tests
             Assert.That(
                 Vector3.Distance(actual, expected), Is.LessThan(0.01f),
                 $"{label}的位置是 {actual}，应为 {expected}。");
+        }
+
+        [Test]
+        public void NoFormalSceneCarriesDemoControlLogic()
+        {
+            // 演示场景自带一套控制逻辑：漫游相机、第一人称角色控制器。
+            // 它们活在正式场景里会和 NARAKA 自己的玩家与镜头抢输入。
+            //
+            // 这条断言是补上来的：第一轮派生只剥了相机、AudioListener 与漫游脚本，
+            // 漏掉了 High Elves 的 AQM_FPS_Character —— 一个带完整第一人称控制器的
+            // Prefab 实例，相机只是它的子对象，所以"相机已处理"并不等于"演示玩家已移除"。
+            foreach (var snapshot in Snapshots())
+            {
+                Assert.That(
+                    snapshot.DemoControlScripts, Is.Empty,
+                    $"{snapshot.Path} 仍然带着演示控制脚本：" +
+                    string.Join("、", snapshot.DemoControlScripts));
+            }
         }
 
         [Test]
