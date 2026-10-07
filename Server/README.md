@@ -24,3 +24,11 @@ The P0 baseline used `ConfigVersion=p0-config-1`. The complete P1 release uses `
 The validated development topology runs the self-contained Windows Host and MySQL 5.7.26 on one Windows Server 2016 Datacenter host. MySQL, bootstrap HTTP, and `LegacyNetworkV1` remain bound to loopback; the Unity client reaches ports 5222 and 8011 through a manually started, key-only SSH local forward. The cloud Host and database do not depend on the local tunnel and continue running when the developer PC is offline. This topology is not a production deployment.
 
 The secret-free operations and acceptance record is in `Docs/Deployment/aliyun-windows-development.md`.
+
+## P3 expedition foundation
+
+P3 starts with a pure domain aggregate under `Naraka.Server.Domain.Expeditions`. It owns temporary
+monster-drop assets, death cleanup, normal/connection-loss settlement, and replay of the first
+successful settlement summary. It does not trust client-submitted rewards and does not reference
+storage or the frozen transport. The transactional MySQL repository and application-message adapter
+are intentionally separate follow-up slices; see ADR-0021.
