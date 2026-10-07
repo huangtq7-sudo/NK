@@ -175,8 +175,14 @@ namespace Naraka.Features.Character.Controller
                 return;
             }
 
-            _lastPublished = PlayerPresentationState.FromCore(_core, _lastRejection);
-            _state.Set(_lastPublished);
+            var next = PlayerPresentationState.FromCore(_core, _lastRejection);
+            if (next.Equals(_lastPublished))
+            {
+                return;
+            }
+
+            _lastPublished = next;
+            _state.Set(next);
         }
     }
 }

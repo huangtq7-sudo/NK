@@ -125,7 +125,7 @@ namespace Naraka.Features.Monster.Controller
                 return;
             }
 
-            _lastPublished = new MonsterPresentationState(
+            var next = new MonsterPresentationState(
                 _core.Tuning.MonsterId,
                 _core.Tuning.DisplayName,
                 !_core.IsDead,
@@ -139,7 +139,7 @@ namespace Naraka.Features.Monster.Controller
                 output.Flags,
                 _warningColorTag,
                 _core.ExecuteWindowRemaining);
-            _state.Set(_lastPublished);
+            PublishIfChanged(in next);
         }
 
         private void Publish()
@@ -149,8 +149,19 @@ namespace Naraka.Features.Monster.Controller
                 return;
             }
 
-            _lastPublished = MonsterPresentationState.FromCore(_core, _warningColorTag);
-            _state.Set(_lastPublished);
+            var next = MonsterPresentationState.FromCore(_core, _warningColorTag);
+            PublishIfChanged(in next);
+        }
+
+        private void PublishIfChanged(in MonsterPresentationState next)
+        {
+            if (next.Equals(_lastPublished))
+            {
+                return;
+            }
+
+            _lastPublished = next;
+            _state.Set(next);
         }
     }
 }

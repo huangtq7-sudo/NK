@@ -90,6 +90,7 @@ namespace Naraka.Features.CombatHud.View
         private ICombatHudController _controller;
         private float _playerFlashRemaining;
         private float _monsterFlashRemaining;
+        private bool _hasRenderedState;
 
         /// <summary>最近一次收到的状态。PlayMode 测试直接断言它。</summary>
         public CombatHudPresentationState State { get; private set; }
@@ -105,6 +106,8 @@ namespace Naraka.Features.CombatHud.View
 
         private void OnEnable()
         {
+            // 重新激活时必须完整投影一次；之后只在状态变化时写 UI。
+            _hasRenderedState = false;
             if (_controller == null)
             {
                 return;
@@ -133,7 +136,12 @@ namespace Naraka.Features.CombatHud.View
             }
 
             _controller.Refresh();
-            Render(_controller.Current);
+            var current = _controller.Current;
+            if (!_hasRenderedState || !current.Equals(State))
+            {
+                Render(in current);
+            }
+
             TickFlash(Time.deltaTime);
         }
 
@@ -141,6 +149,7 @@ namespace Naraka.Features.CombatHud.View
         public void Render(in CombatHudPresentationState state)
         {
             State = state;
+            _hasRenderedState = true;
 
             SetBar(playerHealthSlider, playerHealthFill, state.PlayerHealthRatio);
             SetLabel(playerHealthLabel, state.PlayerHealth, state.PlayerMaxHealth);

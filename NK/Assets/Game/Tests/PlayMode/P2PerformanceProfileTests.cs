@@ -13,6 +13,7 @@ using Naraka.Features.Monster.View;
 using Naraka.Features.World.Controller;
 using NUnit.Framework;
 using Unity.Profiling;
+using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -27,18 +28,16 @@ namespace Naraka.P2.PlayMode.Tests
     /// 给出可复现的 Profiler 数据。它刻意放在 Tests 里：
     /// 采集代码不得进入正式业务运行路径，也不得改变玩法。
     ///
-    /// **这份数据的边界必须说清楚**：它在 Editor 的 PlayMode 里采，不是
-    /// Development Build 连 Profiler。因此：
+    /// **这份数据的边界必须说清楚**：Editor PlayMode 只用于回归，
+    /// 正式门禁必须运行在 1920×1080、真实 GPU 的 Development Build 独立播放器中。
+    /// 因此：
     ///
     /// - **GC 分配**是可信的，而且用"战斗相对空闲基线的增量"表达 ——
     ///   这样 Editor 自身的固定开销会被两边相减抵消掉，剩下的就是战斗代码本身的分配。
     ///   这正是"战斗稳定态 0B GC/frame"真正要回答的问题。
-    /// - **主线程帧时**只能当上限参考：Editor 的开销比播放器大，这个数偏悲观。
-    /// - **渲染线程与 GPU 帧时**在批处理/无图形模式下取不到可信值，
-    ///   取不到就写"未验证"，绝不推测，也绝不填 0。
-    ///
-    /// 要拿正式的渲染线程与 GPU 数据，必须由人把 Profiler 连到 Development Build 上，
-    /// 这一步自动化做不了。
+    /// - **主线程与渲染线程**使用 ProfilerRecorder 采样。
+    /// - **GPU 与总帧时**在独立播放器中使用 FrameTimingManager 采样。
+    /// - 无图形 Editor 环境取不到可信渲染/GPU 值时，报告仍如实写"未验证"。
     /// </summary>
     public sealed class P2PerformanceProfileTests
     {
@@ -63,12 +62,14 @@ namespace Naraka.P2.PlayMode.Tests
 
         /// <summary>
         /// 战斗相对空闲基线允许多出多少每帧分配（字节）。
-        ///
-        /// 取 512：一次 LINQ、一次装箱或一个临时数组都远超这个量，
-        /// 因此它足以抓出"战斗路径里有每帧垃圾"这件事，
-        /// 又不会被 Editor 自身的抖动误判。
+        /// 权威架构预算是 0 B/frame，此处不再用旧的 512 B 容差放宽。
         /// </summary>
-        private const long CombatAllocationBudgetBytes = 512L;
+        private const long CombatAllocationBudgetBytes = 0L;
+
+        private const double TotalFrameBudgetMs = 16.67;
+        private const double MainThreadBudgetMs = 8.0;
+        private const double RenderThreadBudgetMs = 8.0;
+        private const double GpuFrameBudgetMs = 14.0;
 
         [SetUp]
         public void SetUp() => DestroyPersistentRoot();
@@ -93,6 +94,14 @@ namespace Naraka.P2.PlayMode.Tests
             var wolf = UnityEngine.Object.FindObjectOfType<DuskshadowWolfView>();
             Assert.That(player, Is.Not.Null);
             Assert.That(wolf, Is.Not.Null);
+
+            // Development Build 里会编译 IMGUI 调试面板，它每帧格式化字符串并走
+            // GUILayout，既不属于正式 HUD，也不会进入 Release Player。性能门禁必须关掉它，
+            // 否则采到的是调试字符串/GUILayout 开销，而不是战斗代码。
+            foreach (var overlay in UnityEngine.Object.FindObjectsOfType<PlayerDebugOverlay>())
+            {
+                overlay.enabled = false;
+            }
 
             yield return WaitUntil(() => player.State.Action == ActionState.None, 15f, "spawn-burst");
 
@@ -180,6 +189,23 @@ namespace Naraka.P2.PlayMode.Tests
                 $"战斗相对空闲基线每帧多分配 {delta} 字节（基线 {baseline.MedianGcBytes}、" +
                 $"战斗 {combat.MedianGcBytes}），说明战斗路径里有每帧垃圾。" +
                 $"完整数据见 {ResolveOutputPath()}。");
+
+            if (!Application.isEditor)
+            {
+                Assert.That(Debug.isDebugBuild, Is.True, "正式性能门禁必须在 Development Build 中运行。");
+                Assert.That(Screen.width, Is.EqualTo(1920), "正式性能门禁必须使用 1920×1080。");
+                Assert.That(Screen.height, Is.EqualTo(1080), "正式性能门禁必须使用 1920×1080。");
+                Assert.That(
+                    SystemInfo.graphicsDeviceType, Is.Not.EqualTo(UnityEngine.Rendering.GraphicsDeviceType.Null),
+                    "正式性能门禁不能在 Null Device/-nographics 下运行。");
+                Assert.That(combat.RenderValid, Is.True, "独立播放器未取到可信的渲染线程帧时。");
+                Assert.That(combat.GpuValid, Is.True, "独立播放器未取到可信的 GPU 帧时。");
+                Assert.That(combat.TotalValid, Is.True, "独立播放器未取到可信的总帧时。");
+                Assert.That(combat.P95MainMs, Is.LessThanOrEqualTo(MainThreadBudgetMs));
+                Assert.That(combat.P95RenderMs, Is.LessThanOrEqualTo(RenderThreadBudgetMs));
+                Assert.That(combat.P95GpuMs, Is.LessThanOrEqualTo(GpuFrameBudgetMs));
+                Assert.That(combat.P95TotalMs, Is.LessThanOrEqualTo(TotalFrameBudgetMs));
+            }
         }
 
         // ------------------------------------------------------------------ 采样
@@ -193,11 +219,20 @@ namespace Naraka.P2.PlayMode.Tests
                 long maxGcBytes,
                 long totalGcBytes,
                 double medianMainMs,
+                double p95MainMs,
                 double maxMainMs,
                 double medianRenderMs,
+                double p95RenderMs,
+                double maxRenderMs,
                 double medianGpuMs,
+                double p95GpuMs,
+                double maxGpuMs,
+                double medianTotalMs,
+                double p95TotalMs,
+                double maxTotalMs,
                 bool renderValid,
-                bool gpuValid)
+                bool gpuValid,
+                bool totalValid)
             {
                 Label = label;
                 Frames = frames;
@@ -205,11 +240,20 @@ namespace Naraka.P2.PlayMode.Tests
                 MaxGcBytes = maxGcBytes;
                 TotalGcBytes = totalGcBytes;
                 MedianMainMs = medianMainMs;
+                P95MainMs = p95MainMs;
                 MaxMainMs = maxMainMs;
                 MedianRenderMs = medianRenderMs;
+                P95RenderMs = p95RenderMs;
+                MaxRenderMs = maxRenderMs;
                 MedianGpuMs = medianGpuMs;
+                P95GpuMs = p95GpuMs;
+                MaxGpuMs = maxGpuMs;
+                MedianTotalMs = medianTotalMs;
+                P95TotalMs = p95TotalMs;
+                MaxTotalMs = maxTotalMs;
                 RenderValid = renderValid;
                 GpuValid = gpuValid;
+                TotalValid = totalValid;
             }
 
             public string Label { get; }
@@ -224,15 +268,33 @@ namespace Naraka.P2.PlayMode.Tests
 
             public double MedianMainMs { get; }
 
+            public double P95MainMs { get; }
+
             public double MaxMainMs { get; }
 
             public double MedianRenderMs { get; }
 
+            public double P95RenderMs { get; }
+
+            public double MaxRenderMs { get; }
+
             public double MedianGpuMs { get; }
+
+            public double P95GpuMs { get; }
+
+            public double MaxGpuMs { get; }
+
+            public double MedianTotalMs { get; }
+
+            public double P95TotalMs { get; }
+
+            public double MaxTotalMs { get; }
 
             public bool RenderValid { get; }
 
             public bool GpuValid { get; }
+
+            public bool TotalValid { get; }
         }
 
         /// <summary>这段采样实际覆盖到了哪些动作路径。报告里要写实话，不能笼统说"战斗"。</summary>
@@ -255,13 +317,18 @@ namespace Naraka.P2.PlayMode.Tests
         {
             var gc = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame");
             var main = ProfilerRecorder.StartNew(ProfilerCategory.Internal, "Main Thread");
-            var render = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Render Thread");
-            var gpu = ProfilerRecorder.StartNew(ProfilerCategory.Render, "GPU Frame Time");
+            var render = StartAvailableRecorder("Render Thread", ProfilerCategory.Render);
+            var gpuRecorder = StartAvailableRecorder("GPU Frame Time", ProfilerCategory.Render);
 
-            var gcSamples = new List<long>(SampleFrames);
-            var mainSamples = new List<long>(SampleFrames);
-            var renderSamples = new List<long>(SampleFrames);
-            var gpuSamples = new List<long>(SampleFrames);
+            // 1080p 独立播放器通常在 8 秒内跑 600–1500 帧。预留足够容量，
+            // 避免 List 扩容本身污染 GC Allocated In Frame 采样。
+            const int initialCapacity = 2048;
+            var gcSamples = new List<long>(initialCapacity);
+            var mainSamples = new List<long>(initialCapacity);
+            var renderSamples = new List<long>(initialCapacity);
+            var gpuSamples = new List<long>(initialCapacity);
+            var totalSamples = new List<long>(initialCapacity);
+            var latestTiming = new FrameTiming[1];
 
             try
             {
@@ -274,6 +341,10 @@ namespace Naraka.P2.PlayMode.Tests
                 {
                     onFrame?.Invoke();
 
+                    // 请求 Unity 在本帧结束时捕获 CPU/GPU timing，下一帧读取。
+                    FrameTimingManager.CaptureFrameTimings();
+                    yield return null;
+
                     if (gc.Valid)
                     {
                         gcSamples.Add(gc.LastValue);
@@ -284,17 +355,22 @@ namespace Naraka.P2.PlayMode.Tests
                         mainSamples.Add(main.LastValue);
                     }
 
-                    if (render.Valid)
+                    if (render.Valid && render.LastValue > 0L)
                     {
                         renderSamples.Add(render.LastValue);
                     }
 
-                    if (gpu.Valid)
-                    {
-                        gpuSamples.Add(gpu.LastValue);
-                    }
+                    totalSamples.Add((long)Math.Round(Time.unscaledDeltaTime * 1_000_000_000.0));
 
-                    yield return null;
+                    if (FrameTimingManager.GetLatestTimings(1, latestTiming) > 0 &&
+                        latestTiming[0].gpuFrameTime > 0.0)
+                    {
+                        gpuSamples.Add((long)Math.Round(latestTiming[0].gpuFrameTime * 1_000_000.0));
+                    }
+                    else if (gpuRecorder.Valid && gpuRecorder.LastValue > 0L)
+                    {
+                        gpuSamples.Add(gpuRecorder.LastValue);
+                    }
                 }
 
                 var totalGc = 0L;
@@ -310,19 +386,53 @@ namespace Naraka.P2.PlayMode.Tests
                     Max(gcSamples),
                     totalGc,
                     NanosToMs(Median(mainSamples)),
+                    NanosToMs(Percentile95(mainSamples)),
                     NanosToMs(Max(mainSamples)),
                     NanosToMs(Median(renderSamples)),
+                    NanosToMs(Percentile95(renderSamples)),
+                    NanosToMs(Max(renderSamples)),
                     NanosToMs(Median(gpuSamples)),
+                    NanosToMs(Percentile95(gpuSamples)),
+                    NanosToMs(Max(gpuSamples)),
+                    NanosToMs(Median(totalSamples)),
+                    NanosToMs(Percentile95(totalSamples)),
+                    NanosToMs(Max(totalSamples)),
                     renderSamples.Count > 0,
-                    gpuSamples.Count > 0));
+                    gpuSamples.Count > 0,
+                    totalSamples.Count > 0));
             }
             finally
             {
                 gc.Dispose();
                 main.Dispose();
                 render.Dispose();
-                gpu.Dispose();
+                gpuRecorder.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Recorder 的分类在 Unity 版本间有差异（例如 Render Thread 在某些版本归 Internal）。
+        /// 先从当前运行时暴露的 handle 中按名字找，只在找不到时用分类回退，
+        /// 避免因为分类猜错而得到一串虚假的 0。
+        /// </summary>
+        private static ProfilerRecorder StartAvailableRecorder(
+            string metricName, ProfilerCategory fallbackCategory)
+        {
+            var handles = new List<ProfilerRecorderHandle>(256);
+            ProfilerRecorderHandle.GetAvailable(handles);
+            for (var i = 0; i < handles.Count; i++)
+            {
+                var description = ProfilerRecorderHandle.GetDescription(handles[i]);
+                if (string.Equals(description.Name, metricName, StringComparison.Ordinal))
+                {
+                    return new ProfilerRecorder(
+                        handles[i], 1,
+                        ProfilerRecorderOptions.StartImmediately |
+                        ProfilerRecorderOptions.SumAllSamplesInFrame);
+                }
+            }
+
+            return ProfilerRecorder.StartNew(fallbackCategory, metricName);
         }
 
         private static long Median(List<long> values)
@@ -348,6 +458,18 @@ namespace Naraka.P2.PlayMode.Tests
             }
 
             return max;
+        }
+
+        private static long Percentile95(List<long> values)
+        {
+            if (values.Count == 0)
+            {
+                return 0L;
+            }
+
+            values.Sort();
+            var index = (int)Math.Ceiling(values.Count * 0.95) - 1;
+            return values[Mathf.Clamp(index, 0, values.Count - 1)];
         }
 
         private static double NanosToMs(long nanoseconds) => nanoseconds / 1_000_000.0;
@@ -388,25 +510,33 @@ namespace Naraka.P2.PlayMode.Tests
             sb.AppendLine();
             sb.AppendLine("## 测量结果");
             sb.AppendLine();
-            sb.AppendLine($"  {"阶段",-14}{"帧数",-7}{"GC/帧中位数",-15}{"GC/帧峰值",-13}" +
-                          $"{"主线程中位数",-15}{"主线程峰值",-13}");
-            sb.AppendLine("  " + new string('-', 80));
+            sb.AppendLine($"  {"阶段",-12}{"帧数",-7}{"GC中位数",-13}{"主线程P95",-14}" +
+                          $"{"渲染线程P95",-14}{"GPU P95",-13}{"总帧P95",-13}");
+            sb.AppendLine("  " + new string('-', 86));
             foreach (var sample in new[] { baseline, combat })
             {
                 sb.AppendLine(
-                    $"  {sample.Label,-14}{sample.Frames,-7}{sample.MedianGcBytes + " B",-15}" +
-                    $"{sample.MaxGcBytes + " B",-13}" +
-                    $"{sample.MedianMainMs.ToString("F3") + " ms",-15}" +
-                    $"{sample.MaxMainMs.ToString("F3") + " ms",-13}");
+                    $"  {sample.Label,-12}{sample.Frames,-7}{sample.MedianGcBytes + " B",-13}" +
+                    $"{FormatMetric(sample.P95MainMs, true),-14}" +
+                    $"{FormatMetric(sample.P95RenderMs, sample.RenderValid),-14}" +
+                    $"{FormatMetric(sample.P95GpuMs, sample.GpuValid),-13}" +
+                    $"{FormatMetric(sample.P95TotalMs, sample.TotalValid),-13}");
             }
+
+            sb.AppendLine();
+            sb.AppendLine("  战斗稳定态中位数 / P95 / 峰值：");
+            sb.AppendLine($"    主线程  {FormatTriple(combat.MedianMainMs, combat.P95MainMs, combat.MaxMainMs, true)}");
+            sb.AppendLine($"    渲染线程{FormatTriple(combat.MedianRenderMs, combat.P95RenderMs, combat.MaxRenderMs, combat.RenderValid)}");
+            sb.AppendLine($"    GPU     {FormatTriple(combat.MedianGpuMs, combat.P95GpuMs, combat.MaxGpuMs, combat.GpuValid)}");
+            sb.AppendLine($"    总帧时   {FormatTriple(combat.MedianTotalMs, combat.P95TotalMs, combat.MaxTotalMs, combat.TotalValid)}");
 
             var delta = combat.MedianGcBytes - baseline.MedianGcBytes;
             sb.AppendLine();
             sb.AppendLine($"  **战斗相对空闲基线的每帧分配增量：{delta} B**" +
                           $"（预算 ≤ {CombatAllocationBudgetBytes} B）");
             sb.AppendLine();
-            sb.AppendLine("  用增量而不是绝对值：Editor 自身有固定的每帧分配，" +
-                          "两边相减之后剩下的才是战斗代码本身的分配。");
+            sb.AppendLine("  用增量而不是绝对值：Test Runner/Profiler 有固定每帧分配，" +
+                          "空闲与战斗的中位数差才是本门禁关心的稳定态增量。");
 
             sb.AppendLine();
             sb.AppendLine("## 阶段预算对照（`NARAKA_技术架构.md` §15）");
@@ -417,28 +547,49 @@ namespace Naraka.P2.PlayMode.Tests
                           $"{delta + " B（相对基线）",-26}" +
                           $"{(delta <= CombatAllocationBudgetBytes ? "通过" : "**不通过**")}");
             sb.AppendLine($"  {"主线程帧时",-22}{"≤ 8 ms",-14}" +
-                          $"{combat.MedianMainMs.ToString("F3") + " ms（中位数）",-26}" +
-                          "仅作上限参考：Editor 开销大于播放器，这个数偏悲观");
+                          $"{FormatMetric(combat.P95MainMs, true) + "（P95）",-26}" +
+                          $"{GateConclusion(combat.P95MainMs, MainThreadBudgetMs, !Application.isEditor)}");
             sb.AppendLine($"  {"渲染线程帧时",-22}{"≤ 8 ms",-14}" +
-                          $"{(combat.RenderValid ? combat.MedianRenderMs.ToString("F3") + " ms" : "**未验证**"),-26}" +
-                          $"{(combat.RenderValid ? "仅参考" : "取不到可信值，不推测")}");
+                          $"{FormatMetric(combat.P95RenderMs, combat.RenderValid) + "（P95）",-26}" +
+                          $"{GateConclusion(combat.P95RenderMs, RenderThreadBudgetMs, !Application.isEditor && combat.RenderValid)}");
             sb.AppendLine($"  {"GPU 帧时",-22}{"≤ 14 ms",-14}" +
-                          $"{(combat.GpuValid ? combat.MedianGpuMs.ToString("F3") + " ms" : "**未验证**"),-26}" +
-                          $"{(combat.GpuValid ? "仅参考" : "取不到可信值，不推测")}");
-            sb.AppendLine($"  {"总帧预算",-22}{"≤ 16.67 ms",-14}{"**未验证**",-26}" +
-                          "需要把 Profiler 连到 Development Build，自动化做不到");
+                          $"{FormatMetric(combat.P95GpuMs, combat.GpuValid) + "（P95）",-26}" +
+                          $"{GateConclusion(combat.P95GpuMs, GpuFrameBudgetMs, !Application.isEditor && combat.GpuValid)}");
+            sb.AppendLine($"  {"总帧预算",-22}{"≤ 16.67 ms",-14}" +
+                          $"{FormatMetric(combat.P95TotalMs, combat.TotalValid) + "（P95）",-26}" +
+                          $"{GateConclusion(combat.P95TotalMs, TotalFrameBudgetMs, !Application.isEditor && combat.TotalValid)}");
 
             sb.AppendLine();
-            sb.AppendLine("## 仍需人工完成");
+            sb.AppendLine("## 验收边界");
             sb.AppendLine();
-            sb.AppendLine("  1920×1080 下的渲染线程、GPU 帧时与总帧预算必须由人把 Unity Profiler");
-            sb.AppendLine("  连到已构建的 Development Build 上采集（Deep Profile 保持关闭、");
-            sb.AppendLine("  预热与采样分开、至少 300 帧稳定战斗）。本文件给出的 GC 结论不受此影响。");
+            sb.AppendLine(Application.isEditor
+                ? "  当前是 Editor 回归数据；渲染/GPU/总帧不得用于关闭正式门禁。"
+                : "  当前是 1920×1080 Development Build 独立播放器数据；P95 用于稳定态门禁，峰值保留用于定位偶发尖峰。");
 
             var outputPath = ResolveOutputPath();
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
             File.WriteAllText(outputPath, sb.ToString(), new UTF8Encoding(false));
             Debug.Log($"[性能采集] 已写出 {outputPath}\n{sb}");
+        }
+
+        private static string FormatMetric(double value, bool valid) =>
+            valid ? value.ToString("F3", CultureInfo.InvariantCulture) + " ms" : "**未验证**";
+
+        private static string FormatTriple(double median, double p95, double max, bool valid) =>
+            valid
+                ? $"{median.ToString("F3", CultureInfo.InvariantCulture)} / " +
+                  $"{p95.ToString("F3", CultureInfo.InvariantCulture)} / " +
+                  $"{max.ToString("F3", CultureInfo.InvariantCulture)} ms"
+                : "**未验证**";
+
+        private static string GateConclusion(double value, double budget, bool formalEnvironment)
+        {
+            if (!formalEnvironment)
+            {
+                return "未在正式独立播放器环境验证";
+            }
+
+            return value <= budget ? "通过" : "**不通过**";
         }
 
         private static string ResolveOutputPath()

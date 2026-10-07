@@ -1,3 +1,4 @@
+using System;
 using Naraka.Core.Application.MVC;
 using Naraka.Features.Character.Model;
 
@@ -7,7 +8,8 @@ namespace Naraka.Features.Character.Controller
     /// 战斗 HUD 可订阅的只读状态。本阶段不做 HUD 视觉，但状态必须先存在，
     /// 否则后续 HUD 只能去反查 Animator 或 Model，那会立刻制造第二份状态真相。
     /// </summary>
-    public readonly struct PlayerPresentationState : IPresentationState
+    public readonly struct PlayerPresentationState
+        : IPresentationState, IEquatable<PlayerPresentationState>
     {
         public PlayerPresentationState(
             bool isAlive,
@@ -128,5 +130,50 @@ namespace Naraka.Features.Character.Controller
                 core.Flags,
                 rejection,
                 core.ComboStep);
+
+        /// <summary>
+        /// 显式值比较避免 <see cref="ValueType.Equals(object)"/> 反射与装箱。
+        /// Controller 每帧判断是否需要发布展示状态，这里必须是 0 GC。
+        /// </summary>
+        public bool Equals(PlayerPresentationState other) =>
+            IsAlive == other.IsAlive &&
+            Health.Equals(other.Health) &&
+            MaxHealth.Equals(other.MaxHealth) &&
+            Armor.Equals(other.Armor) &&
+            MaxArmor.Equals(other.MaxArmor) &&
+            Defense.Equals(other.Defense) &&
+            Stamina.Equals(other.Stamina) &&
+            MaxStamina.Equals(other.MaxStamina) &&
+            SkillFCooldownRemaining.Equals(other.SkillFCooldownRemaining) &&
+            SkillFCooldownSeconds.Equals(other.SkillFCooldownSeconds) &&
+            SkillVCooldownRemaining.Equals(other.SkillVCooldownRemaining) &&
+            SkillVCooldownSeconds.Equals(other.SkillVCooldownSeconds) &&
+            Locomotion == other.Locomotion &&
+            Action == other.Action &&
+            Reaction == other.Reaction &&
+            Flags == other.Flags &&
+            Rejection == other.Rejection &&
+            ComboStep == other.ComboStep;
+
+        public override bool Equals(object obj) =>
+            obj is PlayerPresentationState other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hash = IsAlive.GetHashCode();
+                hash = (hash * 397) ^ Health.GetHashCode();
+                hash = (hash * 397) ^ Armor.GetHashCode();
+                hash = (hash * 397) ^ Stamina.GetHashCode();
+                hash = (hash * 397) ^ (int)Locomotion;
+                hash = (hash * 397) ^ (int)Action;
+                hash = (hash * 397) ^ (int)Reaction;
+                hash = (hash * 397) ^ (int)Flags;
+                hash = (hash * 397) ^ (int)Rejection;
+                hash = (hash * 397) ^ ComboStep;
+                return hash;
+            }
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using Naraka.Core.Application.MVC;
 using Naraka.Features.Combat.Model;
 using Naraka.Features.Monster.Model;
@@ -8,7 +9,8 @@ namespace Naraka.Features.Monster.Controller
     /// 怪物的只读展示状态。战斗 HUD 的怪物血条、预警提示与处决提示
     /// 只订阅它，绝不去读 Animator、NavMeshAgent 或 Model。
     /// </summary>
-    public readonly struct MonsterPresentationState : IPresentationState
+    public readonly struct MonsterPresentationState
+        : IPresentationState, IEquatable<MonsterPresentationState>
     {
         public MonsterPresentationState(
             string monsterId,
@@ -117,6 +119,43 @@ namespace Naraka.Features.Monster.Controller
             }
 
             return flags;
+        }
+
+        /// <summary>显式值比较，避免每帧发布时走 ValueType 反射并装箱。</summary>
+        public bool Equals(MonsterPresentationState other) =>
+            string.Equals(MonsterId, other.MonsterId, StringComparison.Ordinal) &&
+            string.Equals(DisplayName, other.DisplayName, StringComparison.Ordinal) &&
+            IsAlive == other.IsAlive &&
+            Health.Equals(other.Health) &&
+            MaxHealth.Equals(other.MaxHealth) &&
+            Armor.Equals(other.Armor) &&
+            MaxArmor.Equals(other.MaxArmor) &&
+            Phase == other.Phase &&
+            Action == other.Action &&
+            Intent == other.Intent &&
+            Flags == other.Flags &&
+            WarningColorTag == other.WarningColorTag &&
+            ExecuteWindowRemaining.Equals(other.ExecuteWindowRemaining);
+
+        public override bool Equals(object obj) =>
+            obj is MonsterPresentationState other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hash = MonsterId != null ? MonsterId.GetHashCode() : 0;
+                hash = (hash * 397) ^ (DisplayName != null ? DisplayName.GetHashCode() : 0);
+                hash = (hash * 397) ^ IsAlive.GetHashCode();
+                hash = (hash * 397) ^ Health.GetHashCode();
+                hash = (hash * 397) ^ Armor.GetHashCode();
+                hash = (hash * 397) ^ (int)Phase;
+                hash = (hash * 397) ^ (int)Action;
+                hash = (hash * 397) ^ (int)Intent;
+                hash = (hash * 397) ^ (int)Flags;
+                hash = (hash * 397) ^ (int)WarningColorTag;
+                return hash;
+            }
         }
     }
 }
