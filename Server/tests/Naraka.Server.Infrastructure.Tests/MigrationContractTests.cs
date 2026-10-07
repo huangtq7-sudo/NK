@@ -588,6 +588,85 @@ public sealed class SocialMigrationContractTests
     }
 }
 
+/// <summary>P3远征、幂等事件、不可变结算摘要与邮件溢出迁移。</summary>
+public sealed class ExpeditionMigrationContractTests
+{
+    private static readonly string Migration = File.ReadAllText(
+        Path.Combine(AppContext.BaseDirectory, "Migrations", "0010_p3_expeditions.sql"));
+
+    private static readonly string ExecutableSql = string.Join(
+        '\n',
+        Migration.Split('\n').Where(line => !line.TrimStart().StartsWith("--", StringComparison.Ordinal)));
+
+    [Fact]
+    public void MigrationIsAdditiveRepeatableAndMySql57Compatible()
+    {
+        Assert.DoesNotContain("DROP ", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("TRUNCATE", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ALTER TABLE", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CHECK (", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CREATE INDEX IF NOT EXISTS", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ON DUPLICATE KEY UPDATE", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void MigrationCreatesTheCompleteExpeditionStorageSet()
+    {
+        foreach (var table in new[]
+                 {
+                     "expeditions", "expedition_assets", "expedition_events",
+                     "expedition_settlements", "expedition_settlement_assets", "account_mail_items"
+                 })
+        {
+            Assert.Contains(
+                "CREATE TABLE IF NOT EXISTS " + table, ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void DatabaseEnforcesOneActiveExpeditionAndIdempotentEvents()
+    {
+        Assert.Contains(
+            "UNIQUE KEY uq_expeditions_one_active (active_account_id)",
+            ExecutableSql,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "UNIQUE KEY uq_expeditions_start_request (account_id, start_request_id)",
+            ExecutableSql,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "PRIMARY KEY (expedition_id, event_kind, event_id)",
+            ExecutableSql,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void SettlementSummaryAndMailboxOverflowAreImmutableByStructure()
+    {
+        Assert.Contains(
+            "PRIMARY KEY (expedition_id)", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "UNIQUE KEY uq_account_mail_source_item (account_id, source_kind, source_id, item_id)",
+            ExecutableSql,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("claimed_utc DATETIME(6) NULL", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void MigrationRecordsOnlyItsOwnVersionAndHasSevenStatements()
+    {
+        Assert.Contains("'0010'", ExecutableSql, StringComparison.Ordinal);
+        Assert.DoesNotContain("'0009'", ExecutableSql, StringComparison.Ordinal);
+
+        var statements = Migration
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(statement => !string.IsNullOrWhiteSpace(statement))
+            .ToArray();
+
+        Assert.Equal(7, statements.Length);
+    }
+}
+
 /// <summary>
 /// 迁移器最终验收必须覆盖全部迁移实际创建的表和版本记录。
 /// 这项源码契约防止“迁移已经成功，但遗漏清单导致部署被误判失败”的回归。
@@ -598,7 +677,7 @@ public sealed class DatabaseMigratorVerificationContractTests
         Path.Combine(AppContext.BaseDirectory, "MigratorSource", "Program.cs"));
 
     [Fact]
-    public void FinalVerificationIncludesAllTwentySevenTables()
+    public void FinalVerificationIncludesAllThirtyThreeTables()
     {
         foreach (var table in new[]
                  {
@@ -609,23 +688,25 @@ public sealed class DatabaseMigratorVerificationContractTests
                      "account_signin", "account_signin_claims", "account_reward_claims",
                      "account_achievements", "account_achievement_state", "account_reddot",
                      "account_friends", "account_friend_requests", "account_blocks",
-                     "chat_conversations", "chat_messages", "chat_read_positions"
+                     "chat_conversations", "chat_messages", "chat_read_positions",
+                     "expeditions", "expedition_assets", "expedition_events", "expedition_settlements",
+                     "expedition_settlement_assets", "account_mail_items"
                  })
         {
             Assert.Contains("'" + table + "'", MigratorSource, StringComparison.Ordinal);
         }
 
-        Assert.Contains("tableCount != 27", MigratorSource, StringComparison.Ordinal);
+        Assert.Contains("tableCount != 33", MigratorSource, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void FinalVerificationRequiresAllNineMigrationVersions()
+    public void FinalVerificationRequiresAllTenMigrationVersions()
     {
-        for (var version = 1; version <= 9; version++)
+        for (var version = 1; version <= 10; version++)
         {
             Assert.Contains($"'{version:0000}'", MigratorSource, StringComparison.Ordinal);
         }
 
-        Assert.Contains("versionCount != 9", MigratorSource, StringComparison.Ordinal);
+        Assert.Contains("versionCount != 10", MigratorSource, StringComparison.Ordinal);
     }
 }

@@ -47,6 +47,50 @@ public sealed class ExpeditionAggregateTests
             });
     }
 
+    [Fact]
+    public void ActiveSnapshotCanBeRestoredWithoutDuplicatingDomainRules()
+    {
+        var assets = new[]
+        {
+            new ExpeditionAsset(
+                ExpeditionAssetKind.Item,
+                "mat_wolf_fang",
+                3,
+                ExpeditionAssetSource.MonsterDrop),
+            new ExpeditionAsset(
+                ExpeditionAssetKind.Item,
+                "mat_wolf_fang",
+                2,
+                ExpeditionAssetSource.MonsterDrop)
+        };
+
+        var restored = ExpeditionAggregate.RestoreActive(
+            new ExpeditionId("exp-restored"),
+            42,
+            ExpeditionMapIds.Map01,
+            StartedAt,
+            assets,
+            2);
+
+        Assert.Equal(ExpeditionStatus.Active, restored.Status);
+        Assert.Equal(2, restored.DeathCount);
+        var asset = Assert.Single(restored.TemporaryAssets);
+        Assert.Equal(5, asset.Quantity);
+    }
+
+    [Fact]
+    public void RestoreRejectsInvalidDeathCount()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            ExpeditionAggregate.RestoreActive(
+                new ExpeditionId("exp-restored"),
+                42,
+                ExpeditionMapIds.Map01,
+                StartedAt,
+                Array.Empty<ExpeditionAsset>(),
+                -1));
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]

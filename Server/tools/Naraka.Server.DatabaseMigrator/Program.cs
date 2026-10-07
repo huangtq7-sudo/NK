@@ -55,25 +55,27 @@ await using (var tableCommand = new MySqlCommand(
     "'account_signin', 'account_signin_claims', 'account_reward_claims', " +
     "'account_achievements', 'account_achievement_state', 'account_reddot', " +
     "'account_friends', 'account_friend_requests', 'account_blocks', " +
-    "'chat_conversations', 'chat_messages', 'chat_read_positions')",
+    "'chat_conversations', 'chat_messages', 'chat_read_positions', " +
+    "'expeditions', 'expedition_assets', 'expedition_events', 'expedition_settlements', " +
+    "'expedition_settlement_assets', 'account_mail_items')",
     connection))
 {
     var tableCount = Convert.ToInt32(await tableCommand.ExecuteScalarAsync());
-    if (tableCount != 27)
+    if (tableCount != 33)
     {
-        Console.Error.WriteLine($"Schema verification failed: expected 27 tables, found {tableCount}.");
+        Console.Error.WriteLine($"Schema verification failed: expected 33 tables, found {tableCount}.");
         return 4;
     }
 }
 
 await using (var versionCommand = new MySqlCommand(
-    "SELECT COUNT(*) FROM schema_migrations WHERE version IN ('0001', '0002', '0003', '0004', '0005', '0006', '0007', '0008', '0009')",
+    "SELECT COUNT(*) FROM schema_migrations WHERE version IN ('0001', '0002', '0003', '0004', '0005', '0006', '0007', '0008', '0009', '0010')",
     connection))
 {
     var versionCount = Convert.ToInt32(await versionCommand.ExecuteScalarAsync());
-    if (versionCount != 9)
+    if (versionCount != 10)
     {
-        Console.Error.WriteLine("Schema verification failed: migrations 0001-0009 are not all recorded.");
+        Console.Error.WriteLine("Schema verification failed: migrations 0001-0010 are not all recorded.");
         return 5;
     }
 }
@@ -93,7 +95,7 @@ await using (var backfillCommand = new MySqlCommand(
     }
 }
 
-Console.WriteLine("Verified schema: 27 tables, migrations 0001-0009 recorded, progression backfilled.");
+Console.WriteLine("Verified schema: 33 tables, migrations 0001-0010 recorded, progression backfilled.");
 
 return 0;
 

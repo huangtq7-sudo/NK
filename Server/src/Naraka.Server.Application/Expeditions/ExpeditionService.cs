@@ -14,7 +14,7 @@ public static class ExpeditionMapIds
 public sealed record ExpeditionSnapshot(
     ExpeditionId ExpeditionId,
     long AccountId,
-    string CurrentMapId,
+    string EntryMapId,
     DateTimeOffset StartedAt,
     ExpeditionStatus Status,
     IReadOnlyList<ExpeditionAsset> TemporaryAssets,

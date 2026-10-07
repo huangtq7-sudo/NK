@@ -32,5 +32,22 @@ monster-drop assets, death cleanup, normal/connection-loss settlement, and repla
 successful settlement summary. `ExpeditionService` is the authenticated application boundary; it
 creates stable expedition/map identifiers, accepts drops only from trusted server modules, and drives
 an atomic `IExpeditionRepository` port without referencing SqlSugar or the frozen transport. The
-transactional MySQL implementation and application-message adapter are intentionally separate
-follow-up slices; see ADR-0021.
+transactional MySQL implementation stays in Infrastructure, while the application-message adapter
+remains a separate follow-up slice; see ADR-0021.
+
+The MySQL implementation now lives in `SqlSugarExpeditionRepository`, backed by additive migration
+`0010_p3_expeditions.sql`. A nullable unique active-account key enforces one active expedition per
+account. Settlement grants currency with an immutable ledger entry, fills available inventory space,
+stores overflow in account mail, persists the first settlement summary, and closes the expedition in
+one transaction. `Naraka.Server.ExpeditionSmoke` creates and removes its own test account to verify
+that path against a reachable development database. Dry-run and smoke commands are:
+
+```powershell
+dotnet run --project Server/tools/Naraka.Server.DatabaseMigrator -- --dry-run
+dotnet run --project Server/tools/Naraka.Server.DatabaseMigrator
+dotnet run --project Server/tools/Naraka.Server.ExpeditionSmoke
+```
+
+The connection string remains environment-only. Do not pass it on the command line or write it into
+repository files. At the 2026-10-07 checkpoint, migration contracts and full CI pass, but the local
+database was not listening, so live migration and smoke acceptance remain pending.

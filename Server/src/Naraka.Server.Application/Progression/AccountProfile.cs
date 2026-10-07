@@ -55,6 +55,7 @@ public static class CurrencyLedgerReason
     public const string AccountLevelReward = "AccountLevelReward";
     public const string AchievementReward = "AchievementReward";
     public const string InventoryExpand = "InventoryExpand";
+    public const string ExpeditionSettlement = "ExpeditionSettlement";
 }
 
 /// <summary>一次性赠送的键。同一账号同一个键只会执行一次。</summary>

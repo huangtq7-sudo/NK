@@ -74,6 +74,40 @@ public sealed class ExpeditionAggregate
     }
 
     /// <summary>
+    /// 从持久化快照恢复活动远征。仓储必须通过这里重建聚合，不能在SQL层复制领域规则。
+    /// 已结算远征由不可变结算摘要重放，不允许恢复成活动状态。
+    /// </summary>
+    public static ExpeditionAggregate RestoreActive(
+        ExpeditionId id,
+        long accountId,
+        string entryMapId,
+        DateTimeOffset startedAt,
+        IReadOnlyList<ExpeditionAsset> temporaryAssets,
+        int deathCount)
+    {
+        ArgumentNullException.ThrowIfNull(temporaryAssets);
+        if (deathCount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(deathCount));
+        }
+
+        var aggregate = Start(id, accountId, entryMapId, startedAt);
+        foreach (var asset in temporaryAssets)
+        {
+            ArgumentNullException.ThrowIfNull(asset);
+            if (asset.Source != ExpeditionAssetSource.MonsterDrop)
+            {
+                throw new ArgumentException("Only monster drops can be restored as temporary assets.", nameof(temporaryAssets));
+            }
+
+            aggregate.AddMonsterDrop(asset.Kind, asset.AssetId, asset.Quantity);
+        }
+
+        aggregate.DeathCount = deathCount;
+        return aggregate;
+    }
+
+    /// <summary>
     /// 只由服务端掉落系统调用。客户端不得提交任意AssetId或数量到此入口。
     /// </summary>
     public void AddMonsterDrop(ExpeditionAssetKind kind, string assetId, long quantity)
