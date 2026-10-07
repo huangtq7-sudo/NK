@@ -1,3 +1,4 @@
+using Naraka.Server.Application.Expeditions;
 using Naraka.Server.Domain;
 using Naraka.Server.Domain.Expeditions;
 
@@ -14,9 +15,9 @@ public sealed class ExpeditionAggregateTests
         var id = new ExpeditionId("exp-001");
 
         Assert.Throws<ArgumentException>(() =>
-            ExpeditionAggregate.Start(default, 42, "map_task_01", StartedAt));
+            ExpeditionAggregate.Start(default, 42, ExpeditionMapIds.Map01, StartedAt));
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            ExpeditionAggregate.Start(id, 0, "map_task_01", StartedAt));
+            ExpeditionAggregate.Start(id, 0, ExpeditionMapIds.Map01, StartedAt));
         Assert.Throws<ArgumentException>(() =>
             ExpeditionAggregate.Start(id, 42, " ", StartedAt));
     }
@@ -169,6 +170,6 @@ public sealed class ExpeditionAggregateTests
         ExpeditionAggregate.Start(
             new ExpeditionId("exp-001"),
             42,
-            "map_task_01",
+            ExpeditionMapIds.Map01,
             StartedAt);
 }

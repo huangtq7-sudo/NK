@@ -29,6 +29,8 @@ The secret-free operations and acceptance record is in `Docs/Deployment/aliyun-w
 
 P3 starts with a pure domain aggregate under `Naraka.Server.Domain.Expeditions`. It owns temporary
 monster-drop assets, death cleanup, normal/connection-loss settlement, and replay of the first
-successful settlement summary. It does not trust client-submitted rewards and does not reference
-storage or the frozen transport. The transactional MySQL repository and application-message adapter
-are intentionally separate follow-up slices; see ADR-0021.
+successful settlement summary. `ExpeditionService` is the authenticated application boundary; it
+creates stable expedition/map identifiers, accepts drops only from trusted server modules, and drives
+an atomic `IExpeditionRepository` port without referencing SqlSugar or the frozen transport. The
+transactional MySQL implementation and application-message adapter are intentionally separate
+follow-up slices; see ADR-0021.
