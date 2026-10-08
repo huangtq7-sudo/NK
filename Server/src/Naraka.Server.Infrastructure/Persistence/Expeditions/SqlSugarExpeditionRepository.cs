@@ -108,7 +108,7 @@ public sealed class SqlSugarExpeditionRepository(
                 command.ExpeditionId,
                 command.AccountId,
                 command.EntryMapId,
-                command.StartedAt);
+                NormalizeDatabaseTimestamp(command.StartedAt));
             var row = new ExpeditionRow
             {
                 ExpeditionId = aggregate.Id.Value,
@@ -322,7 +322,8 @@ public sealed class SqlSugarExpeditionRepository(
             }
 
             var aggregate = await RestoreActiveAsync(database, row, cancellationToken);
-            var settlement = aggregate.Settle(command.RequestId, command.Reason, command.SettledAt).Summary;
+            var settledAt = NormalizeDatabaseTimestamp(command.SettledAt);
+            var settlement = aggregate.Settle(command.RequestId, command.Reason, settledAt).Summary;
 
             var grantOutcome = await ApplySettlementAssetsAsync(database, settlement, cancellationToken);
             if (grantOutcome != ExpeditionWriteOutcome.Applied)
@@ -338,7 +339,7 @@ public sealed class SqlSugarExpeditionRepository(
 
             row.Status = SettledStatus;
             row.ActiveAccountId = null;
-            row.SettledUtc = ToDatabaseTime(command.SettledAt);
+            row.SettledUtc = ToDatabaseTime(settledAt);
             await database.Updateable(row)
                 .UpdateColumns(value => new
                 {
@@ -590,13 +591,20 @@ public sealed class SqlSugarExpeditionRepository(
             throw new InvalidDataException("Stored expedition settlement reason is invalid.");
         }
 
+        var assets = rows
+            .Select(ToAsset)
+            .OrderBy(asset => asset.Kind)
+            .ThenBy(asset => asset.AssetId, StringComparer.Ordinal)
+            .ThenBy(asset => asset.Source)
+            .ToArray();
+
         return new ExpeditionSettlementSummary(
             new ExpeditionId(row.ExpeditionId),
             row.AccountId,
             new RequestId(row.RequestId),
             reason,
             FromDatabaseTime(row.SettledUtc),
-            rows.Select(ToAsset).ToArray(),
+            assets,
             row.DeathCount);
     }
 
@@ -805,7 +813,16 @@ public sealed class SqlSugarExpeditionRepository(
             replay.DeathCount);
     }
 
-    private static DateTime ToDatabaseTime(DateTimeOffset value) => value.UtcDateTime;
+    // MySQL DATETIME(6) stores microseconds while DateTimeOffset can carry 100-nanosecond ticks.
+    // Canonicalize before returning the first write result so a later database replay is identical.
+    private static DateTimeOffset NormalizeDatabaseTimestamp(DateTimeOffset value) =>
+        FromDatabaseTime(ToDatabaseTime(value));
+
+    private static DateTime ToDatabaseTime(DateTimeOffset value)
+    {
+        var utc = value.UtcDateTime;
+        return new DateTime(utc.Ticks - (utc.Ticks % 10L), DateTimeKind.Utc);
+    }
 
     private static DateTimeOffset FromDatabaseTime(DateTime value) =>
         new(DateTime.SpecifyKind(value, DateTimeKind.Utc));

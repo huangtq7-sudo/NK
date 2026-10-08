@@ -144,7 +144,13 @@ try
         replayed.Settlement is null ||
         !SettlementMatches(replayed.Settlement, settled.Settlement))
     {
-        Console.Error.WriteLine("Expedition smoke settlement or replay failed.");
+        Console.Error.WriteLine(
+            $"Expedition smoke settlement or replay failed: " +
+            $"settled={settled.Status}, settledSummary={settled.Settlement is not null}, " +
+            $"replayed={replayed.Status}, isReplay={replayed.IsReplay}, " +
+            $"replayedSummary={replayed.Settlement is not null}, " +
+            $"summaryMatch={settled.Settlement is not null && replayed.Settlement is not null && SettlementMatches(replayed.Settlement, settled.Settlement)}, " +
+            $"differences={DescribeSettlementDifferences(settled.Settlement, replayed.Settlement)}.");
         return 10;
     }
 
@@ -208,6 +214,39 @@ static bool SettlementMatches(
     left.SettledAt == right.SettledAt &&
     left.DeathCount == right.DeathCount &&
     left.Assets.SequenceEqual(right.Assets);
+
+static string DescribeSettlementDifferences(
+    Naraka.Server.Domain.Expeditions.ExpeditionSettlementSummary? first,
+    Naraka.Server.Domain.Expeditions.ExpeditionSettlementSummary? replay)
+{
+    if (first is null || replay is null)
+    {
+        return "missing-summary";
+    }
+
+    var differences = new List<string>();
+    if (first.ExpeditionId != replay.ExpeditionId) differences.Add("expedition-id");
+    if (first.AccountId != replay.AccountId) differences.Add("account-id");
+    if (first.RequestId != replay.RequestId) differences.Add("request-id");
+    if (first.Reason != replay.Reason) differences.Add("reason");
+    if (first.SettledAt != replay.SettledAt)
+    {
+        differences.Add($"settled-at-ticks:{first.SettledAt.UtcTicks - replay.SettledAt.UtcTicks}");
+    }
+    if (first.DeathCount != replay.DeathCount) differences.Add("death-count");
+    if (!first.Assets.SequenceEqual(replay.Assets))
+    {
+        differences.Add(
+            $"assets:first=[{DescribeAssets(first.Assets)}],replay=[{DescribeAssets(replay.Assets)}]");
+    }
+    return differences.Count == 0 ? "none" : string.Join(',', differences);
+}
+
+static string DescribeAssets(IReadOnlyList<ExpeditionAsset> assets) =>
+    string.Join(
+        '|',
+        assets.Select(asset =>
+            $"{asset.Kind}:{asset.AssetId}:{asset.Source}:{asset.Quantity}"));
 
 static async Task CleanupAsync(
     string connectionString,

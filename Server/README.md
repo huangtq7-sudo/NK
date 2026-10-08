@@ -49,5 +49,8 @@ dotnet run --project Server/tools/Naraka.Server.ExpeditionSmoke
 ```
 
 The connection string remains environment-only. Do not pass it on the command line or write it into
-repository files. At the 2026-10-07 checkpoint, migration contracts and full CI pass, but the local
-database was not listening, so live migration and smoke acceptance remain pending.
+repository files. On 2026-10-08, a loopback-only MySQL 5.7.26 development instance applied and
+verified migrations 0001-0010 twice and the self-cleaning expedition smoke passed death cleanup,
+atomic settlement, inventory overflow, currency ledger, and replay. That run exposed and fixed
+database replay ordering and `DATETIME(6)` precision normalization. Local start/stop and acceptance
+commands are documented in `Docs/Deployment/local-mysql57-development.md`.
