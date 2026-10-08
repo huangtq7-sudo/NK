@@ -32,8 +32,14 @@ monster-drop assets, death cleanup, normal/connection-loss settlement, and repla
 successful settlement summary. `ExpeditionService` is the authenticated application boundary; it
 creates stable expedition/map identifiers, accepts drops only from trusted server modules, and drives
 an atomic `IExpeditionRepository` port without referencing SqlSugar or the frozen transport. The
-transactional MySQL implementation stays in Infrastructure, while the application-message adapter
-remains a separate follow-up slice; see ADR-0021.
+transactional MySQL implementation stays in Infrastructure; see ADR-0021.
+
+The P3 application-message adapter is implemented above the frozen transport with the append-only
+pair `MsgExpeditionRequest=65` and `MsgExpeditionResponse=66`. The authenticated connection is the
+only account-identity source, and the request contract has no account, asset, quantity, or drop-list
+claim. Client disconnects settle through the same idempotent application service before session
+removal, while Host shutdown preserves the last active snapshot for recovery. The adapter does not
+advertise a new Bootstrap capability until the matching Unity MVC integration is implemented.
 
 The MySQL implementation now lives in `SqlSugarExpeditionRepository`, backed by additive migration
 `0010_p3_expeditions.sql`. A nullable unique active-account key enforces one active expedition per
@@ -54,3 +60,10 @@ verified migrations 0001-0010 twice and the self-cleaning expedition smoke passe
 atomic settlement, inventory overflow, currency ledger, and replay. That run exposed and fixed
 database replay ordering and `DATETIME(6)` precision normalization. Local start/stop and acceptance
 commands are documented in `Docs/Deployment/local-mysql57-development.md`.
+
+The adapter regression suite uses real encrypted loopback sockets and covers authentication, start,
+active lookup, death, return, replay, disconnect settlement, and Host-shutdown preservation. On
+2026-10-08 the targeted LegacyNetworkV1 suite passed 64/64 and the complete server CI passed 395/395
+with a zero-warning Release build. A separate Host composition smoke returned HTTP 200 for live and
+Bootstrap and opened the isolated legacy listener. Readiness was intentionally not recorded as passed
+because port 3306 was occupied by an unrelated phpStudy MySQL instance; that process was left untouched.

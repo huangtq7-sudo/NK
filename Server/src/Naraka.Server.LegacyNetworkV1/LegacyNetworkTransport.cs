@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using Naraka.Server.Application.Accounts;
+using Naraka.Server.Application.Expeditions;
 using Naraka.Server.Application.Lobby;
 using Naraka.Server.Application.Networking;
 using Naraka.Server.Application.Forge;
@@ -11,6 +12,7 @@ using Naraka.Server.Application.Progression;
 using Naraka.Server.Application.Shop;
 using Naraka.Server.Application.Social;
 using Naraka.Server.Application.Sessions;
+using Naraka.Server.Domain.Expeditions;
 using Naraka.Server.LegacyNetworkV1.Messages;
 using Naraka.Server.LegacyNetworkV1.Authentication;
 using Naraka.Server.LegacyNetworkV1.Protocol;
@@ -35,7 +37,8 @@ public sealed class LegacyNetworkTransport(
     AchievementService achievements,
     RedDotService redDots,
     SocialService socials,
-    ILegacyTransportDiagnostics? diagnostics = null) : ILegacyNetworkTransport
+    ILegacyTransportDiagnostics? diagnostics = null,
+    ExpeditionService? expeditions = null) : ILegacyNetworkTransport
 {
     public const string PublicHandshakeKey = "abc123";
     public const int LegacyClientHeartbeatIntervalSeconds = 300;
@@ -112,7 +115,7 @@ public sealed class LegacyNetworkTransport(
                 {
                     if (readable.Contains(client.Socket) && !ReceiveAndDispatch(client, cancellationToken))
                     {
-                        CloseClient(client, clients);
+                        CloseClient(client, clients, settleConnectionLoss: true);
                     }
                 }
 
@@ -120,7 +123,7 @@ public sealed class LegacyNetworkTransport(
                 foreach (var client in clients.Where(client => now - client.LastHeartbeatUtc > HeartbeatTimeout).ToArray())
                 {
                     _diagnostics.ConnectionDropped(client.ConnectionId, "heartbeat timeout", null);
-                    CloseClient(client, clients);
+                    CloseClient(client, clients, settleConnectionLoss: true);
                 }
             }
         }
@@ -128,7 +131,9 @@ public sealed class LegacyNetworkTransport(
         {
             foreach (var client in clients.ToArray())
             {
-                CloseClient(client, clients);
+                // Host shutdown or listener failure is a server event, not a player disconnect.
+                // Preserve the last authoritative snapshot for recovery instead of auto-settling.
+                CloseClient(client, clients, settleConnectionLoss: false);
             }
 
             CloseSocket(listener);
@@ -167,7 +172,7 @@ public sealed class LegacyNetworkTransport(
             foreach (var client in clients.ToArray())
             {
                 _diagnostics.ConnectionDropped(client.ConnectionId, "socket wait failed", exception);
-                CloseClient(client, clients);
+                CloseClient(client, clients, settleConnectionLoss: true);
             }
 
             return false;
@@ -240,7 +245,9 @@ public sealed class LegacyNetworkTransport(
         switch (message)
         {
             case LegacyMsgSecret:
-                loginSessions.Disconnect(client.ConnectionId);
+                // Re-handshaking invalidates an authenticated connection and therefore follows the
+                // same settlement path as any other client-initiated disconnect.
+                DisconnectSession(client.ConnectionId, settleConnectionLoss: true);
                 client.SessionKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
                 Send(client, new LegacyMsgSecret { Secret = client.SessionKey }, PublicHandshakeKey);
                 break;
@@ -348,6 +355,10 @@ public sealed class LegacyNetworkTransport(
 
             case LegacyMsgLobbyChatRequest chatRequest:
                 HandleLobbyChat(client, chatRequest, key, cancellationToken);
+                break;
+
+            case LegacyMsgExpeditionRequest expeditionRequest:
+                HandleExpedition(client, expeditionRequest, key, cancellationToken);
                 break;
 
             default:
@@ -1445,6 +1456,146 @@ public sealed class LegacyNetworkTransport(
         response.Gold = view.Gold;
     }
 
+    private void HandleExpedition(
+        LegacyClientConnection client,
+        LegacyMsgExpeditionRequest request,
+        string key,
+        CancellationToken cancellationToken)
+    {
+        var response = new LegacyMsgExpeditionResponse
+        {
+            RequestId = request.RequestId,
+            Operation = request.Operation
+        };
+        if (!TryResolveAccount(client, request.RequestId, out var accountId, out var failure))
+        {
+            response.Status = failure;
+            Send(client, response, key);
+            return;
+        }
+
+        if (expeditions is null)
+        {
+            response.Status = LegacyLobbyOperationStatus.InternalError;
+            Send(client, response, key);
+            return;
+        }
+
+        var requiresExpeditionId = request.Operation is
+            LegacyExpeditionOperation.RecordDeath or LegacyExpeditionOperation.ReturnToLobby;
+        if (requiresExpeditionId == string.IsNullOrWhiteSpace(request.ExpeditionId))
+        {
+            response.Status = LegacyLobbyOperationStatus.InvalidRequest;
+            Send(client, response, key);
+            return;
+        }
+
+        var result = request.Operation switch
+        {
+            LegacyExpeditionOperation.GetActive => expeditions
+                .GetActiveAsync(accountId, cancellationToken)
+                .GetAwaiter()
+                .GetResult(),
+            LegacyExpeditionOperation.Start => expeditions
+                .StartAsync(accountId, request.RequestId, cancellationToken)
+                .GetAwaiter()
+                .GetResult(),
+            LegacyExpeditionOperation.RecordDeath => expeditions
+                .RecordDeathAsync(
+                    accountId,
+                    new ExpeditionId(request.ExpeditionId!),
+                    request.RequestId,
+                    cancellationToken)
+                .GetAwaiter()
+                .GetResult(),
+            LegacyExpeditionOperation.ReturnToLobby => expeditions
+                .ReturnToLobbyAsync(
+                    accountId,
+                    new ExpeditionId(request.ExpeditionId!),
+                    request.RequestId,
+                    cancellationToken)
+                .GetAwaiter()
+                .GetResult(),
+            _ => ExpeditionResult.Failed(LobbyOperationStatus.InvalidRequest)
+        };
+
+        response.Status = ToWireStatus(result.Status);
+        response.IsReplay = result.IsReplay;
+        response.Snapshot = result.Snapshot is null ? null : ToWireSnapshot(result.Snapshot);
+        response.Death = result.Death is null ? null : ToWireDeath(result.Death);
+        response.Settlement = result.Settlement is null ? null : ToWireSettlement(result.Settlement);
+        Send(client, response, key);
+    }
+
+    private static LegacyExpeditionSnapshot ToWireSnapshot(ExpeditionSnapshot snapshot)
+    {
+        var wire = new LegacyExpeditionSnapshot
+        {
+            ExpeditionId = snapshot.ExpeditionId.Value,
+            EntryMapId = snapshot.EntryMapId,
+            StartedUnixMilliseconds = snapshot.StartedAt.ToUnixTimeMilliseconds(),
+            State = snapshot.Status switch
+            {
+                ExpeditionStatus.Active => LegacyExpeditionState.Active,
+                ExpeditionStatus.Settled => LegacyExpeditionState.Settled,
+                _ => LegacyExpeditionState.None
+            },
+            DeathCount = snapshot.DeathCount
+        };
+        wire.TemporaryAssets.AddRange(snapshot.TemporaryAssets.Select(ToWireAsset));
+        return wire;
+    }
+
+    private static LegacyExpeditionDeath ToWireDeath(ExpeditionDeathResult death)
+    {
+        var wire = new LegacyExpeditionDeath
+        {
+            ExpeditionId = death.ExpeditionId.Value,
+            OccurredUnixMilliseconds = death.OccurredAt.ToUnixTimeMilliseconds(),
+            DeathCount = death.DeathCount
+        };
+        wire.ClearedAssets.AddRange(death.ClearedAssets.Select(ToWireAsset));
+        return wire;
+    }
+
+    private static LegacyExpeditionSettlement ToWireSettlement(ExpeditionSettlementSummary settlement)
+    {
+        var wire = new LegacyExpeditionSettlement
+        {
+            ExpeditionId = settlement.ExpeditionId.Value,
+            RequestId = settlement.RequestId.Value,
+            Reason = settlement.Reason switch
+            {
+                ExpeditionSettlementReason.ReturnedToLobby =>
+                    LegacyExpeditionSettlementReason.ReturnedToLobby,
+                ExpeditionSettlementReason.ConnectionLost =>
+                    LegacyExpeditionSettlementReason.ConnectionLost,
+                _ => LegacyExpeditionSettlementReason.None
+            },
+            SettledUnixMilliseconds = settlement.SettledAt.ToUnixTimeMilliseconds(),
+            DeathCount = settlement.DeathCount
+        };
+        wire.Assets.AddRange(settlement.Assets.Select(ToWireAsset));
+        return wire;
+    }
+
+    private static LegacyExpeditionAsset ToWireAsset(ExpeditionAsset asset) => new()
+    {
+        Kind = asset.Kind switch
+        {
+            ExpeditionAssetKind.Item => LegacyExpeditionAssetKind.Item,
+            ExpeditionAssetKind.Currency => LegacyExpeditionAssetKind.Currency,
+            _ => LegacyExpeditionAssetKind.None
+        },
+        AssetId = asset.AssetId,
+        Quantity = asset.Quantity,
+        Source = asset.Source switch
+        {
+            ExpeditionAssetSource.MonsterDrop => LegacyExpeditionAssetSource.MonsterDrop,
+            _ => LegacyExpeditionAssetSource.None
+        }
+    };
+
     /// <summary>
     /// 每个 P1 业务请求的统一入口检查：必须携带 RequestId，且必须来自已认证连接。
     /// 账号身份只来自连接会话，请求体里根本没有 AccountId 字段可供伪造。
@@ -1505,12 +1656,52 @@ public sealed class LegacyNetworkTransport(
         client.Send(LegacyFrameCodec.Encode(outbound.WireProtocolName, ciphertext));
     }
 
-    private void CloseClient(LegacyClientConnection client, ICollection<LegacyClientConnection> clients)
+    private void CloseClient(
+        LegacyClientConnection client,
+        ICollection<LegacyClientConnection> clients,
+        bool settleConnectionLoss)
     {
-        loginSessions.Disconnect(client.ConnectionId);
+        DisconnectSession(client.ConnectionId, settleConnectionLoss);
         clients.Remove(client);
         CloseSocket(client.Socket);
         Volatile.Write(ref _connectedClientCount, clients.Count);
+    }
+
+    private void DisconnectSession(ConnectionId connectionId, bool settleConnectionLoss)
+    {
+        if (settleConnectionLoss && expeditions is not null)
+        {
+            try
+            {
+                var accountId = sessionAccounts.Resolve(connectionId);
+                var result = expeditions
+                    .SettleConnectionLossAsync(accountId, CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                if (result.Status != LobbyOperationStatus.Success)
+                {
+                    _diagnostics.BusinessFaulted(
+                        connectionId,
+                        $"expedition connection-loss settlement ({result.Status})",
+                        null);
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Handshake-only and never-authenticated connections have no account to settle.
+            }
+            catch (Exception exception)
+            {
+                // Connection cleanup must continue even when persistence is temporarily unavailable.
+                // The active expedition remains recoverable and no duplicate grant has occurred.
+                _diagnostics.BusinessFaulted(
+                    connectionId,
+                    "expedition connection-loss settlement",
+                    exception);
+            }
+        }
+
+        loginSessions.Disconnect(connectionId);
     }
 
     private static void CloseSocket(Socket? socket)

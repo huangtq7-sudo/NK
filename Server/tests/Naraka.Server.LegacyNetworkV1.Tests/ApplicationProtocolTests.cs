@@ -124,4 +124,92 @@ public sealed class ApplicationProtocolTests
             ApplicationProtocolCatalog.LobbyAccountSummaryResponse,
             payload));
     }
+
+    [Fact]
+    public void ExpeditionPairAppendsAfterP1WithoutTouchingTheFrozenCatalog()
+    {
+        Assert.Equal(
+            (int)LegacyProtocolValue.MsgExpeditionRequest,
+            ApplicationProtocolCatalog.Inbound[ApplicationProtocolCatalog.ExpeditionRequest]);
+        Assert.Equal(
+            (int)LegacyProtocolValue.MsgExpeditionResponse,
+            ApplicationProtocolCatalog.Outbound[ApplicationProtocolCatalog.ExpeditionResponse]);
+        Assert.Equal(65, (int)LegacyProtocolValue.MsgExpeditionRequest);
+        Assert.Equal(66, (int)LegacyProtocolValue.MsgExpeditionResponse);
+        Assert.False(LegacyProtocolCatalog.Client.ContainsKey(ApplicationProtocolCatalog.ExpeditionRequest));
+        Assert.False(LegacyProtocolCatalog.Server.ContainsKey(ApplicationProtocolCatalog.ExpeditionResponse));
+    }
+
+    [Fact]
+    public void ExpeditionRequestCannotCarryAccountOrDropClaims()
+    {
+        var properties = typeof(LegacyMsgExpeditionRequest)
+            .GetProperties()
+            .Select(property => property.Name)
+            .ToArray();
+
+        Assert.Equal(
+            new[] { "ProtocolType", "RequestId", "Operation", "ExpeditionId" },
+            properties);
+        Assert.DoesNotContain("AccountId", properties);
+        Assert.DoesNotContain("Assets", properties);
+        Assert.DoesNotContain("Quantity", properties);
+    }
+
+    [Fact]
+    public void ExpeditionRequestAndResponseSurviveSeparateCodecRoundTrips()
+    {
+        var request = new LegacyMsgExpeditionRequest
+        {
+            RequestId = "expedition-start-001",
+            Operation = LegacyExpeditionOperation.Start
+        };
+        var decodedRequest = Assert.IsType<LegacyMsgExpeditionRequest>(
+            LegacyProtobufCodec.DeserializeIncoming(
+                ApplicationProtocolCatalog.ExpeditionRequest,
+                LegacyProtobufCodec.Serialize(request)));
+        Assert.Equal("expedition-start-001", decodedRequest.RequestId);
+        Assert.Equal(LegacyExpeditionOperation.Start, decodedRequest.Operation);
+
+        var response = new LegacyMsgExpeditionResponse
+        {
+            RequestId = request.RequestId,
+            Operation = request.Operation,
+            Status = LegacyLobbyOperationStatus.Success,
+            Snapshot = new LegacyExpeditionSnapshot
+            {
+                ExpeditionId = "exp-001",
+                EntryMapId = "Map01",
+                StartedUnixMilliseconds = 1_700_000_000_123,
+                State = LegacyExpeditionState.Active,
+                DeathCount = 1
+            }
+        };
+        response.Snapshot.TemporaryAssets.Add(new LegacyExpeditionAsset
+        {
+            Kind = LegacyExpeditionAssetKind.Item,
+            AssetId = "mat_wolf_fang",
+            Quantity = 2,
+            Source = LegacyExpeditionAssetSource.MonsterDrop
+        });
+
+        var decodedResponse = Assert.IsType<LegacyMsgExpeditionResponse>(
+            LegacyProtobufCodec.DeserializeOutgoing(
+                ApplicationProtocolCatalog.ExpeditionResponse,
+                LegacyProtobufCodec.Serialize(response)));
+        Assert.Equal(LegacyLobbyOperationStatus.Success, decodedResponse.Status);
+        Assert.Equal("exp-001", decodedResponse.Snapshot?.ExpeditionId);
+        Assert.Equal("Map01", decodedResponse.Snapshot?.EntryMapId);
+        Assert.Equal(2, Assert.Single(decodedResponse.Snapshot!.TemporaryAssets).Quantity);
+    }
+
+    [Fact]
+    public void ExpeditionResponseIsNeverAcceptedAsAnInboundCommand()
+    {
+        var payload = LegacyProtobufCodec.Serialize(new LegacyMsgExpeditionResponse());
+
+        Assert.Throws<InvalidDataException>(() => LegacyProtobufCodec.DeserializeIncoming(
+            ApplicationProtocolCatalog.ExpeditionResponse,
+            payload));
+    }
 }

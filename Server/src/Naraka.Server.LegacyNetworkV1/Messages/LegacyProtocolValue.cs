@@ -69,7 +69,48 @@ public enum LegacyProtocolValue
     MsgLobbySocialActionRequest = 61,
     MsgLobbySocialActionResponse = 62,
     MsgLobbyChatRequest = 63,
-    MsgLobbyChatResponse = 64
+    MsgLobbyChatResponse = 64,
+
+    // P3 application adapter. The audited P0 transport and its 0-18 values remain untouched.
+    MsgExpeditionRequest = 65,
+    MsgExpeditionResponse = 66
+}
+
+/// <summary>P3 expedition operations. Values are append-only wire contracts.</summary>
+public enum LegacyExpeditionOperation
+{
+    None = 0,
+    GetActive = 1,
+    Start = 2,
+    RecordDeath = 3,
+    ReturnToLobby = 4
+}
+
+public enum LegacyExpeditionState
+{
+    None = 0,
+    Active = 1,
+    Settled = 2
+}
+
+public enum LegacyExpeditionAssetKind
+{
+    None = 0,
+    Item = 1,
+    Currency = 2
+}
+
+public enum LegacyExpeditionAssetSource
+{
+    None = 0,
+    MonsterDrop = 1
+}
+
+public enum LegacyExpeditionSettlementReason
+{
+    None = 0,
+    ReturnedToLobby = 1,
+    ConnectionLost = 2
 }
 
 /// <summary>Friend actions. Values are a wire contract: append only.</summary>

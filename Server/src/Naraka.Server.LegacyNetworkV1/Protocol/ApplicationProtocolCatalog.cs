@@ -132,6 +132,14 @@ public static class ApplicationProtocolCatalog
 
     public const string LobbyChatResponse = "MsgLobbyChatResponse";
 
+    /// <summary>
+    /// P3 client to server command for reading, starting, recording death in, or returning from an
+    /// expedition. Monster drops deliberately have no client protocol and remain server-authored.
+    /// </summary>
+    public const string ExpeditionRequest = "MsgExpeditionRequest";
+
+    public const string ExpeditionResponse = "MsgExpeditionResponse";
+
     /// <summary>Requests the client may send. Names, not numbers, travel on the wire.</summary>
     public static IReadOnlyDictionary<string, int> Inbound { get; } =
         new ReadOnlyDictionary<string, int>(new Dictionary<string, int>(StringComparer.Ordinal)
@@ -158,7 +166,8 @@ public static class ApplicationProtocolCatalog
             [LobbySocialRequest] = 57,
             [LobbySocialSearchRequest] = 59,
             [LobbySocialActionRequest] = 61,
-            [LobbyChatRequest] = 63
+            [LobbyChatRequest] = 63,
+            [ExpeditionRequest] = 65
         });
 
     /// <summary>Responses the server may send.</summary>
@@ -187,7 +196,8 @@ public static class ApplicationProtocolCatalog
             [LobbySocialResponse] = 58,
             [LobbySocialSearchResponse] = 60,
             [LobbySocialActionResponse] = 62,
-            [LobbyChatResponse] = 64
+            [LobbyChatResponse] = 64,
+            [ExpeditionResponse] = 66
         });
 
     public static bool TryGetInbound(string protocolName, out int protocolValue) =>

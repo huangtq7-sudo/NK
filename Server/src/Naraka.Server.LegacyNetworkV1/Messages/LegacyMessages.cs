@@ -969,3 +969,80 @@ public sealed class LegacyMsgLobbyAchievementClaimResponse : LegacyMessage
     [ProtoMember(9)] public long AccountXp { get; set; }
     [ProtoMember(10)] public int AccountLevel { get; set; }
 }
+
+/// <summary>
+/// P3 expedition command. Account identity always comes from the authenticated connection. The
+/// request intentionally has no account id, asset id, quantity, or drop list, so a client cannot
+/// mint rewards through this adapter.
+/// </summary>
+[ProtoContract]
+public sealed class LegacyMsgExpeditionRequest : LegacyMessage
+{
+    public LegacyMsgExpeditionRequest() => ProtocolType = LegacyProtocolValue.MsgExpeditionRequest;
+
+    [ProtoMember(1)]
+    public override LegacyProtocolValue ProtocolType { get; set; }
+
+    [ProtoMember(2)] public string? RequestId { get; set; }
+    [ProtoMember(3)] public LegacyExpeditionOperation Operation { get; set; }
+
+    /// <summary>Required only for death and return. Start always uses the server-generated id.</summary>
+    [ProtoMember(4)] public string? ExpeditionId { get; set; }
+}
+
+[ProtoContract]
+public sealed class LegacyMsgExpeditionResponse : LegacyMessage
+{
+    public LegacyMsgExpeditionResponse() => ProtocolType = LegacyProtocolValue.MsgExpeditionResponse;
+
+    [ProtoMember(1)]
+    public override LegacyProtocolValue ProtocolType { get; set; }
+
+    [ProtoMember(2)] public string? RequestId { get; set; }
+    [ProtoMember(3)] public LegacyExpeditionOperation Operation { get; set; }
+    [ProtoMember(4)] public LegacyLobbyOperationStatus Status { get; set; }
+    [ProtoMember(5)] public bool IsReplay { get; set; }
+    [ProtoMember(6)] public LegacyExpeditionSnapshot? Snapshot { get; set; }
+    [ProtoMember(7)] public LegacyExpeditionDeath? Death { get; set; }
+    [ProtoMember(8)] public LegacyExpeditionSettlement? Settlement { get; set; }
+}
+
+[ProtoContract]
+public sealed class LegacyExpeditionAsset
+{
+    [ProtoMember(1)] public LegacyExpeditionAssetKind Kind { get; set; }
+    [ProtoMember(2)] public string? AssetId { get; set; }
+    [ProtoMember(3)] public long Quantity { get; set; }
+    [ProtoMember(4)] public LegacyExpeditionAssetSource Source { get; set; }
+}
+
+[ProtoContract]
+public sealed class LegacyExpeditionSnapshot
+{
+    [ProtoMember(1)] public string? ExpeditionId { get; set; }
+    [ProtoMember(2)] public string? EntryMapId { get; set; }
+    [ProtoMember(3)] public long StartedUnixMilliseconds { get; set; }
+    [ProtoMember(4)] public LegacyExpeditionState State { get; set; }
+    [ProtoMember(5)] public List<LegacyExpeditionAsset> TemporaryAssets { get; } = new();
+    [ProtoMember(6)] public int DeathCount { get; set; }
+}
+
+[ProtoContract]
+public sealed class LegacyExpeditionDeath
+{
+    [ProtoMember(1)] public string? ExpeditionId { get; set; }
+    [ProtoMember(2)] public long OccurredUnixMilliseconds { get; set; }
+    [ProtoMember(3)] public List<LegacyExpeditionAsset> ClearedAssets { get; } = new();
+    [ProtoMember(4)] public int DeathCount { get; set; }
+}
+
+[ProtoContract]
+public sealed class LegacyExpeditionSettlement
+{
+    [ProtoMember(1)] public string? ExpeditionId { get; set; }
+    [ProtoMember(2)] public string? RequestId { get; set; }
+    [ProtoMember(3)] public LegacyExpeditionSettlementReason Reason { get; set; }
+    [ProtoMember(4)] public long SettledUnixMilliseconds { get; set; }
+    [ProtoMember(5)] public List<LegacyExpeditionAsset> Assets { get; } = new();
+    [ProtoMember(6)] public int DeathCount { get; set; }
+}
