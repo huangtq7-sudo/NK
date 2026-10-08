@@ -93,3 +93,20 @@ Assets/Aquarius Fantasy - High Elves/Demo Scenes/High Elves Sanctuary/LightingDa
 
 是否还在。不要重新烘焙 —— 重烘会在项目里生成一份新的光照数据，
 而第三方源场景必须保持只读。
+
+## 如果场景根本打不开，或者地形整块消失
+
+先量一下地形数据的字节数，不要先怀疑场景：
+
+```
+Assets/Aquarius Fantasy - High Elves/Demo Scenes/High Elves Sanctuary/Elven_Sanctuary_Ter.asset
+```
+
+它是二进制 TerrainData，**头部自述自己的总长度**，所以损坏能自证。
+正确长度是 1,993,760 字节。如果实际字节数比这个小，说明它被当成文本做过行尾转换，
+高度图里的 CR 字节被抹掉了 —— Unity 会直接无法反序列化它。
+
+`Tools/CI/Test-UnityBinaryAssetIntegrity.ps1` 会报出这种情况并指明缺了多少字节。
+
+**不要试图"修"它**：哪些 LF 原本前面有 CR 已经推不出来了，Git 也还原不回来。
+唯一正确的办法是从原始素材包按字节覆盖，并保留现有 `.meta`（GUID 一致，不会重导入）。
