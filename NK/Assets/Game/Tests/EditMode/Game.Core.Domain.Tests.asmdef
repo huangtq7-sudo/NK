@@ -38,7 +38,9 @@
     "Game.Features.AI.Model",
     "Game.Features.Monster.Model",
     "Game.Features.Monster.Controller",
-    "Game.Features.CombatHud.Controller"
+    "Game.Features.CombatHud.Controller",
+    "Game.Features.Expedition.Model",
+    "Game.Features.Expedition.Controller"
   ],
   "includePlatforms": [
     "Editor"

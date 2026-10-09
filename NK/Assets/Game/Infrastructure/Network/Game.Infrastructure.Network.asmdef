@@ -17,7 +17,9 @@
     "Game.Features.SignIn.Controller",
     "Game.Features.Achievement.Controller",
     "Game.Features.RedDot.Controller",
-    "Game.Features.Social.Controller"
+    "Game.Features.Social.Controller",
+    "Game.Features.Expedition.Controller",
+    "Game.Features.Expedition.Model"
   ],
   "autoReferenced": true,
   "overrideReferences": false,

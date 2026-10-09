@@ -5,6 +5,8 @@
     "Game.Features.Account.View",
     "Game.Features.Bootstrap.View",
     "Game.Features.Lobby.View",
+    "Game.Features.Lobby.Controller",
+    "Game.Features.Expedition.Model",
     "Game.Boot",
     "Game.Core.Application",
     "Game.Features.Character.Model",

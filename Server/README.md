@@ -38,8 +38,11 @@ The P3 application-message adapter is implemented above the frozen transport wit
 pair `MsgExpeditionRequest=65` and `MsgExpeditionResponse=66`. The authenticated connection is the
 only account-identity source, and the request contract has no account, asset, quantity, or drop-list
 claim. Client disconnects settle through the same idempotent application service before session
-removal, while Host shutdown preserves the last active snapshot for recovery. The adapter does not
-advertise a new Bootstrap capability until the matching Unity MVC integration is implemented.
+removal, while Host shutdown preserves the last active snapshot for recovery. The matching Unity
+MVC integration now keeps the authenticated connection, minimal account session, capability set,
+and expedition snapshot in the persistent application root. A matching Host advertises the
+`expedition` Bootstrap capability; clients connected to an older Host block expedition entry and do
+not send protocols 65/66.
 
 The MySQL implementation now lives in `SqlSugarExpeditionRepository`, backed by additive migration
 `0010_p3_expeditions.sql`. A nullable unique active-account key enforces one active expedition per

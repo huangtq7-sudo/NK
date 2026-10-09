@@ -16,12 +16,24 @@ $ErrorActionPreference = 'Stop'
 $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $serverCiScript = Join-Path $repositoryRoot 'Tools\CI\Invoke-ServerTests.ps1'
 $unityCiScript = Join-Path $repositoryRoot 'Tools\CI\Invoke-UnityTests.ps1'
+$unityBinaryIntegrityScript = Join-Path $repositoryRoot 'Tools\CI\Test-UnityBinaryAssetIntegrity.ps1'
 $nugetConfig = Join-Path $repositoryRoot 'Server\NuGet.Config'
 $hostProject = Join-Path $repositoryRoot 'Server\src\Naraka.Server.Host\Naraka.Server.Host.csproj'
 $migratorProject = Join-Path $repositoryRoot 'Server\tools\Naraka.Server.DatabaseMigrator\Naraka.Server.DatabaseMigrator.csproj'
 $appSettingsPath = Join-Path $repositoryRoot 'Server\src\Naraka.Server.Host\appsettings.json'
 $gameConfigManifestPath = Join-Path $repositoryRoot 'Shared\Generated\Config\manifest.json'
 $releaseRoot = Join-Path $repositoryRoot "artifacts\releases\$ReleaseId"
+$expectedServerCapabilityCount = 13
+$appSettings = Get-Content -Raw -Encoding UTF8 -LiteralPath $appSettingsPath | ConvertFrom-Json
+
+# P3 adds application messages 65/66 and the expedition capability. A package carrying
+# those contracts must never retain the P1 gate: that exact kind of client/Host mismatch
+# has already taken the cloud Host down once. Keep development against the P1 cloud
+# possible, but make an official release fail before doing any build or publish work.
+if ($expectedServerCapabilityCount -ge 13 -and
+    $appSettings.Naraka.Bootstrap.ConfigVersion -notlike 'p3-*') {
+    throw 'P3 application contracts require a p3-* Bootstrap ConfigVersion before a deployable release can be built.'
+}
 
 if (Test-Path -LiteralPath $releaseRoot) {
     throw "Release output already exists: $releaseRoot"
@@ -67,6 +79,11 @@ $unityResults = Join-Path $releaseRoot 'test-results\unity'
 $stagingRoot = Join-Path $releaseRoot '_staging'
 $hostOutput = Join-Path $stagingRoot 'host'
 $migratorOutput = Join-Path $stagingRoot 'migrator'
+
+& $unityBinaryIntegrityScript -RepositoryRoot $repositoryRoot
+if ($LASTEXITCODE -ne 0) {
+    throw "Unity binary asset integrity check failed with exit code $LASTEXITCODE."
+}
 
 New-Item -ItemType Directory -Path $hostOutput,$migratorOutput -Force | Out-Null
 
@@ -177,7 +194,6 @@ Compress-Archive -Path (Join-Path $migratorOutput '*') -DestinationPath $migrato
 
 $hostHash = (Get-FileHash -LiteralPath $hostArchive -Algorithm SHA256).Hash
 $migratorHash = (Get-FileHash -LiteralPath $migratorArchive -Algorithm SHA256).Hash
-$appSettings = Get-Content -Raw -Encoding UTF8 -LiteralPath $appSettingsPath | ConvertFrom-Json
 $gameConfigManifest = Get-Content -Raw -Encoding UTF8 -LiteralPath $gameConfigManifestPath | ConvertFrom-Json
 $migrationFiles = @(Get-ChildItem -LiteralPath (Join-Path $migratorOutput 'Migrations') -Filter '*.sql' | Sort-Object Name)
 $migrationManifest = @(
@@ -214,7 +230,7 @@ $manifest = [ordered]@{
         SchemaVersion = $gameConfigManifest.SchemaVersion
         CatalogSHA256 = $gameConfigManifest.CatalogSha256
     }
-    ExpectedServerCapabilityCount = 12
+    ExpectedServerCapabilityCount = $expectedServerCapabilityCount
     HostPackage = [ordered]@{
         FileName = $hostArchiveName
         Length = (Get-Item -LiteralPath $hostArchive).Length

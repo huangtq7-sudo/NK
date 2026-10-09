@@ -8,6 +8,7 @@
     "Game.Features.Character.Model",
     "Game.Features.Loading.Controller",
     "Game.Features.Lobby.Controller",
+    "Game.Features.Expedition.Controller",
     "UniTask"
   ],
   "autoReferenced": true,

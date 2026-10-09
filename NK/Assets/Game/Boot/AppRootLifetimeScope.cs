@@ -1,21 +1,37 @@
+using Naraka.Core.Application.Bootstrap;
 using Naraka.Core.Application.Config;
+using Naraka.Core.Application.Networking;
 using Naraka.Core.Application.Presentation;
 using Naraka.Core.Application.Scenes;
 using Naraka.Core.Application.Timing;
+using Naraka.Features.Account.Controller;
+using Naraka.Features.Account.Model;
+using Naraka.Features.Achievement.Controller;
 using Naraka.Features.Character.Controller;
 using Naraka.Features.Character.Model;
 using Naraka.Features.Character.View;
 using Naraka.Features.Combat.Controller;
 using Naraka.Features.Combat.View;
 using Naraka.Features.CombatHud.Controller;
+using Naraka.Features.Expedition.Controller;
+using Naraka.Features.Expedition.Model;
+using Naraka.Features.Forge.Controller;
+using Naraka.Features.Gacha.Controller;
+using Naraka.Features.Inventory.Controller;
 using Naraka.Features.Loading.Controller;
 using Naraka.Features.Loading.View;
+using Naraka.Features.Loadout.Controller;
 using Naraka.Features.Lobby.Controller;
 using Naraka.Features.Monster.Controller;
+using Naraka.Features.RedDot.Controller;
+using Naraka.Features.Shop.Controller;
+using Naraka.Features.SignIn.Controller;
+using Naraka.Features.Social.Controller;
 using Naraka.Features.World.Controller;
 using Naraka.Infrastructure.Camera;
 using Naraka.Infrastructure.Config;
 using Naraka.Infrastructure.Input;
+using Naraka.Infrastructure.Network;
 using Naraka.Infrastructure.Scene;
 using Naraka.Infrastructure.Timing;
 using UnityEngine;
@@ -27,8 +43,9 @@ namespace Naraka.Boot
     /// <summary>
     /// 跨场景持久化的组合根。
     ///
-    /// 它只承载真正需要活过场景切换的能力：时钟、场景加载、加载界面、输入、
-    /// 第三人称相机、玩家状态与命中结算。大厅的十几个业务控制器仍然留在
+    /// 它只承载真正需要活过场景切换的能力：认证连接、最小账号会话、
+    /// 远征快照、时钟、场景加载、加载界面、输入、第三人称相机、玩家状态与命中结算。
+    /// 大厅的其他业务控制器仍然留在
     /// <see cref="GameLifetimeScope"/> 里随 Bootstrap 场景卸载，不会被带进战斗场景。
     ///
     /// 为什么必须持久化：加载界面要在"卸载大厅"和"地图已就绪"之间一直可见。
@@ -39,6 +56,11 @@ namespace Naraka.Boot
     {
         /// <summary>登录后进入大厅、以及地图之间切换时加载界面的最短显示时长（秒）。</summary>
         [SerializeField] private float minimumLoadingSeconds = 2f;
+
+        [Tooltip("LegacyNetworkV1只通过本地回环或SSH隧道连接。")]
+        [SerializeField] private string serverAddress = "127.0.0.1";
+
+        [SerializeField] private int serverPort = 8011;
 
         [SerializeField] private PlayerTuningAsset playerTuning;
 
@@ -87,6 +109,37 @@ namespace Naraka.Boot
 
         protected override void Configure(IContainerBuilder builder)
         {
+            // 认证连接必须跨场景存活。它如果留在大厅Scope，加载地图时会被Dispose，
+            // 服务端会把这次正常切图误判成断线并立刻结算远征。
+            var network = new LegacyNetworkAdapter(serverAddress, serverPort);
+            builder.RegisterInstance(network)
+                .As<INetworkFacade>()
+                .As<IAccountGateway>()
+                .As<ILobbyAccountGateway>()
+                .As<ILobbyProfileGateway>()
+                .As<ILoadoutGateway>()
+                .As<IInventoryGateway>()
+                .As<IShopGateway>()
+                .As<IForgeGateway>()
+                .As<IGachaGateway>()
+                .As<ISignInGateway>()
+                .As<IAchievementGateway>()
+                .As<IRedDotGateway>()
+                .As<ISocialGateway>()
+                .As<IExpeditionGateway>();
+
+            // 会话、能力声明与远征快照同样跨场景存活。回到Bootstrap时只重建View和大厅控制器，
+            // 不要求玩家重新输入密码，也不会丢失首次结算摘要。
+            builder.Register<AccountSessionModel>(Lifetime.Singleton);
+            builder.Register<ServerCapabilityRegistry>(Lifetime.Singleton)
+                .AsSelf()
+                .As<IServerCapabilities>();
+            builder.Register<ExpeditionModel>(Lifetime.Singleton);
+            builder.Register<IExpeditionRequestIdSource, GuidExpeditionRequestIdSource>(Lifetime.Singleton);
+            builder.Register<ExpeditionController>(Lifetime.Singleton)
+                .AsSelf()
+                .As<IExpeditionController>();
+
             builder.Register<IGameClock, UnityGameClock>(Lifetime.Singleton);
             builder.Register<ISceneLoader, UnitySceneLoader>(Lifetime.Singleton);
 

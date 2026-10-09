@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 using Naraka.Core.Application.Scenes;
 using Naraka.Core.Application.Presentation;
 using Naraka.Core.Application.Timing;
+using Naraka.Features.Expedition.Controller;
 using Naraka.Features.Loading.Controller;
 using Naraka.Features.World.Controller;
 using Naraka.P0.Tests;
@@ -562,6 +563,141 @@ namespace Naraka.P2.Tests
 
             Assert.That(loader.BeginCount, Is.EqualTo(2), "失败之后必须能重新发起加载。");
         });
+
+        [UnityTest]
+        public IEnumerator DeathIsRecordedBeforeMap01ReloadStarts() => UniTask.ToCoroutine(async () =>
+        {
+            var clock = new FakeGameClock();
+            var loader = new FakeSceneLoader();
+            var loading = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
+            var expedition = new RecordingExpeditionController
+            {
+                DeathStatus = ExpeditionOperationStatus.DatabaseUnavailable
+            };
+            var world = new WorldFlowController(loading, WorldSceneCatalog.Default, expedition);
+
+            var threw = false;
+            try
+            {
+                await world.ReturnToMap01AfterDeathAsync(CancellationToken.None);
+            }
+            catch (InvalidOperationException)
+            {
+                threw = true;
+            }
+
+            Assert.That(threw, Is.True);
+            Assert.That(expedition.DeathCount, Is.EqualTo(1));
+            Assert.That(loader.BeginCount, Is.Zero,
+                "服务端尚未记录死亡时，客户端不得先重载地图。");
+        });
+
+        [UnityTest]
+        public IEnumerator DeathStillRespawnsWhenNoExpeditionIsActive() => UniTask.ToCoroutine(async () =>
+        {
+            // NotFound 由 ExpeditionController 在发请求之前就地判定，含义是"没有远征可以记录
+            // 这次死亡"，不是服务端拒绝。把它也当致命错误会让玩家永远停在死亡状态 ——
+            // 而且在远征开始还没接到 UI 上之前，"没有活跃远征"是常态而不是边缘情况。
+            var clock = new FakeGameClock();
+            var loader = new FakeSceneLoader
+            {
+                Factory = _ => new FakeSceneLoader.FakeOperation
+                {
+                    Progress = 1f,
+                    IsReadyToActivate = true
+                }
+            };
+            var loading = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
+            var expedition = new RecordingExpeditionController
+            {
+                DeathStatus = ExpeditionOperationStatus.NotFound
+            };
+            var world = new WorldFlowController(loading, WorldSceneCatalog.Default, expedition);
+
+            await world.ReturnToMap01AfterDeathAsync(CancellationToken.None);
+
+            Assert.That(expedition.DeathCount, Is.EqualTo(1),
+                "即使没有活跃远征，也必须先尝试上报死亡，不能跳过这一步。");
+            Assert.That(loader.BeginCount, Is.EqualTo(1),
+                "没有活跃远征不是服务端拒绝，玩家必须照常重生。");
+            Assert.That(loader.LastSceneName, Is.EqualTo(WorldSceneNames.Map01Task));
+            Assert.That(world.Current.CurrentMapId, Is.EqualTo(WorldMapIds.Map01));
+            Assert.That(world.ConsumeArrival(), Is.EqualTo(WorldArrival.DeathToMap01),
+                "重生仍然要走死亡到达方式，否则会播成普通进场动画。");
+        });
+
+        [UnityTest]
+        public IEnumerator ReturnToLobbySettlesBeforeLoadingBootstrap() => UniTask.ToCoroutine(async () =>
+        {
+            var clock = new FakeGameClock();
+            var loader = new FakeSceneLoader
+            {
+                Factory = _ => new FakeSceneLoader.FakeOperation
+                {
+                    Progress = 1f,
+                    IsReadyToActivate = true
+                }
+            };
+            var loading = new LoadingController(clock, loader, new FakeFrameScheduler(clock), Minimum);
+            var expedition = new RecordingExpeditionController();
+            var world = new WorldFlowController(loading, WorldSceneCatalog.Default, expedition);
+
+            await world.ReturnToLobbyAsync(CancellationToken.None);
+
+            Assert.That(expedition.SettlementCount, Is.EqualTo(1));
+            Assert.That(loader.BeginCount, Is.EqualTo(1));
+            Assert.That(loader.LastSceneName, Is.EqualTo(WorldSceneNames.Boot));
+            Assert.That(world.Current.CurrentMapId, Is.Empty);
+        });
+
+        private sealed class RecordingExpeditionController : IExpeditionController
+        {
+            public int DeathCount { get; private set; }
+
+            public int SettlementCount { get; private set; }
+
+            public ExpeditionOperationStatus DeathStatus { get; set; } =
+                ExpeditionOperationStatus.Success;
+
+            public ExpeditionOperationStatus SettlementStatus { get; set; } =
+                ExpeditionOperationStatus.Success;
+
+            public ExpeditionPresentationState Current => ExpeditionPresentationState.Initial;
+
+            public UniTask<ExpeditionOperationStatus> LoadActiveAsync(
+                CancellationToken cancellationToken) =>
+                UniTask.FromResult(ExpeditionOperationStatus.Success);
+
+            public UniTask<ExpeditionOperationStatus> StartOrResumeAsync(
+                CancellationToken cancellationToken) =>
+                UniTask.FromResult(ExpeditionOperationStatus.Success);
+
+            public UniTask<ExpeditionOperationStatus> RecordDeathAsync(
+                CancellationToken cancellationToken)
+            {
+                DeathCount++;
+                return UniTask.FromResult(DeathStatus);
+            }
+
+            public UniTask<ExpeditionOperationStatus> SettleReturnToLobbyAsync(
+                CancellationToken cancellationToken)
+            {
+                SettlementCount++;
+                return UniTask.FromResult(SettlementStatus);
+            }
+
+            public IDisposable Subscribe(IObserver<ExpeditionPresentationState> observer) =>
+                NoopDisposable.Instance;
+        }
+
+        private sealed class NoopDisposable : IDisposable
+        {
+            public static readonly NoopDisposable Instance = new NoopDisposable();
+
+            public void Dispose()
+            {
+            }
+        }
 
         private sealed class StateRecorder : IObserver<LoadingPresentationState>
         {

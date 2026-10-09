@@ -10,7 +10,7 @@
 
 ## 2. 本地正式打包
 
-正式发布要求干净Git工作区，并默认运行服务端CI和Unity全部测试。运行前应保存场景并关闭正在占用正式工程的Unity编辑器：
+正式发布要求干净Git工作区，并默认先运行Unity二进制资产完好性守卫，再运行服务端CI和Unity全部测试。运行前应保存场景并关闭正在占用正式工程的Unity编辑器：
 
 ```powershell
 ./Tools/Deployment/New-NarakaServerRelease.ps1 `
@@ -28,6 +28,10 @@
 - 本轮测试结果。
 
 仅本地排查时可以使用`-AllowDirtyCandidate`或`-SkipUnityTestsCandidate`。这种清单的`Deployable`为`false`，云端部署脚本会拒绝，不能通过改JSON绕过门禁。
+
+发布脚本还会核对应用契约版本。P3已经增加65/66消息和第13项`expedition`能力，因此正式候选包
+必须使用`p3-*` Bootstrap `ConfigVersion`；仍为`p1-config-1`时在构建前直接失败，避免新Host与旧客户端
+绕过版本门禁相互通信。
 
 ## 3. 云端集中部署
 

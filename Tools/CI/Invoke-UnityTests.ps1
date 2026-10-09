@@ -60,10 +60,21 @@ $versionStandardOutput = Join-Path $ResultsDirectory "editor-version.stdout.txt"
 $versionStandardError = Join-Path $ResultsDirectory "editor-version.stderr.txt"
 $versionProcess = Start-Process -FilePath $UnityEditorPath `
     -ArgumentList "-version" `
-    -Wait `
     -PassThru `
     -RedirectStandardOutput $versionStandardOutput `
     -RedirectStandardError $versionStandardError
+$versionDeadline = [DateTime]::UtcNow.AddSeconds(60)
+while (-not $versionProcess.HasExited) {
+    if ([DateTime]::UtcNow -ge $versionDeadline) {
+        Stop-Process -Id $versionProcess.Id -Force
+        $versionProcess.WaitForExit()
+        throw "Unity -version did not exit within 60 seconds."
+    }
+
+    Start-Sleep -Milliseconds 100
+    $versionProcess.Refresh()
+}
+
 $actualVersion = @(
     Get-Content -Raw -Encoding UTF8 -LiteralPath $versionStandardOutput
     Get-Content -Raw -Encoding UTF8 -LiteralPath $versionStandardError
@@ -71,6 +82,14 @@ $actualVersion = @(
 $actualVersion = $actualVersion.Trim()
 if ($versionProcess.ExitCode -ne 0) {
     throw "Unity -version failed with exit code $($versionProcess.ExitCode)."
+}
+
+# Unity 2021.3 China builds can exit successfully without writing -version output when
+# stdout is redirected. The executable's signed version resource still carries the exact
+# editor channel and revision (for example 2021.3.45f2c1_8058fe21db2f), so use it as the
+# deterministic fallback instead of hanging or accepting an unknown editor.
+if ([string]::IsNullOrWhiteSpace($actualVersion)) {
+    $actualVersion = (Get-Item -LiteralPath $UnityEditorPath).VersionInfo.ProductVersion
 }
 
 if ($actualVersion -notmatch [regex]::Escape($requiredVersion)) {

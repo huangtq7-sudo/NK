@@ -2,7 +2,6 @@ using MessagePipe;
 using Naraka.Core.Application.Bootstrap;
 using Naraka.Core.Application.Config;
 using Naraka.Core.Application.Messaging;
-using Naraka.Core.Application.Networking;
 using Naraka.Features.Account.Controller;
 using Naraka.Features.Account.Model;
 using Naraka.Features.Account.View;
@@ -32,7 +31,6 @@ using Naraka.Features.Shop.Controller;
 using Naraka.Features.Shop.View;
 using Naraka.Infrastructure.Config;
 using Naraka.Infrastructure.Messaging;
-using Naraka.Infrastructure.Network;
 using Naraka.Core.Application.Scenes;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -49,8 +47,6 @@ namespace Naraka.Boot
         /// </summary>
         private const string DefaultMapId = WorldMapIds.Map01;
 
-        [SerializeField] private string serverAddress = "127.0.0.1";
-        [SerializeField] private int serverPort = 8011;
         [SerializeField] private string bootstrapBaseUrl = "http://127.0.0.1:5222";
         [SerializeField] private string configVersion = "p1-config-1";
         [SerializeField] private string protocolVersion = "LegacyNetworkV1";
@@ -62,21 +58,6 @@ namespace Naraka.Boot
             builder.RegisterMessagePipe();
             builder.Register<MessagePipeDomainEventBus>(Lifetime.Singleton).As<IDomainEventBus>();
 
-            var network = new LegacyNetworkAdapter(serverAddress, serverPort);
-            builder.RegisterInstance(network)
-                .As<INetworkFacade>()
-                .As<IAccountGateway>()
-                .As<ILobbyAccountGateway>()
-                .As<ILobbyProfileGateway>()
-                .As<ILoadoutGateway>()
-                .As<IInventoryGateway>()
-                .As<IShopGateway>()
-                .As<IForgeGateway>()
-                .As<IGachaGateway>()
-                .As<ISignInGateway>()
-                .As<IAchievementGateway>()
-                .As<IRedDotGateway>()
-                .As<ISocialGateway>();
             builder.RegisterInstance<IConfigVersionGateway>(
                 new UnityConfigVersionGateway(bootstrapBaseUrl));
             builder.RegisterInstance(new ConfigVersionModel(
@@ -86,10 +67,6 @@ namespace Naraka.Boot
 
             // 服务器能力集合在版本预检时写入，其余模块只读消费。
             // 旧云端不返回能力字段时会退回 P1.1-A 兼容集合，因此登录与大厅始终可用。
-            builder.Register<ServerCapabilityRegistry>(Lifetime.Singleton)
-                .AsSelf()
-                .As<IServerCapabilities>();
-
             // 客户端配置只用于展示。它已经移到持久化的 AppRootLifetimeScope：
             // 怪物数值也从同一份目录读，而地图场景里没有 GameLifetimeScope。
             // 本 Scope 是 App Root 的子 Scope，因此这里的消费者照常解析得到。
@@ -97,7 +74,6 @@ namespace Naraka.Boot
             builder.Register<ConfigVersionController>(Lifetime.Singleton)
                 .AsSelf()
                 .As<IStartupReadiness>();
-            builder.Register<AccountSessionModel>(Lifetime.Singleton);
             builder.Register<AccountController>(Lifetime.Singleton);
 
             builder.Register<LobbyModel>(Lifetime.Singleton);

@@ -1,12 +1,19 @@
 using System.Collections;
+using System.Reflection;
+using Naraka.Boot;
+using Naraka.Core.Application.Scenes;
+using Naraka.Features.Expedition.Model;
 using Naraka.Features.Account.View;
 using Naraka.Features.Bootstrap.View;
+using Naraka.Features.Lobby.Controller;
 using Naraka.Features.Lobby.View;
+using Naraka.Features.World.Controller;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
+using VContainer;
 
 namespace Naraka.P0.PlayMode.Tests
 {
@@ -103,6 +110,60 @@ namespace Naraka.P0.PlayMode.Tests
                 overlay.parent.IndexOf(overlay),
                 Is.GreaterThan(overlay.parent.IndexOf(screen)),
                 "版本预检覆盖层必须位于登录界面之上。");
+        }
+
+        [UnityTest]
+        public IEnumerator StartGameButtonLoadsTheFormalTaskSceneThroughTheRealLobbyPath()
+        {
+            yield return LoadBootScene();
+
+            var appRoot = AppRootLifetimeScope.Instance;
+            Assert.That(appRoot, Is.Not.Null, "Bootstrap 场景缺少持久化 App Root。");
+            var expeditionModel = appRoot.Container.Resolve<ExpeditionModel>();
+            Assert.That(
+                ExpeditionSnapshot.TryCreate(
+                    "playmode-expedition", "map-01", 1700000000000,
+                    ExpeditionState.Active, System.Array.Empty<ExpeditionAsset>(), 0,
+                    out var snapshot),
+                Is.True);
+            expeditionModel.ApplyActive(snapshot);
+
+            var gameScope = Object.FindObjectOfType<GameLifetimeScope>();
+            Assert.That(gameScope, Is.Not.Null, "Bootstrap 场景缺少 GameLifetimeScope。");
+            var lobby = gameScope.Container.Resolve<LobbyController>();
+            lobby.Enter("playmode-player", 42);
+            yield return null;
+
+            var lobbyView = Object.FindObjectOfType<LobbyView>();
+            Assert.That(lobbyView, Is.Not.Null);
+            var startButton = lobbyView.GetComponent<UIDocument>()
+                .rootVisualElement.Q<Button>("StartGameButton");
+            Assert.That(startButton, Is.Not.Null);
+            Assert.That(startButton.enabledSelf, Is.True);
+
+            InvokeButton(startButton);
+
+            var deadline = Time.realtimeSinceStartup + 30f;
+            while (SceneManager.GetActiveScene().name != WorldSceneNames.Map01Task &&
+                   Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            Assert.That(
+                SceneManager.GetActiveScene().name,
+                Is.EqualTo(WorldSceneNames.Map01Task),
+                "大厅开始游戏按钮必须经过远征控制器与加载流程进入正式任务场景。");
+        }
+
+        private static void InvokeButton(Button button)
+        {
+            // Button.clicked 存在于 Clickable 操纵器中；通过它的实际 Invoke 路径触发，
+            // 可以覆盖 LobbyView 对 StartGameButton 的真实绑定，又不依赖桌面鼠标位置。
+            var invoke = typeof(Clickable).GetMethod(
+                "Invoke", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(invoke, Is.Not.Null, "当前 UI Toolkit 找不到 Clickable.Invoke。");
+            invoke.Invoke(button.clickable, new object[] { null });
         }
 
         private static IEnumerator LoadBootScene()

@@ -178,6 +178,36 @@ namespace Naraka.Features.World.View
             }
         }
 
+        /// <summary>
+        /// 给用户后续手工制作的“返回大厅”按钮绑定。这里只提供公开入口，不创建或修改任何UI。
+        /// </summary>
+        public void RequestReturnToLobby()
+        {
+            ReturnToLobbyAsync().Forget();
+        }
+
+        private async UniTaskVoid ReturnToLobbyAsync()
+        {
+            if (_world == null)
+            {
+                Debug.LogError("WorldSceneEntry 未注入 IWorldFlowController，不能返回大厅。", this);
+                return;
+            }
+
+            try
+            {
+                await _world.ReturnToLobbyAsync(CancellationToken.None);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("结算远征并返回大厅失败。", this);
+                Debug.LogException(exception);
+            }
+        }
+
         private Transform FindSpawn(WorldArrival arrival)
         {
             var points = FindObjectsOfType<PlayerSpawnPoint>();

@@ -24,6 +24,8 @@
     "Game.Features.Forge.View",
     "Game.Features.Gacha.Controller",
     "Game.Features.Gacha.View",
+    "Game.Features.Expedition.Controller",
+    "Game.Features.Expedition.Model",
     "Game.Features.Inventory.Controller",
     "Game.Features.Inventory.Model",
     "Game.Features.Inventory.View",

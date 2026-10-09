@@ -98,7 +98,7 @@ namespace Naraka.P0.Tests
                 lobby.CloseFeature();
             }
 
-            Assert.That(NarakaServerCapabilities.Full.Length, Is.EqualTo(12));
+            Assert.That(NarakaServerCapabilities.Full.Length, Is.EqualTo(13));
         }
 
         [Test]

@@ -10,6 +10,8 @@ using Naraka.Core.Application.Networking;
 using Naraka.Core.Domain;
 using Naraka.Features.Account.Controller;
 using Naraka.Features.Achievement.Controller;
+using Naraka.Features.Expedition.Controller;
+using Naraka.Features.Expedition.Model;
 using Naraka.Features.Forge.Controller;
 using Naraka.Features.Gacha.Controller;
 using Naraka.Features.Inventory.Controller;
@@ -41,6 +43,7 @@ namespace Naraka.Infrastructure.Network
         IAchievementGateway,
         IRedDotGateway,
         ISocialGateway,
+        IExpeditionGateway,
         IDisposable
     {
         public const string PublicHandshakeKey = "abc123";
@@ -120,6 +123,83 @@ namespace Naraka.Infrastructure.Network
                 _ => AccountLoginStatus.Failed
             };
             return new AccountLoginResult(status, response.AccountId);
+        }
+
+        public UniTask<ExpeditionGatewayResult> GetActiveAsync(
+            string requestId,
+            CancellationToken cancellationToken) =>
+            RequestExpeditionAsync(
+                LegacyExpeditionOperation.GetActive, requestId, string.Empty, cancellationToken);
+
+        public UniTask<ExpeditionGatewayResult> StartAsync(
+            string requestId,
+            CancellationToken cancellationToken) =>
+            RequestExpeditionAsync(
+                LegacyExpeditionOperation.Start, requestId, string.Empty, cancellationToken);
+
+        public UniTask<ExpeditionGatewayResult> RecordDeathAsync(
+            string expeditionId,
+            string requestId,
+            CancellationToken cancellationToken) =>
+            RequestExpeditionAsync(
+                LegacyExpeditionOperation.RecordDeath, requestId, expeditionId, cancellationToken);
+
+        public UniTask<ExpeditionGatewayResult> ReturnToLobbyAsync(
+            string expeditionId,
+            string requestId,
+            CancellationToken cancellationToken) =>
+            RequestExpeditionAsync(
+                LegacyExpeditionOperation.ReturnToLobby, requestId, expeditionId, cancellationToken);
+
+        private async UniTask<ExpeditionGatewayResult> RequestExpeditionAsync(
+            LegacyExpeditionOperation operation,
+            string requestId,
+            string expeditionId,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(requestId) || requestId.Length > 64)
+            {
+                return ExpeditionGatewayResult.Failed(ExpeditionOperationStatus.InvalidRequest);
+            }
+
+            LegacyMsgExpeditionResponse response;
+            try
+            {
+                response = await SendRequestAsync<LegacyMsgExpeditionRequest, LegacyMsgExpeditionResponse>(
+                    new LegacyMsgExpeditionRequest
+                    {
+                        RequestId = requestId,
+                        Operation = operation,
+                        ExpeditionId = expeditionId
+                    },
+                    LegacyProtocolValue.MsgExpeditionResponse,
+                    DefaultRequestTimeout,
+                    cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                return ExpeditionGatewayResult.Failed(ExpeditionOperationStatus.TransportFailure);
+            }
+
+            // 远征共用一个响应协议号，因此必须在进入业务层前再核对
+            // RequestId与Operation，防止迟到响应被当作另一次操作的结果。
+            if (!string.Equals(response.RequestId, requestId, StringComparison.Ordinal) ||
+                response.Operation != operation)
+            {
+                return ExpeditionGatewayResult.Failed(ExpeditionOperationStatus.InternalError);
+            }
+
+            if (response.Settlement != null &&
+                !string.Equals(response.Settlement.RequestId, requestId, StringComparison.Ordinal))
+            {
+                return ExpeditionGatewayResult.Failed(ExpeditionOperationStatus.InternalError);
+            }
+
+            return ToExpeditionResult(response);
         }
 
         /// <summary>
@@ -1194,6 +1274,193 @@ namespace Naraka.Infrastructure.Network
                 out var snapshot)
                 ? LobbyProfileResult.Success(snapshot)
                 : LobbyProfileResult.Failed(LobbyOperationStatus.InternalError);
+        }
+
+        private static ExpeditionGatewayResult ToExpeditionResult(LegacyMsgExpeditionResponse response)
+        {
+            var status = ToExpeditionStatus(response.Status);
+            if (status != ExpeditionOperationStatus.Success)
+            {
+                return ExpeditionGatewayResult.Failed(status);
+            }
+
+            ExpeditionSnapshot snapshot = null;
+            if (response.Snapshot != null)
+            {
+                if (!TryConvertAssets(response.Snapshot.TemporaryAssets, out var temporaryAssets) ||
+                    !ExpeditionSnapshot.TryCreate(
+                        response.Snapshot.ExpeditionId,
+                        response.Snapshot.EntryMapId,
+                        response.Snapshot.StartedUnixMilliseconds,
+                        ToExpeditionState(response.Snapshot.State),
+                        temporaryAssets,
+                        response.Snapshot.DeathCount,
+                        out snapshot))
+                {
+                    return ExpeditionGatewayResult.Failed(ExpeditionOperationStatus.InternalError);
+                }
+            }
+
+            ExpeditionDeathSummary death = null;
+            if (response.Death != null)
+            {
+                if (!TryConvertAssets(response.Death.ClearedAssets, out var clearedAssets))
+                {
+                    return ExpeditionGatewayResult.Failed(ExpeditionOperationStatus.InternalError);
+                }
+
+                death = new ExpeditionDeathSummary(
+                    response.Death.ExpeditionId,
+                    response.Death.OccurredUnixMilliseconds,
+                    clearedAssets,
+                    response.Death.DeathCount);
+                if (!death.IsValid)
+                {
+                    return ExpeditionGatewayResult.Failed(ExpeditionOperationStatus.InternalError);
+                }
+            }
+
+            ExpeditionSettlementSummary settlement = null;
+            if (response.Settlement != null)
+            {
+                if (!TryConvertAssets(response.Settlement.Assets, out var assets))
+                {
+                    return ExpeditionGatewayResult.Failed(ExpeditionOperationStatus.InternalError);
+                }
+
+                settlement = new ExpeditionSettlementSummary(
+                    response.Settlement.ExpeditionId,
+                    response.Settlement.RequestId,
+                    ToSettlementReason(response.Settlement.Reason),
+                    response.Settlement.SettledUnixMilliseconds,
+                    assets,
+                    response.Settlement.DeathCount);
+                if (!settlement.IsValid)
+                {
+                    return ExpeditionGatewayResult.Failed(ExpeditionOperationStatus.InternalError);
+                }
+            }
+
+            return ExpeditionGatewayResult.Success(snapshot, death, settlement, response.IsReplay);
+        }
+
+        private static bool TryConvertAssets(
+            IReadOnlyList<LegacyExpeditionAsset> wire,
+            out ExpeditionAsset[] assets)
+        {
+            assets = null;
+            if (wire == null)
+            {
+                return false;
+            }
+
+            var copy = new ExpeditionAsset[wire.Count];
+            for (var i = 0; i < wire.Count; i++)
+            {
+                var source = wire[i];
+                if (source == null)
+                {
+                    return false;
+                }
+
+                var asset = new ExpeditionAsset(
+                    ToAssetKind(source.Kind),
+                    source.AssetId,
+                    source.Quantity,
+                    ToAssetSource(source.Source));
+                if (!asset.IsValid)
+                {
+                    return false;
+                }
+
+                copy[i] = asset;
+            }
+
+            assets = copy;
+            return true;
+        }
+
+        private static ExpeditionState ToExpeditionState(LegacyExpeditionState state)
+        {
+            switch (state)
+            {
+                case LegacyExpeditionState.Active:
+                    return ExpeditionState.Active;
+                case LegacyExpeditionState.Settled:
+                    return ExpeditionState.Settled;
+                default:
+                    return ExpeditionState.None;
+            }
+        }
+
+        private static ExpeditionAssetKind ToAssetKind(LegacyExpeditionAssetKind kind)
+        {
+            switch (kind)
+            {
+                case LegacyExpeditionAssetKind.Item:
+                    return ExpeditionAssetKind.Item;
+                case LegacyExpeditionAssetKind.Currency:
+                    return ExpeditionAssetKind.Currency;
+                default:
+                    return ExpeditionAssetKind.None;
+            }
+        }
+
+        private static ExpeditionAssetSource ToAssetSource(LegacyExpeditionAssetSource source) =>
+            source == LegacyExpeditionAssetSource.MonsterDrop
+                ? ExpeditionAssetSource.MonsterDrop
+                : ExpeditionAssetSource.None;
+
+        private static ExpeditionSettlementReason ToSettlementReason(
+            LegacyExpeditionSettlementReason reason)
+        {
+            switch (reason)
+            {
+                case LegacyExpeditionSettlementReason.ReturnedToLobby:
+                    return ExpeditionSettlementReason.ReturnedToLobby;
+                case LegacyExpeditionSettlementReason.ConnectionLost:
+                    return ExpeditionSettlementReason.ConnectionLost;
+                default:
+                    return ExpeditionSettlementReason.None;
+            }
+        }
+
+        private static ExpeditionOperationStatus ToExpeditionStatus(
+            LegacyLobbyOperationStatus status)
+        {
+            switch (status)
+            {
+                case LegacyLobbyOperationStatus.Success:
+                    return ExpeditionOperationStatus.Success;
+                case LegacyLobbyOperationStatus.Unauthenticated:
+                    return ExpeditionOperationStatus.Unauthenticated;
+                case LegacyLobbyOperationStatus.InvalidRequest:
+                    return ExpeditionOperationStatus.InvalidRequest;
+                case LegacyLobbyOperationStatus.NotFound:
+                    return ExpeditionOperationStatus.NotFound;
+                case LegacyLobbyOperationStatus.DatabaseUnavailable:
+                    return ExpeditionOperationStatus.DatabaseUnavailable;
+                case LegacyLobbyOperationStatus.Forbidden:
+                    return ExpeditionOperationStatus.Forbidden;
+                case LegacyLobbyOperationStatus.InsufficientCurrency:
+                    return ExpeditionOperationStatus.InsufficientCurrency;
+                case LegacyLobbyOperationStatus.InsufficientItems:
+                    return ExpeditionOperationStatus.InsufficientItems;
+                case LegacyLobbyOperationStatus.InventoryFull:
+                    return ExpeditionOperationStatus.InventoryFull;
+                case LegacyLobbyOperationStatus.LimitReached:
+                    return ExpeditionOperationStatus.LimitReached;
+                case LegacyLobbyOperationStatus.AlreadyClaimed:
+                    return ExpeditionOperationStatus.AlreadyClaimed;
+                case LegacyLobbyOperationStatus.NotAvailable:
+                    return ExpeditionOperationStatus.NotAvailable;
+                case LegacyLobbyOperationStatus.RateLimited:
+                    return ExpeditionOperationStatus.RateLimited;
+                case LegacyLobbyOperationStatus.Conflict:
+                    return ExpeditionOperationStatus.Conflict;
+                default:
+                    return ExpeditionOperationStatus.InternalError;
+            }
         }
 
         /// <summary>

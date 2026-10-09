@@ -7,6 +7,8 @@ on:
     paths:
       - "NK/**"
       - "Tools/CI/Invoke-UnityTests.ps1"
+      - "Tools/CI/Test-UnityBinaryAssetIntegrity.ps1"
+      - ".gitattributes"
       - ".github/workflows/unity-ci.yml"
   pull_request:
     branches:
@@ -14,6 +16,8 @@ on:
     paths:
       - "NK/**"
       - "Tools/CI/Invoke-UnityTests.ps1"
+      - "Tools/CI/Test-UnityBinaryAssetIntegrity.ps1"
+      - ".gitattributes"
       - ".github/workflows/unity-ci.yml"
   workflow_dispatch:
 
@@ -43,6 +47,10 @@ jobs:
         uses: actions/checkout@v7
         with:
           clean: true
+
+      - name: Verify binary Unity asset integrity
+        shell: pwsh
+        run: ./Tools/CI/Test-UnityBinaryAssetIntegrity.ps1
 
       - name: Run Unity test gates
         shell: pwsh

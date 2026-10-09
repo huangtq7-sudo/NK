@@ -1,0 +1,13 @@
+{
+  "name": "Game.Features.Expedition.Model",
+  "rootNamespace": "Naraka.Features.Expedition.Model",
+  "references": [
+    "Game.Core.Domain"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

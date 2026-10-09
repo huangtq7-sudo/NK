@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using Naraka.Core.Application.MVC;
 using Naraka.Core.Application.Presentation;
 using Naraka.Core.Application.Scenes;
+using Naraka.Features.Expedition.Controller;
 using Naraka.Features.Loading.Controller;
 using Naraka.Features.Lobby.Controller;
 
@@ -22,6 +23,9 @@ namespace Naraka.Features.World.Controller
 
         /// <summary>死亡后异步返回地图一重生点。</summary>
         UniTask ReturnToMap01AfterDeathAsync(CancellationToken cancellationToken);
+
+        /// <summary>幂等结算当前远征后返回Bootstrap大厅场景。</summary>
+        UniTask ReturnToLobbyAsync(CancellationToken cancellationToken);
 
         /// <summary>场景入口 View 取走本次到达方式。取走后归零，避免重载场景重复播放出场动画。</summary>
         WorldArrival ConsumeArrival();
@@ -46,16 +50,21 @@ namespace Naraka.Features.World.Controller
     {
         private readonly ILoadingController _loading;
         private readonly IWorldSceneCatalog _sceneCatalog;
+        private readonly IExpeditionController _expedition;
         private readonly ReactiveState<WorldPresentationState> _state;
         private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
         private bool _isTransitioning;
         private bool _disposed;
         private WorldArrival _pendingArrival;
 
-        public WorldFlowController(ILoadingController loading, IWorldSceneCatalog sceneCatalog)
+        public WorldFlowController(
+            ILoadingController loading,
+            IWorldSceneCatalog sceneCatalog,
+            IExpeditionController expedition = null)
         {
             _loading = loading ?? throw new ArgumentNullException(nameof(loading));
             _sceneCatalog = sceneCatalog ?? throw new ArgumentNullException(nameof(sceneCatalog));
+            _expedition = expedition;
             _state = new ReactiveState<WorldPresentationState>(WorldPresentationState.Initial);
         }
 
@@ -87,8 +96,73 @@ namespace Naraka.Features.World.Controller
         public UniTask EnterMap02Async(CancellationToken cancellationToken) =>
             TransitionAsync(WorldMapIds.Map02, WorldArrival.Map01ToMap02, cancellationToken);
 
-        public UniTask ReturnToMap01AfterDeathAsync(CancellationToken cancellationToken) =>
-            TransitionAsync(WorldMapIds.Map01, WorldArrival.DeathToMap01, cancellationToken);
+        public async UniTask ReturnToMap01AfterDeathAsync(CancellationToken cancellationToken)
+        {
+            if (_expedition != null)
+            {
+                var status = await _expedition.RecordDeathAsync(cancellationToken);
+
+                // NotFound is decided client-side before any request leaves: there is no
+                // active expedition, so there is no death to record against one. That is
+                // not a refusal. Treating it as fatal left the player permanently dead,
+                // which is the ordinary case today because starting an expedition is not
+                // wired to the UI yet — enter the task map, die once, and the respawn
+                // never happens.
+                //
+                // Every other non-success really is the authoritative server declining,
+                // and those must still stop the respawn. Otherwise dropping the
+                // connection would be a way to take a death that never gets recorded.
+                if (status != ExpeditionOperationStatus.Success &&
+                    status != ExpeditionOperationStatus.NotFound)
+                {
+                    throw new InvalidOperationException(ExpeditionOperationMessages.Describe(status));
+                }
+            }
+
+            await TransitionAsync(WorldMapIds.Map01, WorldArrival.DeathToMap01, cancellationToken);
+        }
+
+        public async UniTask ReturnToLobbyAsync(CancellationToken cancellationToken)
+        {
+            if (_isTransitioning)
+            {
+                return;
+            }
+
+            if (_expedition == null)
+            {
+                throw new InvalidOperationException("远征控制器未注入，不能结算并返回大厅。");
+            }
+
+            _isTransitioning = true;
+            SetState(new WorldPresentationState(Current.CurrentMapId, WorldArrival.None, true));
+            try
+            {
+                using (var linked = CancellationTokenSource.CreateLinkedTokenSource(
+                           cancellationToken, _lifetime.Token))
+                {
+                    var status = await _expedition.SettleReturnToLobbyAsync(linked.Token);
+                    if (status != ExpeditionOperationStatus.Success)
+                    {
+                        throw new InvalidOperationException(ExpeditionOperationMessages.Describe(status));
+                    }
+
+                    await _loading.LoadSceneAsync(WorldSceneNames.Boot, linked.Token);
+                }
+
+                _pendingArrival = WorldArrival.None;
+                SetState(WorldPresentationState.Initial);
+            }
+            catch
+            {
+                SetState(new WorldPresentationState(Current.CurrentMapId, WorldArrival.None, false));
+                throw;
+            }
+            finally
+            {
+                _isTransitioning = false;
+            }
+        }
 
         private async UniTask TransitionAsync(
             string mapId,

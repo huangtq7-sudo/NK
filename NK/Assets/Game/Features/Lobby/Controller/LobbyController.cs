@@ -5,6 +5,7 @@ using Naraka.Config;
 using Naraka.Core.Application.Bootstrap;
 using Naraka.Core.Application.MVC;
 using Naraka.Core.Application.Presentation;
+using Naraka.Features.Expedition.Controller;
 using Naraka.Features.Lobby.Model;
 
 namespace Naraka.Features.Lobby.Controller
@@ -45,13 +46,16 @@ namespace Naraka.Features.Lobby.Controller
         private readonly ILobbyAccountGateway _accountGateway;
         private readonly ILobbyProfileGateway _profileGateway;
         private readonly IServerCapabilities _capabilities;
+        private readonly IExpeditionController _expedition;
         private readonly string _mapSceneName;
         private readonly ReactiveState<LobbyPresentationState> _state;
         private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
+        private LobbyPresentationState _lastState;
         private bool _isStartingGame;
         private bool _isLoadingAccountSummary;
         private bool _isLoadingProfile;
         private bool _isSavingAppearance;
+        private bool _disposed;
 
         public LobbyController(
             LobbyModel model,
@@ -59,28 +63,30 @@ namespace Naraka.Features.Lobby.Controller
             string mapSceneName,
             ILobbyAccountGateway accountGateway,
             ILobbyProfileGateway profileGateway,
-            IServerCapabilities capabilities)
+            IServerCapabilities capabilities,
+            IExpeditionController expedition = null)
         {
             _model = model ?? throw new ArgumentNullException(nameof(model));
             _sceneGateway = sceneGateway ?? throw new ArgumentNullException(nameof(sceneGateway));
             _accountGateway = accountGateway ?? throw new ArgumentNullException(nameof(accountGateway));
             _profileGateway = profileGateway ?? throw new ArgumentNullException(nameof(profileGateway));
             _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
+            _expedition = expedition;
             if (string.IsNullOrWhiteSpace(mapSceneName))
             {
                 throw new ArgumentException("Map scene name cannot be empty.", nameof(mapSceneName));
             }
 
             _mapSceneName = mapSceneName;
-            _state = new ReactiveState<LobbyPresentationState>(
-                new LobbyPresentationState(
-                    false, string.Empty, 0, string.Empty, LobbyStatusSource.None, false,
-                    LobbyModal.None, LobbyFeature.Hero, LobbyAppearanceTab.Avatar,
-                    false, false, default(LobbyAccountSnapshot),
-                    false, false, default(LobbyProfileSnapshot)));
+            _lastState = new LobbyPresentationState(
+                false, string.Empty, 0, string.Empty, LobbyStatusSource.None, false,
+                LobbyModal.None, LobbyFeature.Hero, LobbyAppearanceTab.Avatar,
+                false, false, default(LobbyAccountSnapshot),
+                false, false, default(LobbyProfileSnapshot));
+            _state = new ReactiveState<LobbyPresentationState>(_lastState);
         }
 
-        public LobbyPresentationState Current => _state.Current;
+        public LobbyPresentationState Current => _lastState;
 
         public void Enter(string username, long accountId)
         {
@@ -94,7 +100,7 @@ namespace Naraka.Features.Lobby.Controller
 
             _model.Enter(username, accountId);
             var current = Current;
-            _state.Set(new LobbyPresentationState(
+            SetState(new LobbyPresentationState(
                 true,
                 _model.Username,
                 _model.AccountId,
@@ -134,12 +140,12 @@ namespace Naraka.Features.Lobby.Controller
             // 面板自己会显示加载、空数据与失败状态，大厅再叠一句提示只会互相打架。
             if (_capabilities.Has(ToCapability(feature)))
             {
-                _state.Set(Current.WithFeatureOpen(feature)
+                SetState(Current.WithFeatureOpen(feature)
                     .WithClearedStatus(LobbyStatusSource.Feature));
                 return;
             }
 
-            _state.Set(Current.WithFeatureOpen(feature).WithStatusMessage(
+            SetState(Current.WithFeatureOpen(feature).WithStatusMessage(
                 LobbyOperationMessages.Describe(LobbyOperationStatus.ServerCapabilityMissing),
                 LobbyStatusSource.Feature));
         }
@@ -151,7 +157,7 @@ namespace Naraka.Features.Lobby.Controller
                 return;
             }
 
-            _state.Set(Current.WithModalClosed().WithClearedStatus(LobbyStatusSource.Feature));
+            SetState(Current.WithModalClosed().WithClearedStatus(LobbyStatusSource.Feature));
         }
 
         public async UniTask StartGameAsync(CancellationToken cancellationToken)
@@ -162,24 +168,40 @@ namespace Naraka.Features.Lobby.Controller
             }
 
             _isStartingGame = true;
-            _state.Set(Current.WithStartingGame(true)
-                .WithStatusMessage("正在进入地图…", LobbyStatusSource.StartGame));
+            SetState(Current.WithStartingGame(true).WithStatusMessage(
+                _expedition == null ? "正在进入地图…" : "正在创建或恢复远征…",
+                LobbyStatusSource.StartGame));
             try
             {
                 using (var linked = CancellationTokenSource.CreateLinkedTokenSource(
                            cancellationToken, _lifetime.Token))
                 {
+                    if (_expedition != null)
+                    {
+                        var expeditionStatus = await _expedition.StartOrResumeAsync(linked.Token);
+                        if (expeditionStatus != ExpeditionOperationStatus.Success)
+                        {
+                            SetState(Current.WithStartingGame(false).WithStatusMessage(
+                                ExpeditionOperationMessages.Describe(expeditionStatus),
+                                LobbyStatusSource.StartGame));
+                            return;
+                        }
+
+                        SetState(Current.WithStatusMessage(
+                            "正在进入地图…", LobbyStatusSource.StartGame));
+                    }
+
                     await _sceneGateway.LoadMapAsync(_mapSceneName, linked.Token);
                 }
             }
             catch (OperationCanceledException)
             {
                 // 取消属于正常流程，只恢复按钮状态，不写错误消息。
-                _state.Set(Current.WithStartingGame(false).WithClearedStatus(LobbyStatusSource.StartGame));
+                SetState(Current.WithStartingGame(false).WithClearedStatus(LobbyStatusSource.StartGame));
             }
             catch (Exception)
             {
-                _state.Set(Current.WithStartingGame(false)
+                SetState(Current.WithStartingGame(false)
                     .WithStatusMessage("加载地图失败，请重试。", LobbyStatusSource.StartGame));
             }
             finally
@@ -195,7 +217,7 @@ namespace Naraka.Features.Lobby.Controller
                 return;
             }
 
-            _state.Set(Current.WithAppearanceOpen(true).WithClearedStatus(LobbyStatusSource.Profile));
+            SetState(Current.WithAppearanceOpen(true).WithClearedStatus(LobbyStatusSource.Profile));
         }
 
         public void CloseAppearance()
@@ -205,7 +227,7 @@ namespace Naraka.Features.Lobby.Controller
                 return;
             }
 
-            _state.Set(Current.WithAppearanceOpen(false));
+            SetState(Current.WithAppearanceOpen(false));
         }
 
         public void SelectAppearanceTab(LobbyAppearanceTab tab)
@@ -215,7 +237,7 @@ namespace Naraka.Features.Lobby.Controller
                 return;
             }
 
-            _state.Set(Current.WithAppearanceTab(tab));
+            SetState(Current.WithAppearanceTab(tab));
         }
 
         public void SelectAvatar(string avatarId) =>
@@ -243,14 +265,14 @@ namespace Naraka.Features.Lobby.Controller
 
             if (!_capabilities.Has(NarakaServerCapabilities.AccountProfile))
             {
-                _state.Set(Current.WithStatusMessage(
+                SetState(Current.WithStatusMessage(
                     LobbyOperationMessages.Describe(LobbyOperationStatus.ServerCapabilityMissing),
                     LobbyStatusSource.Profile));
                 return;
             }
 
             _isSavingAppearance = true;
-            _state.Set(Current.WithAppearanceSaving(true).WithClearedStatus(LobbyStatusSource.Profile));
+            SetState(Current.WithAppearanceSaving(true).WithClearedStatus(LobbyStatusSource.Profile));
             try
             {
                 using (var linked = CancellationTokenSource.CreateLinkedTokenSource(
@@ -267,11 +289,11 @@ namespace Naraka.Features.Lobby.Controller
             }
             catch (OperationCanceledException)
             {
-                _state.Set(Current.WithAppearanceSaving(false));
+                SetState(Current.WithAppearanceSaving(false));
             }
             catch (Exception)
             {
-                _state.Set(Current
+                SetState(Current
                     .WithAppearanceSaving(false)
                     .WithStatusMessage(
                         LobbyOperationMessages.Describe(LobbyOperationStatus.TransportFailure),
@@ -300,7 +322,7 @@ namespace Naraka.Features.Lobby.Controller
             // 因此这里显式写下原因，交给大厅与外观面板显示。
             if (!_capabilities.Has(NarakaServerCapabilities.AccountProfile))
             {
-                _state.Set(Current.WithStatusMessage(
+                SetState(Current.WithStatusMessage(
                     LobbyOperationMessages.Describe(LobbyOperationStatus.ServerCapabilityMissing),
                     LobbyStatusSource.Profile));
                 return;
@@ -327,7 +349,7 @@ namespace Naraka.Features.Lobby.Controller
             }
             catch (Exception)
             {
-                _state.Set(Current.WithStatusMessage(
+                SetState(Current.WithStatusMessage(
                     LobbyOperationMessages.Describe(LobbyOperationStatus.TransportFailure),
                     LobbyStatusSource.Profile));
             }
@@ -343,11 +365,11 @@ namespace Naraka.Features.Lobby.Controller
             {
                 _model.ApplyProfile(result.Snapshot);
                 // 只清掉资料链路自己的错误：账号概要可能同时在展示它的失败提示。
-                _state.Set(Current.WithProfile(result.Snapshot).WithClearedStatus(LobbyStatusSource.Profile));
+                SetState(Current.WithProfile(result.Snapshot).WithClearedStatus(LobbyStatusSource.Profile));
                 return;
             }
 
-            _state.Set(Current
+            SetState(Current
                 .WithAppearanceSaving(false)
                 .WithStatusMessage(
                     LobbyOperationMessages.Describe(result.Status), LobbyStatusSource.Profile));
@@ -365,7 +387,7 @@ namespace Naraka.Features.Lobby.Controller
             }
 
             _isLoadingAccountSummary = true;
-            _state.Set(Current.WithAccountSummaryLoading(true)
+            SetState(Current.WithAccountSummaryLoading(true)
                 .WithClearedStatus(LobbyStatusSource.AccountSummary));
             try
             {
@@ -381,13 +403,13 @@ namespace Naraka.Features.Lobby.Controller
                     if (result.IsSuccess)
                     {
                         _model.ApplyAccountSnapshot(result.Snapshot);
-                        _state.Set(Current
+                        SetState(Current
                             .WithAccountSummary(result.Snapshot)
                             .WithClearedStatus(LobbyStatusSource.AccountSummary));
                     }
                     else
                     {
-                        _state.Set(Current
+                        SetState(Current
                             .WithAccountSummaryLoading(false)
                             .WithStatusMessage(
                                 ToAccountSummaryMessage(result.Status), LobbyStatusSource.AccountSummary));
@@ -397,11 +419,11 @@ namespace Naraka.Features.Lobby.Controller
             catch (OperationCanceledException)
             {
                 // 取消属于正常流程，保留已有数据，不写错误消息。
-                _state.Set(Current.WithAccountSummaryLoading(false));
+                SetState(Current.WithAccountSummaryLoading(false));
             }
             catch (Exception)
             {
-                _state.Set(Current
+                SetState(Current
                     .WithAccountSummaryLoading(false)
                     .WithStatusMessage(
                         ToAccountSummaryMessage(LobbyAccountSummaryStatus.TransportFailure),
@@ -428,9 +450,28 @@ namespace Naraka.Features.Lobby.Controller
 
         public void Dispose()
         {
+            if (_disposed)
+            {
+                return;
+            }
+
+            // 场景加载会先销毁大厅Scope，再让正在等待场景加载的异步方法收到取消。
+            // 必须先标记，后续catch分支才能忽略状态写入，而不是写入已释放的R3状态源。
+            _disposed = true;
             _lifetime.Cancel();
             _lifetime.Dispose();
             _state.Dispose();
+        }
+
+        private void SetState(LobbyPresentationState state)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _lastState = state;
+            _state.Set(state);
         }
 
         /// <summary>大厅入口与服务器能力的对应关系。新增入口时必须同步登记，否则会漏掉能力门禁。</summary>

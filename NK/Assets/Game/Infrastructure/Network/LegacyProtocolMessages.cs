@@ -65,7 +65,9 @@ namespace Naraka.Infrastructure.Network
         MsgLobbySocialActionRequest = 61,
         MsgLobbySocialActionResponse = 62,
         MsgLobbyChatRequest = 63,
-        MsgLobbyChatResponse = 64
+        MsgLobbyChatResponse = 64,
+        MsgExpeditionRequest = 65,
+        MsgExpeditionResponse = 66
     }
 
     /// <summary>与服务端 LegacySocialAction 数值一一对应。</summary>
@@ -104,6 +106,42 @@ namespace Naraka.Infrastructure.Network
         None = 0,
         Achievement = 1,
         AccountLevel = 2
+    }
+
+    internal enum LegacyExpeditionOperation
+    {
+        None = 0,
+        GetActive = 1,
+        Start = 2,
+        RecordDeath = 3,
+        ReturnToLobby = 4
+    }
+
+    internal enum LegacyExpeditionState
+    {
+        None = 0,
+        Active = 1,
+        Settled = 2
+    }
+
+    internal enum LegacyExpeditionAssetKind
+    {
+        None = 0,
+        Item = 1,
+        Currency = 2
+    }
+
+    internal enum LegacyExpeditionAssetSource
+    {
+        None = 0,
+        MonsterDrop = 1
+    }
+
+    internal enum LegacyExpeditionSettlementReason
+    {
+        None = 0,
+        ReturnedToLobby = 1,
+        ConnectionLost = 2
     }
 
     /// <summary>与服务端 LegacyInventoryOperation 数值一一对应。</summary>
@@ -1183,5 +1221,84 @@ namespace Naraka.Infrastructure.Network
         [ProtoMember(8)] public List<string> ClaimedAccountLevels { get; } = new List<string>();
         [ProtoMember(9)] public long AccountXp { get; set; }
         [ProtoMember(10)] public int AccountLevel { get; set; }
+    }
+
+    [ProtoContract]
+    internal sealed class LegacyMsgExpeditionRequest : LegacyMessage
+    {
+        public LegacyMsgExpeditionRequest()
+        {
+            ProtocolType = LegacyProtocolValue.MsgExpeditionRequest;
+        }
+
+        [ProtoMember(1)]
+        public override LegacyProtocolValue ProtocolType { get; set; }
+
+        [ProtoMember(2)] public string RequestId { get; set; }
+        [ProtoMember(3)] public LegacyExpeditionOperation Operation { get; set; }
+        [ProtoMember(4)] public string ExpeditionId { get; set; }
+    }
+
+    [ProtoContract]
+    internal sealed class LegacyMsgExpeditionResponse : LegacyMessage
+    {
+        public LegacyMsgExpeditionResponse()
+        {
+            ProtocolType = LegacyProtocolValue.MsgExpeditionResponse;
+        }
+
+        [ProtoMember(1)]
+        public override LegacyProtocolValue ProtocolType { get; set; }
+
+        [ProtoMember(2)] public string RequestId { get; set; }
+        [ProtoMember(3)] public LegacyExpeditionOperation Operation { get; set; }
+        [ProtoMember(4)] public LegacyLobbyOperationStatus Status { get; set; }
+        [ProtoMember(5)] public bool IsReplay { get; set; }
+        [ProtoMember(6)] public LegacyExpeditionSnapshot Snapshot { get; set; }
+        [ProtoMember(7)] public LegacyExpeditionDeath Death { get; set; }
+        [ProtoMember(8)] public LegacyExpeditionSettlement Settlement { get; set; }
+    }
+
+    [ProtoContract]
+    internal sealed class LegacyExpeditionAsset
+    {
+        [ProtoMember(1)] public LegacyExpeditionAssetKind Kind { get; set; }
+        [ProtoMember(2)] public string AssetId { get; set; }
+        [ProtoMember(3)] public long Quantity { get; set; }
+        [ProtoMember(4)] public LegacyExpeditionAssetSource Source { get; set; }
+    }
+
+    [ProtoContract]
+    internal sealed class LegacyExpeditionSnapshot
+    {
+        [ProtoMember(1)] public string ExpeditionId { get; set; }
+        [ProtoMember(2)] public string EntryMapId { get; set; }
+        [ProtoMember(3)] public long StartedUnixMilliseconds { get; set; }
+        [ProtoMember(4)] public LegacyExpeditionState State { get; set; }
+        [ProtoMember(5)] public List<LegacyExpeditionAsset> TemporaryAssets { get; } =
+            new List<LegacyExpeditionAsset>();
+        [ProtoMember(6)] public int DeathCount { get; set; }
+    }
+
+    [ProtoContract]
+    internal sealed class LegacyExpeditionDeath
+    {
+        [ProtoMember(1)] public string ExpeditionId { get; set; }
+        [ProtoMember(2)] public long OccurredUnixMilliseconds { get; set; }
+        [ProtoMember(3)] public List<LegacyExpeditionAsset> ClearedAssets { get; } =
+            new List<LegacyExpeditionAsset>();
+        [ProtoMember(4)] public int DeathCount { get; set; }
+    }
+
+    [ProtoContract]
+    internal sealed class LegacyExpeditionSettlement
+    {
+        [ProtoMember(1)] public string ExpeditionId { get; set; }
+        [ProtoMember(2)] public string RequestId { get; set; }
+        [ProtoMember(3)] public LegacyExpeditionSettlementReason Reason { get; set; }
+        [ProtoMember(4)] public long SettledUnixMilliseconds { get; set; }
+        [ProtoMember(5)] public List<LegacyExpeditionAsset> Assets { get; } =
+            new List<LegacyExpeditionAsset>();
+        [ProtoMember(6)] public int DeathCount { get; set; }
     }
 }
