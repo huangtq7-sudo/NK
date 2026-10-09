@@ -942,7 +942,7 @@ MonoBehaviour:
   serverAddress: 127.0.0.1
   serverPort: 8011
   bootstrapBaseUrl: http://127.0.0.1:5222
-  configVersion: p1-config-1
+  configVersion: p3-config-1
   protocolVersion: LegacyNetworkV1
   map1SceneName: Map01_Task
 --- !u!4 &1244721020

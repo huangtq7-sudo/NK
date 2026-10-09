@@ -14,10 +14,10 @@ namespace Naraka.P0.Tests
         [Test]
         public void ModelAcceptsMatchingConfigClientAndProtocolVersions()
         {
-            var model = new ConfigVersionModel("0.1", "p1-config-1", "LegacyNetworkV1");
+            var model = new ConfigVersionModel("0.1", "p3-config-1", "LegacyNetworkV1");
 
             var result = model.Evaluate(new ConfigVersionManifest(
-                "p1-config-1",
+                "p3-config-1",
                 "0.1",
                 "0.2",
                 "LegacyNetworkV1"));
@@ -26,8 +26,9 @@ namespace Naraka.P0.Tests
         }
 
         [TestCase("p0-config-1", "0.1", "0.2", "LegacyNetworkV1", ConfigCompatibilityStatus.ConfigVersionMismatch)]
-        [TestCase("p1-config-1", "0.2", "0.3", "LegacyNetworkV1", ConfigCompatibilityStatus.ClientVersionTooOld)]
-        [TestCase("p1-config-1", "0.1", "0.2", "LegacyNetworkV2", ConfigCompatibilityStatus.ProtocolVersionMismatch)]
+        [TestCase("p1-config-1", "0.1", "0.2", "LegacyNetworkV1", ConfigCompatibilityStatus.ConfigVersionMismatch)]
+        [TestCase("p3-config-1", "0.2", "0.3", "LegacyNetworkV1", ConfigCompatibilityStatus.ClientVersionTooOld)]
+        [TestCase("p3-config-1", "0.1", "0.2", "LegacyNetworkV2", ConfigCompatibilityStatus.ProtocolVersionMismatch)]
         public void ModelRejectsIncompatibleManifest(
             string configVersion,
             string minimumClientVersion,
@@ -35,7 +36,7 @@ namespace Naraka.P0.Tests
             string protocolVersion,
             ConfigCompatibilityStatus expected)
         {
-            var model = new ConfigVersionModel("0.1", "p1-config-1", "LegacyNetworkV1");
+            var model = new ConfigVersionModel("0.1", "p3-config-1", "LegacyNetworkV1");
 
             var result = model.Evaluate(new ConfigVersionManifest(
                 configVersion,
@@ -52,7 +53,7 @@ namespace Naraka.P0.Tests
             {
                 var controller = new ConfigVersionController(
                     new CompatibleGateway(),
-                    new ConfigVersionModel("0.1", "p1-config-1", "LegacyNetworkV1"),
+                    new ConfigVersionModel("0.1", "p3-config-1", "LegacyNetworkV1"),
                     new ServerCapabilityRegistry());
 
                 Assert.That(controller.IsReady, Is.False);
@@ -67,7 +68,7 @@ namespace Naraka.P0.Tests
             public UniTask<ConfigVersionManifest> GetRequiredVersionAsync(
                 CancellationToken cancellationToken) =>
                 UniTask.FromResult(new ConfigVersionManifest(
-                    "p1-config-1",
+                    "p3-config-1",
                     "0.1",
                     "0.1",
                     "LegacyNetworkV1"));

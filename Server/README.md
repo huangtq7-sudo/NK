@@ -19,6 +19,12 @@ The legacy source remains read-only at `D:\培训项目\7.21net\SimpleServer`. T
 
 The P0 baseline used `ConfigVersion=p0-config-1`. The complete P1 release uses `ConfigVersion=p1-config-1`, `MinimumClientVersion=0.1`, `MaximumClientVersion=0.1`, and `ProtocolVersion=LegacyNetworkV1`. This endpoint does not change the frozen socket transport. Direct remote clients must use HTTPS; the single-developer cloud environment instead forwards the loopback endpoint through an encrypted SSH tunnel as defined by ADR-0006.
 
+The P3 release preparation synchronizes the Host, client C# default, and serialized startup scene to
+`ConfigVersion=p3-config-1`. Official packaging rejects any mismatch before building. The client
+version range and frozen protocol remain unchanged. The cloud is still on the accepted P1 release;
+the P3 client must use a matching local Host until a separately approved cloud deployment completes.
+The generated catalog version remains independent of the Bootstrap compatibility gate.
+
 ## Development cloud deployment
 
 The validated development topology runs the self-contained Windows Host and MySQL 5.7.26 on one Windows Server 2016 Datacenter host. MySQL, bootstrap HTTP, and `LegacyNetworkV1` remain bound to loopback; the Unity client reaches ports 5222 and 8011 through a manually started, key-only SSH local forward. The cloud Host and database do not depend on the local tunnel and continue running when the developer PC is offline. This topology is not a production deployment.

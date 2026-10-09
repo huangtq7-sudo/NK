@@ -219,6 +219,8 @@ P1新增大厅业务按ADR-0007从适配边界扩展应用消息，不解冻Lega
 - Bootstrap 响应包含**可选**的 `serverCapabilities` 字段，声明本 Host 实际部署了哪些 P1 功能。
   当 Bootstrap 版本门禁匹配但 Host 不返回该字段时，客户端退回 P1.1-A 兼容集合，登录与大厅照常可用，其余入口显示“服务器功能尚未升级”且**不发送任何未知协议**。完整 P1 客户端使用 `p1-config-1`，会在预检阶段拒绝仍返回 `p0-config-1` 的旧云端；能力兼容不能绕过版本门禁。
   Host 只能声明自己真正实现的能力（`Implemented`），而不是整份登记表（`Full`）。见 [ADR-0012](Docs/ADR/0012-red-dot-prefix-tree-and-server-capabilities.md)。
+  P3正式发布准备把Host、客户端C#默认值与启动场景序列化值同步为`p3-config-1`；发布脚本在构建前拒绝三者不一致。
+  客户端版本范围仍为`0.1`，协议仍为`LegacyNetworkV1`，生成配置版本独立管理。云端未集中升级前，P3客户端只连接配套本机Host，不能绕过门禁连接P1云端。
 - 模块：Gateway/Session、Player、Inventory、Economy、Quest、Expedition、Gacha、Social、Config和Presence。
 - 基础框架：.NET Generic Host、Microsoft DI、SqlSugar、MySQL、FluentValidation、FluentMigrator、Quartz.NET和Polly。
 - Redis/Tair用于会话、在线状态和短期锁；RocketMQ只用于审计、统计、邮件和非实时通知，不进入实时路径。

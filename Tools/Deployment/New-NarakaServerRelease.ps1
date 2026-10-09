@@ -35,6 +35,24 @@ if ($expectedServerCapabilityCount -ge 13 -and
     throw 'P3 application contracts require a p3-* Bootstrap ConfigVersion before a deployable release can be built.'
 }
 
+# A serialized scene value overrides the C# default. Both must match the Host gate,
+# otherwise a correctly packaged Host still leaves the shipped client unable to log in.
+$clientScopePath = Join-Path $repositoryRoot 'NK\Assets\Game\Boot\GameLifetimeScope.cs'
+$clientScenePath = Join-Path $repositoryRoot 'NK\Assets\Scenes\SampleScene.unity'
+$clientDefaultMatch = [regex]::Match(
+    (Get-Content -Raw -Encoding UTF8 -LiteralPath $clientScopePath),
+    'private\s+string\s+configVersion\s*=\s*"(?<version>[^"]+)"'
+)
+$clientSceneMatch = [regex]::Match(
+    (Get-Content -Raw -Encoding UTF8 -LiteralPath $clientScenePath),
+    '(?m)^\s+configVersion:\s*(?<version>\S+)\s*$'
+)
+if (-not $clientDefaultMatch.Success -or -not $clientSceneMatch.Success -or
+    $clientDefaultMatch.Groups['version'].Value -ne $appSettings.Naraka.Bootstrap.ConfigVersion -or
+    $clientSceneMatch.Groups['version'].Value -ne $appSettings.Naraka.Bootstrap.ConfigVersion) {
+    throw 'The client default, serialized startup scene and Host Bootstrap ConfigVersion must match.'
+}
+
 if (Test-Path -LiteralPath $releaseRoot) {
     throw "Release output already exists: $releaseRoot"
 }

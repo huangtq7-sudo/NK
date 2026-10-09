@@ -18,8 +18,8 @@
 
 ## 2. 部署前仍需完成
 
-- [ ] Bootstrap `ConfigVersion`从`p1-config-1`提升为`p3-*`，客户端场景默认值与Host同步
-- [ ] 使用本机真实Host完成开始远征、死亡清理、返回大厅、重复结算重放的人工闭环
+- [x] Bootstrap `ConfigVersion`提升为`p3-config-1`，客户端C#默认值、启动场景序列化值与Host同步；发布脚本增加一致性门禁
+- [x] 使用本机真实Host完成开始远征、死亡清理、返回大厅、重复结算重放的闭环；用户确认Unity人工效果没有问题，见`Docs/P3-local-acceptance.md`
 - [ ] 形成干净Git提交并从该提交生成`Deployable=true`的P3发布包
 - [ ] 部署前导出云端NK数据库dump，记录文件大小与SHA-256，不在文档中记录连接串或密码
 - [ ] 在不运行HeidiSQL和PowerShell ISE时记录云端稳态可用内存、提交内存、分页文件、Host与MySQL工作集

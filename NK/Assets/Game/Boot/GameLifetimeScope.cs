@@ -48,7 +48,7 @@ namespace Naraka.Boot
         private const string DefaultMapId = WorldMapIds.Map01;
 
         [SerializeField] private string bootstrapBaseUrl = "http://127.0.0.1:5222";
-        [SerializeField] private string configVersion = "p1-config-1";
+        [SerializeField] private string configVersion = "p3-config-1";
         [SerializeField] private string protocolVersion = "LegacyNetworkV1";
         [FormerlySerializedAs("map1SceneName")]
         [SerializeField] private string map1MapId = DefaultMapId;
