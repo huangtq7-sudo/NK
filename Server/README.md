@@ -21,8 +21,12 @@ The P0 baseline used `ConfigVersion=p0-config-1`. The complete P1 release uses `
 
 The P3 release preparation synchronizes the Host, client C# default, and serialized startup scene to
 `ConfigVersion=p3-config-1`. Official packaging rejects any mismatch before building. The client
-version range and frozen protocol remain unchanged. The cloud is still on the accepted P1 release;
-the P3 client must use a matching local Host until a separately approved cloud deployment completes.
+version range and frozen protocol remain unchanged. On 2026-10-09 the user deployed
+`p3-expedition-loop-001` to the cloud: migrations 0001-0010 verified 33 tables, and cloud health and
+the existing SSH tunnel returned the matching P3 gate and 13 capabilities. A subsequent resource
+check reported 543 MiB available memory, one Host and one MySQL process; the user confirmed the
+real-cloud Unity flow and Console check. P3 acceptance is closed. This does not claim a long-running
+load test, database restore drill, or an independently inspected cloud log.
 The generated catalog version remains independent of the Bootstrap compatibility gate.
 
 ## Development cloud deployment

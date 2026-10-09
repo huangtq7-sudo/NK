@@ -1,9 +1,9 @@
 # 阿里云Windows开发环境部署与运维
 
-状态：2026-09-21已完成完整P1 Host、迁移0001至0009与真实客户端验收
+状态：2026-10-09 P3部署、云端/隧道健康、部署后资源复查与用户Unity实机验收完成，P3已关闭
 适用范围：单一开发者从本地使用云端Host和MySQL，不对外提供游戏服务
 
-## 1. 当前已验收拓扑
+## 1. 当前部署拓扑
 
 | 组件 | 运行方式 | 监听与访问边界 |
 | --- | --- | --- |
@@ -14,7 +14,7 @@
 | 本地Unity | 正式工程`E:\NK项目\NK` | 手动启动SSH本地端口转发后访问本机`127.0.0.1:5222/8011` |
 | 数据库GUI | HeidiSQL 12.21 Portable，仅在云端RDP会话中手动打开 | 只连接`127.0.0.1:3306`，不得对外开放数据库端口 |
 
-当前活动Host部署目录仍为`C:\NarakaDeploy\cloud-82c02c7\host`，其中二进制为完整P1发布`p1-lobby-systems-002`；切换前版本保存在`C:\NarakaDeploy\backups\20260910-191428-p1-lobby-systems-002-previous`，更早的P0/P1A备份继续保留。MySQL程序位于`C:\Naraka\mysql-5.7.26-winx64`，HeidiSQL位于`C:\NarakaTools\HeidiSQL-12.21`。这些路径不是配置或密钥；后续发布继续保留至少一个可回滚版本。
+当前活动Host部署目录仍为`C:\NarakaDeploy\cloud-82c02c7\host`，其中二进制为P3发布`p3-expedition-loop-001`；本次切换前的P1版本保存在`C:\NarakaDeploy\backups\20261009-172827-p3-expedition-loop-001-previous`，更早备份继续保留。MySQL程序位于`C:\Naraka\mysql-5.7.26-winx64`，HeidiSQL位于`C:\NarakaTools\HeidiSQL-12.21`。这些路径不是配置或密钥；Host备份目标保留最近3份且至少一份已验收回滚版本，本次不自动删除；数据库备份单独保留。
 
 云端PowerShell ISE已经安装但不会自动启动。云主机不安装Visual Studio、Unity、容器、Redis、MQ或其他非必要服务，以控制2 GiB主机的内存占用。
 
@@ -99,7 +99,7 @@ Invoke-RestMethod -Uri 'http://127.0.0.1:5222/health/ready'
 Invoke-RestMethod -Uri 'http://127.0.0.1:5222/bootstrap/config-version'
 ```
 
-预期两个TCP测试均为`True`；就绪探针返回`MySQL reachable`；版本端点返回`p1-config-1`、12项`serverCapabilities`、客户端范围`0.1`至`0.1`和`LegacyNetworkV1`。`GET /config/version`应返回`p1-config-5e52cf730692`。
+预期两个TCP测试均为`True`；就绪探针返回`MySQL reachable`；版本端点返回`p3-config-1`、13项`serverCapabilities`（含expedition）、客户端范围`0.1`至`0.1`和`LegacyNetworkV1`。`GET /config/version`应返回`p1-config-45539ed9c3ac`。独立游戏配置版本仍以p1命名，不表示Host兼容门禁仍为P1。
 
 普通云主机重启不应修改主机密钥。只有重装系统或明确更换SSH主机密钥时，才允许通过RDP读取新ED25519指纹、在本地隔离验证后更新`known_hosts`；禁止遇到错误就盲目删除主机记录。
 
@@ -131,6 +131,10 @@ Invoke-RestMethod -Uri 'http://127.0.0.1:5222/bootstrap/config-version'
 - 迁移`0001`至`0009`完成dry-run、首次执行与重复幂等验证；迁移器最终确认27张表和9条迁移记录。
 - 完整P1切换后Host进程数为1，工作集约58 MiB；`live`、`ready`、MySQL、5222、8011与3306均通过，Bootstrap返回`p1-config-1`与12项能力，生成配置返回`p1-config-5e52cf730692`。可用内存由切换前515 MiB变为切换后453 MiB。
 - 2026-09-21用户确认Unity真实客户端检查没有问题，P1云端发布闭环完成。
+- 2026-10-09用户执行P3集中部署退出码0；迁移0001至0010的dry-run、首次与重复应用均通过，确认33张表与10条迁移记录。P3包、源提交、数据库备份及旧Host路径见`p3-cloud-batched-release-checklist.md`。
+- P3切换后Host任务Running、进程数1、工作集58.7 MiB；live/ready与MySQL通过，Bootstrap为p3-config-1/13项能力，生成配置为p1-config-45539ed9c3ac。部署前可用内存519 MiB，结束383 MiB；随后保持GUI关闭复查恢复到543 MiB，提交内存1902.7 MiB、分页文件使用505 MiB，磁盘剩余17.65 GiB，唯一Host/MySQL和回环监听正常。该观察不表示已执行长期压测。
+- 本地已停止本机验收Host并启动原有按需SSH任务，两个本地业务端口确由SSH监听；经隧道实测P3云端健康、能力和配置匹配。用户随后确认真实云端Unity登录、开始游戏、两图流转、死亡返回、返回大厅与重新登录及Console检查没有问题，P3验收关闭。
+- 数据库SQL备份只验证导出与SHA-256，未恢复演练；云端故障注入、长期压测与云端日志内容独立审阅未执行。未安装守护启动器模板，未改变SSH任务配置，未自动删除任何旧备份。
 
 ## 7. 当前限制与后续门禁
 
