@@ -32,6 +32,9 @@
 发布脚本还会核对应用契约版本。P3已经增加65/66消息和第13项`expedition`能力，因此正式候选包
 必须使用`p3-*` Bootstrap `ConfigVersion`；仍为`p1-config-1`时在构建前直接失败，避免新Host与旧客户端
 绕过版本门禁相互通信。
+Host配置、客户端C#默认值及启动场景序列化值必须一致；只修改C#默认值不能覆盖场景中的旧值。
+2026-10-09已生成`p3-expedition-loop-001`（`p3-config-1`、`Deployable=true`），本机发布包闭环通过；
+实际包哈希与测试证据见`Docs/P3-local-acceptance.md`，云端部署仍需独立授权。
 
 ## 3. 云端集中部署
 
