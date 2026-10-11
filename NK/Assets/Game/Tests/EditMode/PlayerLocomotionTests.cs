@@ -343,7 +343,8 @@ namespace Naraka.P2.Tests
 
             foreach (var speed in speeds)
             {
-                Assert.That(speed, Is.EqualTo(5.0f).Within(0.001f),
+                // 行走速度 = 5.0 × 走跑倍率（2026-10-11 起 1.3）。
+                Assert.That(speed, Is.EqualTo(PlayerTuning.CreateBaseline().Locomotion.WalkSpeed).Within(0.001f),
                     "四个方向共用同一个行走速度，没有后退减速。");
             }
         }

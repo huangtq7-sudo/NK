@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using System.Reflection;
 using Naraka.Boot;
 using Naraka.Core.Application.Scenes;
@@ -13,6 +14,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
+using UnityEngine.Video;
 using VContainer;
 
 namespace Naraka.P0.PlayMode.Tests
@@ -154,6 +156,54 @@ namespace Naraka.P0.PlayMode.Tests
                 SceneManager.GetActiveScene().name,
                 Is.EqualTo(WorldSceneNames.Map01Task),
                 "大厅开始游戏按钮必须经过远征控制器与加载流程进入正式任务场景。");
+        }
+
+        [UnityTest]
+        public IEnumerator LobbyShowsTheStaticBackgroundAcrossReentry()
+        {
+            // 两轮：首次进入，以及从地图返回时 Bootstrap 场景被整体重载后的再次进入。
+            //
+            // 在 CI 上这条测试即使不修也会通过：背景视频被 .gitignore 排除，引用本来就是丢失的。
+            // 它守的是素材齐全的机器上的真实表现；在任何环境都能暴露问题的是
+            // LobbyStaticBackgroundTests.LobbyViewHasNoVideoBackgroundPath。
+            for (var pass = 0; pass < 2; pass++)
+            {
+                yield return LoadBootScene();
+
+                var gameScope = Object.FindObjectOfType<GameLifetimeScope>();
+                Assert.That(gameScope, Is.Not.Null, $"第 {pass + 1} 次进入：Bootstrap 场景缺少 GameLifetimeScope。");
+                gameScope.Container.Resolve<LobbyController>().Enter("playmode-player", 42);
+
+                // 旧实现要等视频 Prepare 完成才覆盖背景，留足帧数让它有机会发生。
+                for (var frame = 0; frame < 30; frame++)
+                {
+                    yield return null;
+                }
+
+                var lobbyView = Object.FindObjectOfType<LobbyView>();
+                Assert.That(lobbyView, Is.Not.Null);
+                var background = lobbyView.GetComponent<UIDocument>()
+                    .rootVisualElement.Q<VisualElement>("LobbyBackground");
+                Assert.That(background, Is.Not.Null, "LobbyMain.uxml 缺少 LobbyBackground。");
+
+                Assert.That(
+                    Object.FindObjectsOfType<VideoPlayer>(true), Is.Empty,
+                    $"第 {pass + 1} 次进入大厅时不应创建任何视频播放器。");
+                Assert.That(
+                    Resources.FindObjectsOfTypeAll<RenderTexture>()
+                        .Where(texture => texture.name == "LobbyBackgroundVideo"),
+                    Is.Empty,
+                    $"第 {pass + 1} 次进入大厅后不应残留视频用的 RenderTexture。");
+
+                // 读最终生效的样式（USS、UXML 与内联合并后的结果），不读 style：
+                // style 只反映 C# 代码写入的内联值，UXML 里声明的背景不会出现在那里。
+                var image = background.resolvedStyle.backgroundImage;
+                Assert.That(
+                    image.renderTexture, Is.Null,
+                    "大厅背景被运行期的 RenderTexture 覆盖了，静态图不会显示。");
+                Assert.That(image.texture, Is.Not.Null, "大厅背景没有贴图。");
+                Assert.That(image.texture.name, Is.EqualTo("Lobby_Animate"));
+            }
         }
 
         private static void InvokeButton(Button button)

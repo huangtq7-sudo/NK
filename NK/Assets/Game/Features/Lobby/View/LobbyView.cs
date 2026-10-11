@@ -8,7 +8,6 @@ using Naraka.Core.Application.MVC;
 using Naraka.Features.Lobby.Controller;
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEngine.Video;
 using VContainer;
 
 namespace Naraka.Features.Lobby.View
@@ -21,8 +20,9 @@ namespace Naraka.Features.Lobby.View
         [SerializeField] private VisualTreeAsset lobbyLayout;
         [SerializeField] private LobbyAppearanceCatalog catalog;
 
-        /// <summary>大厅循环背景视频。未入库时保持为空，界面回退到UXML/USS里的静态底图。</summary>
-        [SerializeField] private VideoClip backgroundClip;
+        // 大厅背景只由 LobbyMain.uxml / LobbyMain.uss 里的 Lobby_Animate.png 决定，这里不碰它。
+        // 此前这里会在运行期播放背景视频，并用 RenderTexture 写入内联样式盖住静态图；
+        // 视频又被 .gitignore 排除，于是只有素材齐全的那台机器能看到视频，CI 永远看不到。
 
         private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
         private readonly List<KeyValuePair<Button, Action>> _featureHandlers =
@@ -42,9 +42,6 @@ namespace Naraka.Features.Lobby.View
         private Button _startGame;
         private Button _avatarButton;
         private VisualElement _avatarFrame;
-        private VisualElement _background;
-        private VideoPlayer _videoPlayer;
-        private RenderTexture _videoTexture;
 
         [Inject]
         public void Construct(ILobbyController controller, IGameConfigProvider config)
@@ -136,7 +133,6 @@ namespace Naraka.Features.Lobby.View
             _startGame = _screen.Q<Button>("StartGameButton");
             _avatarButton = _screen.Q<Button>("PlayerAvatarButton");
             _avatarFrame = _screen.Q<VisualElement>("PlayerAvatarFrame");
-            _background = _screen.Q<VisualElement>("LobbyBackground");
             if (_playerName == null || _playerAccountId == null || _status == null ||
                 _startGame == null || _avatarButton == null || _avatarFrame == null)
             {
@@ -148,7 +144,6 @@ namespace Naraka.Features.Lobby.View
             _screen.style.display = DisplayStyle.None;
             _startGame.clicked += OnStartGameClicked;
             _avatarButton.clicked += OnAvatarClicked;
-            SetupBackgroundVideo();
             BindFeature("HeroButton", LobbyFeature.Hero);
             BindFeature("WeaponButton", LobbyFeature.Weapon);
             BindFeature("ForgeButton", LobbyFeature.Forge);
@@ -265,46 +260,6 @@ namespace Naraka.Features.Lobby.View
             }
         }
 
-        // 视频准备完成后才把背景切到RenderTexture，避免首帧出现未初始化的画面。
-        private void SetupBackgroundVideo()
-        {
-            if (backgroundClip == null || _background == null)
-            {
-                return;
-            }
-
-            // RenderTexture 尺寸跟随片源，避免多一次缩放采样。
-            var width = backgroundClip.width > 0 ? (int)backgroundClip.width : 1920;
-            var height = backgroundClip.height > 0 ? (int)backgroundClip.height : 1080;
-            _videoTexture = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32)
-            {
-                name = "LobbyBackgroundVideo"
-            };
-            _videoTexture.Create();
-            _videoPlayer = gameObject.AddComponent<VideoPlayer>();
-            _videoPlayer.playOnAwake = false;
-            _videoPlayer.clip = backgroundClip;
-            _videoPlayer.renderMode = VideoRenderMode.RenderTexture;
-            _videoPlayer.targetTexture = _videoTexture;
-            _videoPlayer.isLooping = true;
-            _videoPlayer.waitForFirstFrame = true;
-            // 无音轨的循环背景不需要与时钟对齐，逐帧播放比丢帧追赶更平滑。
-            _videoPlayer.skipOnDrop = false;
-            _videoPlayer.audioOutputMode = VideoAudioOutputMode.None;
-            _videoPlayer.prepareCompleted += OnBackgroundVideoPrepared;
-            _videoPlayer.Prepare();
-        }
-
-        private void OnBackgroundVideoPrepared(VideoPlayer source)
-        {
-            if (_background != null && _videoTexture != null)
-            {
-                _background.style.backgroundImage = Background.FromRenderTexture(_videoTexture);
-            }
-
-            source.Play();
-        }
-
         private void OnStartGameClicked() => StartGameAsync().Forget();
 
         private async UniTaskVoid StartGameAsync()
@@ -328,19 +283,6 @@ namespace Naraka.Features.Lobby.View
             if (_avatarButton != null)
             {
                 _avatarButton.clicked -= OnAvatarClicked;
-            }
-
-            if (_videoPlayer != null)
-            {
-                _videoPlayer.prepareCompleted -= OnBackgroundVideoPrepared;
-                _videoPlayer.Stop();
-            }
-
-            if (_videoTexture != null)
-            {
-                _videoTexture.Release();
-                Destroy(_videoTexture);
-                _videoTexture = null;
             }
 
             _screen?.RemoveFromHierarchy();

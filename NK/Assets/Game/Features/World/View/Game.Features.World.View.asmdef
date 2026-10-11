@@ -12,7 +12,8 @@
     "Game.Infrastructure.Camera",
     "Game.Infrastructure.Input",
     "UniTask",
-    "VContainer"
+    "VContainer",
+    "UnityEngine.UI"
   ],
   "autoReferenced": true,
   "overrideReferences": false,

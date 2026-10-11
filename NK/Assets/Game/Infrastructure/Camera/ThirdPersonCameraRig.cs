@@ -37,8 +37,26 @@ namespace Naraka.Infrastructure.Camera
         private Vector3 _followVelocity;
         private bool _lookEnabled = true;
         private bool _cursorLocked;
+        private CinemachineTransposer _transposer;
+
+        // 出场镜头：Hold 时停在起点（后上方）不动，Play 之后按时长平滑拉回常规位置。
+        private bool _introHolding;
+        private float _introDuration;
+        private float _introElapsed;
+
+        /// <summary>业务单帧最多推进的时长，与玩家状态机一致，镜头与出场动作在卡顿时也保持同步。</summary>
+        private const float MaxIntroStep = 0.1f;
 
         public Transform Target => _target;
+
+        public ThirdPersonCameraSettings Settings => settings;
+
+        /// <summary>出场镜头是否还没回到常规位置（停在起点或正在拉回）。</summary>
+        public bool IsIntroActive => _introHolding || _introDuration > 0f;
+
+        /// <summary>当前相机到轴心的距离（不含遮挡缩短）。</summary>
+        public float CurrentDistance =>
+            _transposer != null ? -_transposer.m_FollowOffset.z : settings != null ? settings.Distance : 0f;
 
         /// <summary>摄像机当前水平朝向（度）。角色的移动方向以它为基准。</summary>
         public float Yaw => _yaw;
@@ -76,7 +94,74 @@ namespace Naraka.Infrastructure.Camera
             }
 
             _followVelocity = Vector3.zero;
+            StopIntro();
             ApplyCursorState();
+        }
+
+        /// <summary>
+        /// 把镜头放到出场起点（角色后上方）并停住。加载界面还盖着的时候调用：
+        /// 从这个角度第一次渲染场景的开销因此落在加载界面下面，而不是出场动作的第一帧。
+        /// </summary>
+        public void HoldIntroStart()
+        {
+            if (settings == null || pivot == null || _target == null)
+            {
+                return;
+            }
+
+            _introHolding = true;
+            _introDuration = 0f;
+            _introElapsed = 0f;
+            pivot.position = PivotPosition(_target);
+            pivot.rotation = Quaternion.Euler(settings.IntroPitch, _yaw, 0f);
+            SetDistance(settings.IntroDistance);
+            if (virtualCamera != null)
+            {
+                virtualCamera.PreviousStateIsValid = false;
+            }
+        }
+
+        /// <summary>从出场起点开始，用 <paramref name="seconds"/> 秒平滑拉回常规位置。</summary>
+        public void PlayIntro(float seconds)
+        {
+            if (settings == null || pivot == null || _target == null)
+            {
+                return;
+            }
+
+            if (!_introHolding)
+            {
+                HoldIntroStart();
+            }
+
+            _introHolding = false;
+            _introElapsed = 0f;
+            _introDuration = Mathf.Max(0.01f, seconds);
+        }
+
+        private void StopIntro()
+        {
+            var wasActive = IsIntroActive;
+            _introHolding = false;
+            _introDuration = 0f;
+            _introElapsed = 0f;
+            if (wasActive && settings != null)
+            {
+                SetDistance(settings.Distance);
+            }
+        }
+
+        private void SetDistance(float distance)
+        {
+            if (_transposer == null && virtualCamera != null)
+            {
+                _transposer = virtualCamera.GetCinemachineComponent<CinemachineTransposer>();
+            }
+
+            if (_transposer != null)
+            {
+                _transposer.m_FollowOffset = new Vector3(0f, 0f, -distance);
+            }
         }
 
         /// <summary>出场动画与死亡期间可以停掉视角输入，但相机仍然跟随角色。</summary>
@@ -134,6 +219,11 @@ namespace Naraka.Infrastructure.Camera
                 : Vector3.SmoothDamp(
                     pivot.position, desired, ref _followVelocity, settings.FollowDamping);
 
+            if (TickIntro())
+            {
+                return;
+            }
+
             var rotation = Quaternion.Euler(_pitch, _yaw, 0f);
             pivot.rotation = settings.RotationDamping <= 0f
                 ? rotation
@@ -141,6 +231,38 @@ namespace Naraka.Infrastructure.Camera
                     pivot.rotation,
                     rotation,
                     1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(0.0001f, settings.RotationDamping)));
+        }
+
+        /// <summary>
+        /// 出场镜头这一帧的俯仰与距离。起点到常规位置用 smoothstep，起步和收尾都是缓的。
+        /// 返回 true 表示这一帧的旋转已经由出场镜头决定。
+        /// </summary>
+        private bool TickIntro()
+        {
+            if (_introHolding)
+            {
+                pivot.rotation = Quaternion.Euler(settings.IntroPitch, _yaw, 0f);
+                return true;
+            }
+
+            if (_introDuration <= 0f)
+            {
+                return false;
+            }
+
+            _introElapsed += Mathf.Min(Time.deltaTime, MaxIntroStep);
+            var t = Mathf.Clamp01(_introElapsed / _introDuration);
+            var eased = t * t * (3f - (2f * t));
+            pivot.rotation = Quaternion.Euler(Mathf.Lerp(settings.IntroPitch, _pitch, eased), _yaw, 0f);
+            SetDistance(Mathf.Lerp(settings.IntroDistance, settings.Distance, eased));
+            if (t >= 1f)
+            {
+                _introDuration = 0f;
+                _introElapsed = 0f;
+                SetDistance(settings.Distance);
+            }
+
+            return true;
         }
 
         private Vector3 PivotPosition(Transform target) =>
@@ -193,6 +315,7 @@ namespace Naraka.Infrastructure.Camera
             }
 
             var transposer = virtualCamera.GetCinemachineComponent<CinemachineTransposer>();
+            _transposer = transposer;
             if (transposer != null)
             {
                 transposer.m_BindingMode = CinemachineTransposer.BindingMode.LockToTarget;

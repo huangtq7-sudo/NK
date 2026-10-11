@@ -39,6 +39,20 @@ namespace Naraka.Features.Loading.Controller
         private const double TickSeconds = 1.0 / 60.0;
         private const float IncompleteCeiling = 0.99f;
 
+        /// <summary>
+        /// 场景切过去之后，连续这么多帧都不超过 <see cref="StableFrameSeconds"/> 才撤掉加载界面。
+        /// </summary>
+        public const int StableFramesRequired = 3;
+
+        /// <summary>
+        /// 一帧不超过它就算"稳了"。取 0.1 秒是因为玩家状态机单帧最多只推进 0.1 秒，
+        /// 而 Animator 单帧最多推进 0.333 秒：超过 0.1 秒的帧里动画会比业务跑得快，出场动作会被吞掉。
+        /// </summary>
+        public const double StableFrameSeconds = 0.1;
+
+        /// <summary>等帧率稳定的上限。设备再慢也不能把玩家永远关在加载界面里。</summary>
+        public const double SettleTimeoutSeconds = 3.0;
+
         private readonly IGameClock _clock;
         private readonly ISceneLoader _sceneLoader;
         private readonly IPresentationFrameScheduler _frames;
@@ -188,7 +202,7 @@ namespace Naraka.Features.Loading.Controller
                 // 100% 必须自己占住一帧，否则它和"隐藏界面"落在同一帧里，
                 // 玩家永远看不到满进度。
                 SetState(new LoadingPresentationState(true, 1f));
-                await _frames.NextFrameAsync(cancellationToken);
+                await SettleAsync(cancellationToken);
                 SetState(new LoadingPresentationState(false, 1f));
             }
             catch (OperationCanceledException)
@@ -206,6 +220,33 @@ namespace Naraka.Features.Loading.Controller
             finally
             {
                 _isRunning = false;
+            }
+        }
+
+        /// <summary>
+        /// 场景已经切过去，但还不能马上撤掉加载界面。
+        ///
+        /// 新场景的头几帧通常最重：第一次渲染、着色器与贴图上传。这些帧如果落在加载界面撤掉之后，
+        /// 玩家看到的就是卡顿，而且出场动画会在这几帧里被 Animator 一口气播过去 ——
+        /// 用户看到的是"角色突然出现"。所以这几帧留在加载界面下面消化掉：
+        /// 连续 <see cref="StableFramesRequired"/> 帧都不超过 <see cref="StableFrameSeconds"/> 才算就绪，
+        /// 最多等 <see cref="SettleTimeoutSeconds"/>。至少等一帧，这一帧同时让 100% 被画出来。
+        /// </summary>
+        private async UniTask SettleAsync(CancellationToken cancellationToken)
+        {
+            var start = _clock.NowSeconds;
+            var last = start;
+            var stable = 0;
+            while (stable < StableFramesRequired)
+            {
+                await _frames.NextFrameAsync(cancellationToken);
+                var now = _clock.NowSeconds;
+                stable = now - last <= StableFrameSeconds ? stable + 1 : 0;
+                last = now;
+                if (now - start >= SettleTimeoutSeconds)
+                {
+                    break;
+                }
             }
         }
 

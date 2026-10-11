@@ -20,7 +20,9 @@ namespace Naraka.Features.Character.Model
             float attackDamage,
             float attackRadius,
             float animationSpeed,
-            ActionRejection rejection)
+            ActionRejection rejection,
+            float dashDistance = 0f,
+            float dashProgress = 0f)
         {
             Locomotion = locomotion;
             Action = action;
@@ -36,6 +38,8 @@ namespace Naraka.Features.Character.Model
             AttackRadius = attackRadius;
             AnimationSpeed = animationSpeed;
             Rejection = rejection;
+            DashDistance = dashDistance;
+            DashProgress = dashProgress;
         }
 
         public LocomotionState Locomotion { get; }
@@ -79,6 +83,16 @@ namespace Naraka.Features.Character.Model
 
         /// <summary>本帧被拒绝的操作原因，没有拒绝时为 None。</summary>
         public ActionRejection Rejection { get; }
+
+        /// <summary>
+        /// 路径冲刺沿当前朝向想走的总距离（米）。只在冲刺进行中（含冲完的那一帧）非零。
+        /// 它是"想走多远"，不是终点：撞墙、贴地与悬崖由 View 层在冲刺开始时校验，
+        /// Model 不认识物理世界。冲刺被死亡等打断时它回到 0，View 就停在当时的位置。
+        /// </summary>
+        public float DashDistance { get; }
+
+        /// <summary>路径冲刺的进度（0 → 1），View 据此沿校验过的路径放置角色。</summary>
+        public float DashProgress { get; }
 
         public bool IsInputLocked => (Flags & PlayerOverlayFlags.InputLocked) != 0;
 

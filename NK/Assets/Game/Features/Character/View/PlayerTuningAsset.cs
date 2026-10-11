@@ -99,6 +99,14 @@ namespace Naraka.Features.Character.View
         [Tooltip("奔跑速度（米/秒）。")]
         public float runSpeed = 7.5f;
 
+        [Tooltip("走 / 跑移动速度的等比例倍率。实际移动速度 = 上面两个速度 × 它。" +
+                 "2026-10-11 确认 1.3（走 6.5、跑 9.75 米/秒）。")]
+        public float locomotionSpeedScale = 1.3f;
+
+        [Tooltip("Walk / Run 动画的播放倍率，与移动倍率分开调。2026-10-11 确认 1.15：" +
+                 "跟着移动倍率加速到 1.3 显得太快、不自然。")]
+        public float locomotionAnimationScale = 1.15f;
+
         [Tooltip("转向角速度（度/秒）。角色朝输入方向转，转到位之前沿当前朝向前进。调大更跟手。")]
         public float turnDegreesPerSecond = 720f;
 
@@ -181,8 +189,29 @@ namespace Naraka.Features.Character.View
         public ActionEntry skillV = ActionEntry.From(Baseline.SkillV.Action);
         public float skillVRadius = 6f;
 
+        // 下面三项放在顶层而不是 ActionEntry 里：ActionEntry 是所有动作共用的嵌套类，给它加字段后
+        // 旧资产里每个条目都缺这一项，缺省值落成什么取决于 Unity 是否复用外层初始化器建的实例。
+        // 顶层字段缺失时取下面的初始化值，是确定的 —— 因此现有资产不必改写。
+        // 启用时它们覆盖 skillV 里的位移窗口（displacementClipSeconds）。
+        [Tooltip("V 技能先原地蓄势，再沿校验过的路径高速冲刺（看得见轨迹、不穿墙、不冲下悬崖、穿过怪物）。" +
+                 "关闭则退回 skillV 里按帧速度铺开的旧位移。")]
+        public bool skillVPathDash = true;
+
+        [Tooltip("蓄势结束、开始冲刺的片段时间（秒）。取自动画根骨骼：片段 0 → 0.333 秒原地不动。")]
+        public float skillVDashStartClipSeconds = 0.333f;
+
+        [Tooltip("冲刺本身持续的真实时间（秒，不含蓄势）。越短越快，但看得见的轨迹越短。")]
+        public float skillVDashSeconds = 0.2f;
+
         [Header("受击、死亡与出场")]
+        [Tooltip("受击片段长度（片段时间）。由 Rebuild Player Animator 从动画片段同步。")]
         public float hitStunSeconds = 2.033f;
+
+        [Tooltip("受击硬直（真实秒）。只有这段锁定输入；之后剩余动作可以被任何操作打断。")]
+        public float hitStunLockSeconds = 0.6f;
+
+        [Tooltip("硬直之后剩余受击动画的播放倍率。不操作时受击总长 = 硬直 + (片段长 − 硬直) ÷ 它。")]
+        public float hitStunRecoverySpeed = 1.6f;
         public float deathSeconds = 2.5f;
 
         [Tooltip("重生保护时长（秒）。")]
@@ -228,6 +257,19 @@ namespace Naraka.Features.Character.View
         [Tooltip("处决伤害倍率。")]
         public float executeDamageMultiplier = 1.5f;
 
+        private TimedActionTuning SkillVAction()
+        {
+            var action = skillV.ToTuning();
+            if (!skillVPathDash)
+            {
+                return action;
+            }
+
+            // 冲刺时长按真实时间填写，换算成片段时间要乘主体播放倍率。
+            var end = skillVDashStartClipSeconds + (Mathf.Max(0f, skillVDashSeconds) * action.Playback.MainSpeed);
+            return action.WithPathDash(skillVDashStartClipSeconds, end);
+        }
+
         public PlayerTuning ToTuning() => new PlayerTuning(
             new LocomotionTuning(
                 walkSpeed,
@@ -242,7 +284,9 @@ namespace Naraka.Features.Character.View
                 runTurnbackSeconds,
                 runTurnbackInputWindowSeconds,
                 runTurnbackAngleThresholdDegrees,
-                moveInputDeadzone),
+                moveInputDeadzone,
+                locomotionSpeedScale,
+                locomotionAnimationScale),
             new StaminaTuning(
                 staminaMax,
                 dashStaminaCost,
@@ -262,14 +306,19 @@ namespace Naraka.Features.Character.View
                 reservedChargeTier1Seconds,
                 reservedChargeTier2Seconds),
             new SkillTuning(skillFCooldownSeconds, skillF.ToTuning(), skillFRadius),
-            new SkillTuning(skillVCooldownSeconds, skillV.ToTuning(), skillVRadius),
+            new SkillTuning(
+                skillVCooldownSeconds,
+                SkillVAction(),
+                skillVRadius),
             new IdleTuning(idleVariationDelaySeconds, idleVariationDurationSeconds),
             new ReactionTuning(
                 hitStunSeconds,
                 deathSeconds,
                 spawnProtectionSeconds,
                 spawnLobbyToMap01.ToTuning(),
-                spawnMap01ToMap02.ToTuning()),
+                spawnMap01ToMap02.ToTuning(),
+                hitStunLockSeconds,
+                hitStunRecoverySpeed),
             new VitalsTuning(maxHealth, maxArmor, defense, reviveArmorRatio),
             new CounterTuning(
                 counterWindowSeconds,

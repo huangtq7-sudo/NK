@@ -101,8 +101,8 @@ MonoBehaviour:
   skillFCooldownSeconds: 15
   skillF:
     clipSeconds: 4.6
-    mainSpeed: 1.5
-    recoverySpeed: 2.4
+    mainSpeed: 1.125
+    recoverySpeed: 1.8
     recoveryStartSeconds: 1.84
     hitWindowStart: 1.073
     hitWindowEnd: 1.84

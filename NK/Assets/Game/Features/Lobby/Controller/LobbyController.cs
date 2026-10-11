@@ -191,7 +191,14 @@ namespace Naraka.Features.Lobby.Controller
                             "正在进入地图…", LobbyStatusSource.StartGame));
                     }
 
-                    await _sceneGateway.LoadMapAsync(_mapSceneName, linked.Token);
+                    // 切换开始之前的取消仍然有效。切换一旦开始就不再挂在大厅的生命周期上：
+                    // 场景激活时 Bootstrap 被卸载，大厅 Scope 随之 Dispose 并取消 _lifetime。
+                    // 原来把 linked.Token 传进去，切换就在激活途中把自己取消了 ——
+                    // 场景照样切过去，但取消分支清掉了"从大厅进入"的到达状态，任务界面的
+                    // 出场动作、出场镜头与色幕全部不播，角色直接站在出生点。
+                    // 与传送门、死亡返回一致，切换的生命周期归持久化的 WorldFlowController 管。
+                    linked.Token.ThrowIfCancellationRequested();
+                    await _sceneGateway.LoadMapAsync(_mapSceneName, CancellationToken.None);
                 }
             }
             catch (OperationCanceledException)

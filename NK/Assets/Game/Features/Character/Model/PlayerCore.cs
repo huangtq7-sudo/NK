@@ -12,7 +12,11 @@ namespace Naraka.Features.Character.Model
     /// </summary>
     public sealed class PlayerCore
     {
-        private const float MaxDeltaSeconds = 0.1f;
+        /// <summary>
+        /// 单帧最多推进的业务时间。卡顿帧被钳到这里，避免一次卡顿把连招窗口整段跳过。
+        /// Animator 的投影按同一个上限推进，见 <c>PlayerAnimatorProjector</c>。
+        /// </summary>
+        public const float MaxDeltaSeconds = 0.1f;
 
         private readonly PlayerTuning _tuning;
         private readonly StateMachine<LocomotionState> _locomotion;
@@ -29,6 +33,12 @@ namespace Naraka.Features.Character.Model
         private PlayerAnimation _animation = PlayerAnimation.Idle;
         private bool _animationRestarted;
         private ActionRejection _rejection;
+
+        // 路径冲刺在一次动作里只走一遍。状态机没有"进入次数"，因此用所属动作与上一帧的
+        // 动作计时来识别新的一次：动作变了，或同一动作的计时回落（被重新进入），就重新开始。
+        private ActionState _dashOwner = ActionState.None;
+        private float _dashLastTime;
+        private bool _dashFinished;
 
         private bool _externalInputLock;
         private bool _loading;
@@ -343,7 +353,7 @@ namespace Naraka.Features.Character.Model
             var locked = _externalInputLock || _loading;
             var effective = locked ? PlayerInputFrame.Idle : input;
 
-            if (TickHitStun(deltaSeconds))
+            if (TickHitStun(effective, deltaSeconds))
             {
                 TrackAttackHold(PlayerInputFrame.Idle, deltaSeconds);
                 TrackMoveDirection(PlayerInputFrame.Idle, deltaSeconds);
@@ -373,9 +383,11 @@ namespace Naraka.Features.Character.Model
             {
                 // 动作期间禁止自由移动与自由旋转，只有配置好的动作位移生效。
                 ApplyActionAnimation(_action.Current);
-                return BuildOutput(ActionForwardSpeed(_action.Current), 0f);
+                DashOutput(_action.Current, out var dashDistance, out var dashProgress);
+                return BuildOutput(ActionForwardSpeed(_action.Current), 0f, dashDistance, dashProgress);
             }
 
+            _dashOwner = ActionState.None;
             return TickLocomotionLayer(effective, deltaSeconds, locked);
         }
 
@@ -430,7 +442,11 @@ namespace Naraka.Features.Character.Model
             return true;
         }
 
-        private bool TickHitStun(float deltaSeconds)
+        /// <summary>
+        /// 受击分两段：硬直段锁定输入；之后剩余的受击动作加速播放，并且任何操作都能立刻打断它。
+        /// 打断的那一帧继续用这帧的输入往下走，所以按键不会被吞掉一帧。
+        /// </summary>
+        private bool TickHitStun(PlayerInputFrame input, float deltaSeconds)
         {
             if (_reaction.Current != ReactionState.HitStun)
             {
@@ -438,7 +454,10 @@ namespace Naraka.Features.Character.Model
             }
 
             _reaction.Tick(deltaSeconds);
-            if (_reaction.TimeInState < _tuning.Reaction.HitStunSeconds)
+            var reaction = _tuning.Reaction;
+            var elapsed = _reaction.TimeInState;
+            if (elapsed < reaction.HitStunLockSeconds ||
+                (elapsed < reaction.HitStunRealSeconds && !HasIntent(input)))
             {
                 SetAnimation(PlayerAnimation.HitStun);
                 return true;
@@ -447,6 +466,27 @@ namespace Naraka.Features.Character.Model
             _reaction.TryChangeTo(ReactionState.None, StateChangeReason.ActionCompleted);
             return false;
         }
+
+        /// <summary>这一帧玩家有没有想做点什么。只转镜头不算。</summary>
+        private bool HasIntent(PlayerInputFrame input)
+        {
+            var deadzone = _tuning.Locomotion.MoveInputDeadzone;
+            var move = (input.MoveX * input.MoveX) + (input.MoveY * input.MoveY);
+            return move > deadzone * deadzone ||
+                   input.SprintHeld ||
+                   input.AttackHeld ||
+                   input.SkillFPressed ||
+                   input.SkillVPressed ||
+                   input.CounterPressed;
+        }
+
+        private bool IsHitStunLocked =>
+            _reaction.Current == ReactionState.HitStun &&
+            _reaction.TimeInState < _tuning.Reaction.HitStunLockSeconds;
+
+        /// <summary>受击动画的播放倍率：硬直段原速，之后按配置加速。</summary>
+        private float HitStunAnimationSpeed() =>
+            IsHitStunLocked ? 1f : _tuning.Reaction.HitStunRecoverySpeed;
 
         private bool TickForcedSpawn(float deltaSeconds, out PlayerFrameOutput output)
         {
@@ -909,6 +949,44 @@ namespace Naraka.Features.Character.Model
         private float ActionForwardSpeed(ActionState action) =>
             ActionTuning(action).ForwardSpeedAt(_action.TimeInState);
 
+        /// <summary>
+        /// 路径冲刺本帧的总距离与进度。蓄势期间、冲刺之外、以及冲完之后都输出 0。
+        ///
+        /// 冲完的那一帧一定输出进度 1，哪怕低帧率时一帧就跨过了终点 —— View 靠它落到终点。
+        /// 冲刺途中被死亡打断时这里不会再被调用（死亡分支提前返回），距离回到 0，View 停在原地。
+        /// </summary>
+        private void DashOutput(ActionState action, out float distance, out float progress)
+        {
+            distance = 0f;
+            progress = 0f;
+            var tuning = ActionTuning(action);
+            if (!tuning.PathDash || tuning.ForwardDisplacement == 0f)
+            {
+                return;
+            }
+
+            var elapsed = _action.TimeInState;
+            if (action != _dashOwner || elapsed < _dashLastTime)
+            {
+                _dashOwner = action;
+                _dashFinished = false;
+            }
+
+            _dashLastTime = elapsed;
+            var clipTime = tuning.ClipTimeAt(elapsed);
+            if (_dashFinished || clipTime < tuning.DisplacementStartClipSeconds)
+            {
+                return;
+            }
+
+            progress = tuning.DashProgressAt(clipTime);
+            distance = tuning.ForwardDisplacement;
+            if (progress >= 1f)
+            {
+                _dashFinished = true;
+            }
+        }
+
         private TimedActionTuning ActionTuning(ActionState action) => action switch
         {
             ActionState.AttackCombo1 => _tuning.Combo.Step1,
@@ -988,8 +1066,9 @@ namespace Naraka.Features.Character.Model
         private PlayerOverlayFlags BuildFlags()
         {
             var flags = PlayerOverlayFlags.None;
+            // 受击只在硬直段锁输入；之后输入必须是开着的，否则"任何操作都能打断"就收不到操作。
             if (_externalInputLock || _loading || IsDead ||
-                _reaction.Current == ReactionState.HitStun ||
+                IsHitStunLocked ||
                 _action.Current == ActionState.SpawnLobbyToMap01 ||
                 _action.Current == ActionState.SpawnMap01ToMap02)
             {
@@ -1036,14 +1115,28 @@ namespace Naraka.Features.Character.Model
             return flags;
         }
 
-        private PlayerFrameOutput BuildOutput(float forwardSpeed, float turnDegrees)
+        private PlayerFrameOutput BuildOutput(
+            float forwardSpeed, float turnDegrees, float dashDistance = 0f, float dashProgress = 0f)
         {
             var action = _action.Current;
             var hitWindowOpen = false;
             var damage = 0f;
             var radius = 0f;
             var animationSpeed = 1f;
-            if (action != ActionState.None)
+            if (action == ActionState.None)
+            {
+                if (_reaction.Current == ReactionState.HitStun)
+                {
+                    animationSpeed = HitStunAnimationSpeed();
+                }
+                else if (_reaction.Current == ReactionState.None &&
+                         (_locomotion.Current == LocomotionState.Walk || _locomotion.Current == LocomotionState.Run))
+                {
+                    // 走跑动画的播放倍率单独配置：跟着移动倍率全速加快会显得不自然。
+                    animationSpeed = _tuning.Locomotion.AnimationScale;
+                }
+            }
+            else
             {
                 var tuning = ActionTuning(action);
                 var clipTime = tuning.ClipTimeAt(_action.TimeInState);
@@ -1076,7 +1169,9 @@ namespace Naraka.Features.Character.Model
                 damage,
                 radius,
                 animationSpeed,
-                _rejection);
+                _rejection,
+                dashDistance,
+                dashProgress);
         }
     }
 }

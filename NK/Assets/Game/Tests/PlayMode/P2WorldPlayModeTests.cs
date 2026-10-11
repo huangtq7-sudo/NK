@@ -1,11 +1,15 @@
 using System.Collections;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Naraka.Boot;
 using Naraka.Features.Character.Model;
 using Naraka.Features.Character.View;
 using Naraka.Features.Loading.Controller;
 using Naraka.Features.Loading.View;
+using Naraka.Features.Lobby.Controller;
+using Naraka.Features.Lobby.Model;
+using Naraka.Core.Application.Bootstrap;
 using Naraka.Features.World.Controller;
 using Naraka.Features.World.View;
 using Naraka.Infrastructure.Camera;
@@ -357,6 +361,207 @@ namespace Naraka.P2.PlayMode.Tests
         }
 
         [UnityTest]
+        public IEnumerator SpawnWaitsForTheLoadingScreenAndTheCameraGlidesInFromAboveBehind()
+        {
+            yield return LoadBootScene();
+            var loading = Resolve<ILoadingController>();
+            var world = Resolve<IWorldFlowController>();
+            var task = world.EnterMap01Async(default).Preserve();
+
+            // 加载界面还盖着的时候，出场动作一帧都不能开始：那几帧玩家看不见。
+            var deadline = Time.realtimeSinceStartup + SceneLoadTimeoutSeconds;
+            PlayerCharacterView player = null;
+            while (!task.Status.IsCompleted() && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+                player = Object.FindObjectOfType<PlayerCharacterView>();
+                if (player != null && loading.Current.IsVisible)
+                {
+                    Assert.That(
+                        player.State.Action, Is.Not.EqualTo(ActionState.SpawnLobbyToMap01),
+                        "加载界面还没撤掉，出场动作就开始了。");
+                }
+            }
+
+            Assert.That(task.Status.IsCompleted(), Is.True, "进入地图一没有在超时前完成。");
+            player = Object.FindObjectOfType<PlayerCharacterView>();
+            Assert.That(player, Is.Not.Null);
+            var rig = Object.FindObjectOfType<ThirdPersonCameraRig>();
+            Assert.That(rig, Is.Not.Null);
+            var settings = rig.Settings;
+
+            yield return WaitUntil(
+                () => player.State.Action == ActionState.SpawnLobbyToMap01, 1f, "spawn-after-loading");
+            Assert.That(loading.Current.IsVisible, Is.False);
+
+            // 出场色幕：加载界面撤掉的那一刻出现，白色、约 60% 不透明，一路变淡，约 1.5 秒后消失。
+            var entry = Object.FindObjectOfType<WorldSceneEntry>();
+            var fade = entry.EntryFade;
+            Assert.That(fade, Is.Not.Null, "进入任务界面必须播放出场色幕。");
+            Assert.That(fade.Alpha, Is.EqualTo(0.6f).Within(0.08f), "色幕从半透明开始。");
+            Assert.That(fade.Color.r, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(fade.Color.b, Is.EqualTo(1f).Within(0.001f));
+            var fadeStarted = Time.time;
+
+            // 动作从头开始播：Animator 落到出场 State 时片段进度还在开头。
+            var animator = player.GetComponentInChildren<Animator>();
+            var burst = Animator.StringToHash(PlayerAnimatorProjector.StateNames.SpawnBurstLobbyToMap01);
+            yield return WaitUntil(
+                () => animator.GetCurrentAnimatorStateInfo(0).shortNameHash == burst, 1f, "spawn-animator");
+            Assert.That(animator.GetCurrentAnimatorStateInfo(0).normalizedTime, Is.LessThan(0.1f),
+                "玩家第一眼看到的必须是出场动作的开头。");
+
+            // 镜头从后上方拉回常规位置：俯仰角与距离一路收小，出场结束时回到常规值。
+            Assert.That(rig.IsIntroActive, Is.True, "出场开始时镜头应处在出场镜头里。");
+            var pivotHeight = settings.PivotHeight;
+            var camera = Camera.main;
+            float Elevation()
+            {
+                var pivot = player.transform.position + (Vector3.up * pivotHeight);
+                var offset = camera.transform.position - pivot;
+                return Mathf.Asin(Mathf.Clamp(offset.y / Mathf.Max(0.001f, offset.magnitude), -1f, 1f)) *
+                       Mathf.Rad2Deg;
+            }
+
+            yield return null;
+            var firstElevation = Elevation();
+            var firstDistance = rig.CurrentDistance;
+            Assert.That(firstElevation, Is.GreaterThan(settings.IntroPitch - 6f), "起点必须在角色后上方。");
+            Assert.That(firstDistance, Is.GreaterThan(settings.IntroDistance - 1.5f), "起点必须比常规更远。");
+
+            var previousElevation = firstElevation;
+            var previousDistance = firstDistance;
+            var previousAlpha = 1f;
+            var fadeGoneAt = -1f;
+            while (player.State.Action == ActionState.SpawnLobbyToMap01)
+            {
+                yield return null;
+                if (fade != null)
+                {
+                    Assert.That(fade.Alpha, Is.LessThanOrEqualTo(previousAlpha + 0.001f), "色幕只能越来越透明。");
+                    previousAlpha = fade.Alpha;
+                }
+                else if (fadeGoneAt < 0f)
+                {
+                    fadeGoneAt = Time.time - fadeStarted;
+                }
+
+                var elevation = Elevation();
+                var distance = rig.CurrentDistance;
+                Assert.That(elevation, Is.LessThanOrEqualTo(previousElevation + 0.5f), "镜头必须一路往下收，不能来回晃。");
+                Assert.That(distance, Is.LessThanOrEqualTo(previousDistance + 0.01f), "镜头必须一路拉近。");
+                previousElevation = elevation;
+                previousDistance = distance;
+            }
+
+            Assert.That(fadeGoneAt, Is.GreaterThan(1.2f).And.LessThan(2.0f), "色幕约 1.5 秒变成完全透明后消失。");
+
+            // 交还操作的那一刻镜头已经落定。
+            yield return null;
+            yield return null;
+            Assert.That(rig.IsIntroActive, Is.False, "出场结束时镜头应已回到常规跟随。");
+            Assert.That(rig.CurrentDistance, Is.EqualTo(settings.Distance).Within(0.01f));
+            Assert.That(Elevation(), Is.EqualTo(settings.InitialPitch).Within(3f), "落定在常规俯仰角。");
+        }
+
+        [UnityTest]
+        public IEnumerator StartingFromTheLobbyButtonStillPlaysTheTaskSceneEntrance()
+        {
+            // 走大厅"开始游戏"的真实路径，并且像 GameLifetimeScope 一样让大厅随 Bootstrap 场景一起被释放。
+            // 之前的出场测试直接调用世界流转，绕过了大厅，所以一直没抓到：大厅把自己的生命周期令牌
+            // 传进了切换，场景激活时大厅被释放，切换在途中取消了自己，到达状态被清空，出场全部不播。
+            yield return LoadBootScene();
+            var lobby = new LobbyController(
+                new LobbyModel(),
+                Resolve<ILobbySceneGateway>(),
+                WorldMapIds.Map01,
+                new PendingLobbyAccountGateway(),
+                new PendingLobbyProfileGateway(),
+                Resolve<IServerCapabilities>());
+            lobby.Enter("player-one", 42);
+            DisposeWithScene.Attach(lobby);
+
+            var task = lobby.StartGameAsync(CancellationToken.None).Preserve();
+            var deadline = Time.realtimeSinceStartup + SceneLoadTimeoutSeconds;
+            while (!task.Status.IsCompleted() && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            Assert.That(task.Status.IsCompleted(), Is.True, "从大厅进入任务界面没有在超时前完成。");
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(WorldSceneNames.Map01Task));
+
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            Assert.That(player, Is.Not.Null);
+            yield return WaitUntil(
+                () => player.State.Action == ActionState.SpawnLobbyToMap01, 2f, "lobby-spawn");
+
+            Assert.That(Object.FindObjectOfType<WorldSceneEntry>().EntryFade, Is.Not.Null,
+                "从大厅进入任务界面必须播放出场色幕。");
+            Assert.That(Object.FindObjectOfType<ThirdPersonCameraRig>().IsIntroActive, Is.True,
+                "从大厅进入任务界面必须播放出场镜头。");
+        }
+
+        private sealed class PendingLobbyAccountGateway : ILobbyAccountGateway
+        {
+            public Cysharp.Threading.Tasks.UniTask<LobbyAccountSummaryResult> RequestAccountSummaryAsync(
+                CancellationToken cancellationToken) =>
+                new Cysharp.Threading.Tasks.UniTaskCompletionSource<LobbyAccountSummaryResult>().Task;
+        }
+
+        private sealed class PendingLobbyProfileGateway : ILobbyProfileGateway
+        {
+            public Cysharp.Threading.Tasks.UniTask<LobbyProfileResult> RequestProfileAsync(
+                CancellationToken cancellationToken) =>
+                new Cysharp.Threading.Tasks.UniTaskCompletionSource<LobbyProfileResult>().Task;
+
+            public Cysharp.Threading.Tasks.UniTask<LobbyProfileResult> SetAppearanceAsync(
+                string avatarId, string avatarFrameId, CancellationToken cancellationToken) =>
+                new Cysharp.Threading.Tasks.UniTaskCompletionSource<LobbyProfileResult>().Task;
+        }
+
+        [UnityTest]
+        public IEnumerator StalledFramesDoNotLetTheSpawnAnimationRunAheadOfTheStateMachine()
+        {
+            yield return LoadBootScene();
+            yield return EnterMap01();
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            var animator = player.GetComponentInChildren<Animator>();
+            var burst = Animator.StringToHash(PlayerAnimatorProjector.StateNames.SpawnBurstLobbyToMap01);
+            yield return WaitUntil(
+                () => player.State.Action == ActionState.SpawnLobbyToMap01 &&
+                      animator.GetCurrentAnimatorStateInfo(0).shortNameHash == burst &&
+                      !animator.IsInTransition(0),
+                6f, "spawn-burst");
+
+            var clipSeconds = animator.GetCurrentAnimatorStateInfo(0).length;
+            var before = animator.GetCurrentAnimatorStateInfo(0).normalizedTime * clipSeconds;
+            const int stalledFrames = 8;
+            try
+            {
+                // 每帧固定 0.25 秒：模拟进地图后头几帧的卡顿。
+                Time.captureDeltaTime = 0.25f;
+                for (var i = 0; i < stalledFrames; i++)
+                {
+                    yield return null;
+                }
+            }
+            finally
+            {
+                Time.captureDeltaTime = 0f;
+            }
+
+            var after = animator.GetCurrentAnimatorStateInfo(0).normalizedTime * clipSeconds;
+            var expected = stalledFrames * PlayerCore.MaxDeltaSeconds *
+                           player.Tuning.Reaction.SpawnLobbyToMap01.Playback.MainSpeed;
+
+            // 不对齐时 Animator 会走 8 × 0.25 = 2.0 秒片段时间，业务只走 0.8 秒。
+            Assert.That(after - before, Is.EqualTo(expected).Within(0.12f),
+                "卡顿帧里 Animator 只能走业务走过的片段时间。");
+            Assert.That(player.State.Action, Is.EqualTo(ActionState.SpawnLobbyToMap01));
+        }
+
+        [UnityTest]
         public IEnumerator AttacksDoNotMoveThePlayer()
         {
             yield return LoadBootScene();
@@ -583,6 +788,12 @@ namespace Naraka.P2.PlayMode.Tests
                 arrived.State.Action, Is.EqualTo(ActionState.SpawnMap01ToMap02),
                 "从地图一进入地图二必须播放 Burst01。");
 
+            // 战斗界面有出场镜头（从角色后上方拉回），但没有任务界面的出场色幕。
+            Assert.That(Object.FindObjectOfType<ThirdPersonCameraRig>().IsIntroActive, Is.True,
+                "战斗界面必须播放出场镜头。");
+            Assert.That(Object.FindObjectOfType<EntryScreenFade>(), Is.Null,
+                "出场色幕只属于任务界面，战斗界面不得播放。");
+
             yield return WaitUntil(() => arrived.State.Action == ActionState.None, 8f);
             Assert.That(arrived.State.Flags.HasFlag(PlayerOverlayFlags.InputLocked), Is.False);
 
@@ -657,6 +868,93 @@ namespace Naraka.P2.PlayMode.Tests
             Assert.That(root, Is.Not.Null, "持久化根不存在。");
             return root.Container.Resolve<T>();
         }
+
+        [UnityTest]
+        public IEnumerator SkillVHoldsThenDashesVisiblyAlongAValidatedPathInTheFormalTaskScene()
+        {
+            yield return LoadBootScene();
+            yield return EnterMap01();
+            var player = Object.FindObjectOfType<PlayerCharacterView>();
+            yield return WaitUntil(() => player.State.Action == ActionState.None, 12f, "spawn-burst");
+
+            var body = player.GetComponent<CharacterController>();
+            var mask = DashPathResolver.ObstacleMaskFor(player.gameObject.layer);
+            var v = player.Tuning.SkillV.Action;
+            var windup = v.DisplacementStartClipSeconds / v.Playback.MainSpeed;
+            var dash = (v.DisplacementClipSeconds - v.DisplacementStartClipSeconds) / v.Playback.MainSpeed;
+
+            // 正式地图前方是什么并不固定，所以不硬编码"一定冲满 17.838 米"，
+            // 而是在按下之前用同一个校验器预测终点：蓄势期间角色不动也不转身，预测与实际必须一致。
+            Physics.SyncTransforms();
+            var start = player.transform.position;
+            var predicted = DashPathResolver.Resolve(body, player.transform.forward, v.ForwardDisplacement, mask);
+            var expectedTravel = Horizontal(predicted - start);
+            Assert.That(expectedTravel, Is.GreaterThan(5f), "测试前提：出生点正前方要有足够的冲刺空间。");
+
+            _input.Press(_keyboard[Key.V]);
+            yield return null;
+            yield return null;
+            _input.Release(_keyboard[Key.V]);
+
+            var castAt = -1f;
+            var firstMoveAt = -1f;
+            var lastMoveAt = -1f;
+            var movingFrames = 0;
+            var movedDuringWindup = 0f;
+            var previous = player.transform.position;
+            var deadline = Time.realtimeSinceStartup + v.RealDurationSeconds + 3f;
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+                if (player.State.Action == ActionState.SkillV)
+                {
+                    if (castAt < 0f)
+                    {
+                        castAt = Time.time;
+                    }
+                }
+                else if (castAt >= 0f)
+                {
+                    break;
+                }
+
+                var now = player.transform.position;
+                var step = Horizontal(now - previous);
+                if (castAt >= 0f && Time.time - castAt < windup - 0.05f)
+                {
+                    movedDuringWindup = Mathf.Max(movedDuringWindup, Horizontal(now - start));
+                }
+
+                if (step > 0.001f)
+                {
+                    movingFrames++;
+                    if (firstMoveAt < 0f)
+                    {
+                        firstMoveAt = Time.time;
+                    }
+
+                    lastMoveAt = Time.time;
+                }
+
+                previous = now;
+            }
+
+            Assert.That(castAt, Is.GreaterThanOrEqualTo(0f), "按 V 必须进入 V 技能。");
+            Assert.That(movedDuringWindup, Is.LessThan(0.05f), "蓄势期间必须原地不动。");
+            Assert.That(firstMoveAt - castAt, Is.EqualTo(windup).Within(0.06f), "冲刺必须在蓄势结束时起步。");
+            Assert.That(lastMoveAt - firstMoveAt, Is.EqualTo(dash).Within(0.06f), "冲刺持续约 0.2 秒。");
+            Assert.That(movingFrames, Is.GreaterThanOrEqualTo(5), "冲刺要看得见轨迹，不能一两帧闪过去。");
+            Assert.That(
+                Horizontal(player.transform.position - predicted), Is.LessThan(0.1f),
+                "实际终点必须与校验器预测的终点一致。");
+            Assert.That(
+                DashPathResolver.Fits(body, player.transform.position, mask), Is.True,
+                "终点不得卡进任何东西。");
+
+            yield return WaitUntil(() => body.isGrounded, 2f, "grounded-after-dash");
+        }
+
+        private static float Horizontal(Vector3 delta) => new Vector2(delta.x, delta.z).magnitude;
 
         private IEnumerator LoadBootScene()
         {

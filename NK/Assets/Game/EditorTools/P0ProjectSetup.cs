@@ -19,7 +19,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
-using UnityEngine.Video;
 
 namespace Naraka.EditorTools
 {
@@ -112,8 +111,6 @@ namespace Naraka.EditorTools
         private const string AvatarPrefix = "avatar";
         private const string FramePrefix = "gacha_card";
         private const string CursorTexturePath = MaterialDirectory + "/MouseCursor.png";
-        private const string LobbyVideoPath =
-            "Assets/Game/Art/UI/Backgrounds/Lobby_Animation-1.mp4";
 
         [MenuItem("NARAKA/Setup/Apply P0 Project Settings")]
         public static void Apply()
@@ -225,7 +222,7 @@ namespace Naraka.EditorTools
             AssignReference(lobby, LobbyMainLayoutField,
                 AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(LobbyMainUxmlPath));
             AssignReference(lobby, "catalog", catalog);
-            AssignReference(lobby, "backgroundClip", ConfigureLobbyVideo());
+            // 大厅背景只用 UXML/USS 里的静态图，不再接线背景视频；视频文件本身保留在工程里。
             AssignReference(appearance, "appearanceLayout",
                 AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(AppearanceUxmlPath));
             AssignReference(appearance, "catalog", catalog);
@@ -435,34 +432,6 @@ namespace Naraka.EditorTools
             }
 
             Debug.Log($"外观目录 {fieldName}：扫描到 {paths.Length} 项（前缀 {prefix}）。");
-        }
-
-        // 源视频为 H.264 High Profile，Unity 直接播放时会报时间戳偏移与色彩标准缺失，
-        // 表现为循环卡顿和颜色偏差。开启 Transcode 让 Unity 重新编码成自身可靠支持的格式。
-        private static VideoClip ConfigureLobbyVideo()
-        {
-            var importer = AssetImporter.GetAtPath(LobbyVideoPath) as VideoClipImporter;
-            if (importer == null)
-            {
-                Debug.LogError($"未找到大厅背景视频：{LobbyVideoPath}。");
-                return null;
-            }
-
-            var settings = importer.GetTargetSettings("Standalone") ?? new VideoImporterTargetSettings();
-            var needsReimport = !settings.enableTranscoding || importer.importAudio;
-            settings.enableTranscoding = true;
-            settings.codec = VideoCodec.H264;
-            settings.bitrateMode = VideoBitrateMode.High;
-            settings.spatialQuality = VideoSpatialQuality.HighSpatialQuality;
-            settings.resizeMode = VideoResizeMode.OriginalSize;
-            importer.SetTargetSettings("Standalone", settings);
-            importer.importAudio = false;
-            if (needsReimport)
-            {
-                importer.SaveAndReimport();
-            }
-
-            return AssetDatabase.LoadAssetAtPath<VideoClip>(LobbyVideoPath);
         }
 
         // 硬件指针要求贴图使用 Cursor 导入类型，否则可能被压缩或带Mipmap而显示异常。

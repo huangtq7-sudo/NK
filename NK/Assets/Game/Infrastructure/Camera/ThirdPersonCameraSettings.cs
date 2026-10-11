@@ -59,6 +59,23 @@ namespace Naraka.Infrastructure.Camera
 
         [SerializeField] private float initialPitch = 15f;
 
+        [Header("进入任务界面的出场效果（镜头 + 色幕）")]
+        [Tooltip("出场镜头起点的俯仰角（度）。越大越从头顶往下看。")]
+        [SerializeField] private float introPitch = 50f;
+
+        [Tooltip("出场镜头起点到轴心的距离（米）。从这里平滑拉回常规距离。")]
+        [SerializeField] private float introDistance = 16f;
+
+        [Tooltip("出场色幕的颜色。")]
+        [SerializeField] private Color introFadeColor = Color.white;
+
+        [Tooltip("出场色幕的起始不透明度（0–1），从它逐渐变成完全透明。")]
+        [Range(0f, 1f)]
+        [SerializeField] private float introFadeStartAlpha = 0.6f;
+
+        [Tooltip("出场色幕从起始不透明度变到完全透明的时长（秒）。")]
+        [SerializeField] private float introFadeSeconds = 1.5f;
+
         public float PivotHeight => pivotHeight;
 
         public float Distance => distance;
@@ -88,5 +105,15 @@ namespace Naraka.Infrastructure.Camera
         public float InitialYaw => initialYaw;
 
         public float InitialPitch => initialPitch;
+
+        public float IntroPitch => introPitch;
+
+        public float IntroDistance => introDistance;
+
+        public Color IntroFadeColor => introFadeColor;
+
+        public float IntroFadeStartAlpha => introFadeStartAlpha;
+
+        public float IntroFadeSeconds => introFadeSeconds;
     }
 }

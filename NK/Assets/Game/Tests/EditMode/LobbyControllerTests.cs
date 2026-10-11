@@ -24,10 +24,14 @@ namespace Naraka.P0.Tests
 
         public Exception FailWith { get; set; }
 
+        /// <summary>最近一次切换收到的取消令牌。</summary>
+        public CancellationToken LastToken { get; private set; }
+
         public UniTask LoadMapAsync(string sceneName, CancellationToken cancellationToken)
         {
             LoadCount++;
             LastSceneName = sceneName;
+            LastToken = cancellationToken;
             if (cancellationToken.IsCancellationRequested)
             {
                 return UniTask.FromCanceled(cancellationToken);
@@ -202,6 +206,31 @@ namespace Naraka.P0.Tests
                 controller.Dispose();
                 gateway.Complete();
 
+                await pending;
+            });
+
+        [UnityTest]
+        public IEnumerator DisposingTheLobbyMidTransitionDoesNotCancelTheTransition() =>
+            UniTask.ToCoroutine(async () =>
+            {
+                // 真实流程：场景激活时 Bootstrap 被卸载，大厅控制器随 Scope 一起 Dispose。
+                // 如果切换挂在大厅的生命周期上，它会在激活途中把自己取消，
+                // 任务界面就收不到"从大厅进入"的到达状态，出场动作、镜头与色幕全部不播。
+                var gateway = new FakeLobbySceneGateway { CompleteImmediately = false };
+                var controller = CreateController(gateway);
+                controller.Enter("player-one", 42);
+
+                var pending = controller.StartGameAsync(CancellationToken.None);
+                Assert.That(gateway.LoadCount, Is.EqualTo(1));
+
+                controller.Dispose();
+
+                Assert.That(gateway.LastToken.IsCancellationRequested, Is.False,
+                    "大厅被卸载不能取消正在进行的场景切换。");
+                Assert.That(gateway.LastToken.CanBeCanceled, Is.False,
+                    "切换的生命周期归持久化的世界流转管，不挂在大厅上。");
+
+                gateway.Complete();
                 await pending;
             });
 

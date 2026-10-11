@@ -45,6 +45,9 @@ namespace Naraka.Features.World.View
 
         public PlayerCharacterView Player => _player;
 
+        /// <summary>本次进入任务界面播放的出场色幕；没有播放或已播完销毁时为 null。</summary>
+        public EntryScreenFade EntryFade { get; private set; }
+
         /// <summary>本场景生成玩家的次数。PlayMode 测试用它断言没有重复玩家。</summary>
         public int SpawnCount { get; private set; }
 
@@ -105,7 +108,6 @@ namespace Naraka.Features.World.View
             }
 
             _player.TeleportTo(position, rotation);
-            _player.SetLoading(false);
             _player.DeathSequenceCompleted -= OnPlayerDeathSequenceCompleted;
             _player.DeathSequenceCompleted += OnPlayerDeathSequenceCompleted;
 
@@ -122,14 +124,41 @@ namespace Naraka.Features.World.View
             var spawnAction = ToSpawnAction(arrival);
             if (spawnAction == ActionState.None)
             {
+                _player.SetLoading(false);
                 return;
             }
 
+            // 加载界面还盖着时角色保持锁定，镜头先停在出场起点（后上方）。
+            // 任务界面（大厅开始游戏进入）与战斗界面（任务界面传送进入）都有出场镜头；
+            // 出场色幕只属于任务界面。
+            _player.SetLoading(true);
             _cameraRig?.SetLookEnabled(false);
-            _player.BeginSpawn(spawnAction);
+            _cameraRig?.HoldIntroStart();
 
             try
             {
+                // 出场动作必须等加载界面真正撤掉之后才开始。原来在场景 Start 里立刻开始，
+                // 新场景头几帧的卡顿与加载界面的最后几帧都会吃掉它 —— 玩家第一眼看到的
+                // 已经是动作的后半段，看起来就是"角色突然出现"。
+                await UniTask.WaitUntil(
+                    () => _player == null || !_world.Current.IsTransitioning,
+                    cancellationToken: _lifetime.Token);
+                if (_player == null)
+                {
+                    return;
+                }
+
+                _player.SetLoading(false);
+                _player.BeginSpawn(spawnAction);
+
+                // 镜头与出场动作同长：镜头落定的那一刻正好交还操作。
+                _cameraRig?.PlayIntro(SpawnSeconds(_player.Tuning, spawnAction));
+
+                if (arrival == WorldArrival.LobbyToMap01)
+                {
+                    PlayEntryFade();
+                }
+
                 // 出场动画期间输入保持锁定；结束后由状态机自己回到 Idle 并解锁。
                 await UniTask.WaitUntil(
                     () => _player == null || _player.State.Action != spawnAction,
@@ -143,6 +172,20 @@ namespace Naraka.Features.World.View
             {
                 _cameraRig?.SetLookEnabled(true);
             }
+        }
+
+        /// <summary>
+        /// 任务界面的出场色幕。在加载界面撤掉的这一刻才出现，不会和加载界面叠在一起。
+        /// 参数与出场镜头一起放在 ThirdPersonCameraSettings 里：放在本组件上会给两个正式场景文件
+        /// 新增序列化字段，而场景归用户管。
+        /// </summary>
+        private void PlayEntryFade()
+        {
+            var settings = _cameraRig != null ? _cameraRig.Settings : null;
+            EntryFade = settings != null
+                ? EntryScreenFade.Play(
+                    settings.IntroFadeColor, settings.IntroFadeStartAlpha, settings.IntroFadeSeconds)
+                : EntryScreenFade.Play(Color.white, 0.6f, 1.5f);
         }
 
         private void OnPlayerDeathSequenceCompleted()
@@ -238,6 +281,11 @@ namespace Naraka.Features.World.View
 
             return fallbackSpawn;
         }
+
+        private static float SpawnSeconds(PlayerTuning tuning, ActionState spawnAction) =>
+            spawnAction == ActionState.SpawnMap01ToMap02
+                ? tuning.Reaction.SpawnMap01ToMap02.RealDurationSeconds
+                : tuning.Reaction.SpawnLobbyToMap01.RealDurationSeconds;
 
         private static ActionState ToSpawnAction(WorldArrival arrival) => arrival switch
         {

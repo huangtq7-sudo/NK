@@ -84,7 +84,9 @@ namespace Naraka.Features.Character.Model
             float comboWindowEnd,
             float forwardDisplacement,
             float displacementClipSeconds,
-            float skillMultiplier)
+            float skillMultiplier,
+            bool pathDash = false,
+            float displacementStartClipSeconds = 0f)
         {
             Playback = playback;
             HitWindowStart = hitWindowStart;
@@ -94,6 +96,8 @@ namespace Naraka.Features.Character.Model
             ForwardDisplacement = forwardDisplacement;
             DisplacementClipSeconds = displacementClipSeconds;
             SkillMultiplier = skillMultiplier;
+            PathDash = pathDash;
+            DisplacementStartClipSeconds = displacementStartClipSeconds < 0f ? 0f : displacementStartClipSeconds;
         }
 
         public ActionPlayback Playback { get; }
@@ -132,6 +136,59 @@ namespace Naraka.Features.Character.Model
         /// </summary>
         public float SkillMultiplier { get; }
 
+        /// <summary>
+        /// 位移是否沿一条预先校验过的路径完成（路径冲刺）。
+        ///
+        /// 为假时位移在 <see cref="DisplacementClipSeconds"/> 内按帧速度铺开，由角色控制器逐帧移动
+        /// （Move_F 就是这样）。为真时不经过按帧速度：<see cref="DisplacementStartClipSeconds"/>
+        /// 之前原地不动，之后按 <see cref="DashProgressAt"/> 给出的进度沿路径前进，
+        /// 到 <see cref="DisplacementClipSeconds"/> 正好走完。路径的撞墙、贴地与悬崖由 View 层
+        /// 在冲刺开始时一次性校验，所以速度再快也不会穿墙或冲下悬崖。
+        /// </summary>
+        public bool PathDash { get; }
+
+        /// <summary>路径冲刺起步的片段时间。此前是原地蓄势。</summary>
+        public float DisplacementStartClipSeconds { get; }
+
+        private float DisplacementWindow =>
+            DisplacementClipSeconds <= 0f || DisplacementClipSeconds > ClipSeconds
+                ? ClipSeconds
+                : DisplacementClipSeconds;
+
+        /// <summary>
+        /// 路径冲刺在某个片段时间点上完成了多少（0 → 1）。
+        ///
+        /// 匀减速收尾（二次缓出）：起步速度是平均速度的两倍，末尾收到零，
+        /// 对应动画里"窜出去、再收住"的观感，同时每一帧都留下一个看得见的位置。
+        /// </summary>
+        public float DashProgressAt(float clipTime)
+        {
+            var end = DisplacementWindow;
+            var span = end - DisplacementStartClipSeconds;
+            if (span <= 0f)
+            {
+                return clipTime >= end ? 1f : 0f;
+            }
+
+            var x = (clipTime - DisplacementStartClipSeconds) / span;
+            if (x <= 0f)
+            {
+                return 0f;
+            }
+
+            if (x >= 1f)
+            {
+                return 1f;
+            }
+
+            return 1f - ((1f - x) * (1f - x));
+        }
+
+        /// <summary>改成在 [<paramref name="startClipSeconds"/>, <paramref name="endClipSeconds"/>] 内的路径冲刺。</summary>
+        public TimedActionTuning WithPathDash(float startClipSeconds, float endClipSeconds) => new TimedActionTuning(
+            Playback, HitWindowStart, HitWindowEnd, ComboWindowStart, ComboWindowEnd,
+            ForwardDisplacement, endClipSeconds, SkillMultiplier, true, startClipSeconds);
+
         public float ClipTimeAt(float realElapsed) => Playback.ClipTimeAt(realElapsed);
 
         public float SpeedAt(float clipTime) => Playback.SpeedAt(clipTime);
@@ -153,14 +210,13 @@ namespace Naraka.Features.Character.Model
         /// </summary>
         public float ForwardSpeedAt(float realElapsed)
         {
-            if (ForwardDisplacement == 0f)
+            // 路径冲刺不经过按帧速度，位置由 View 沿校验过的路径按进度放置。
+            if (ForwardDisplacement == 0f || PathDash)
             {
                 return 0f;
             }
 
-            var window = DisplacementClipSeconds <= 0f || DisplacementClipSeconds > ClipSeconds
-                ? ClipSeconds
-                : DisplacementClipSeconds;
+            var window = DisplacementWindow;
             if (window <= 0f)
             {
                 return 0f;
@@ -230,10 +286,14 @@ namespace Naraka.Features.Character.Model
             float runTurnbackSeconds,
             float runTurnbackInputWindowSeconds,
             float runTurnbackAngleThresholdDegrees,
-            float moveInputDeadzone)
+            float moveInputDeadzone,
+            float speedScale = 1f,
+            float animationScale = -1f)
         {
-            WalkSpeed = walkSpeed;
-            RunSpeed = runSpeed;
+            SpeedScale = speedScale > 0f ? speedScale : 1f;
+            AnimationScale = animationScale > 0f ? animationScale : SpeedScale;
+            WalkSpeed = walkSpeed * SpeedScale;
+            RunSpeed = runSpeed * SpeedScale;
             TurnDegreesPerSecond = turnDegreesPerSecond;
             Gravity = gravity;
             GroundSnapSpeed = groundSnapSpeed;
@@ -247,11 +307,20 @@ namespace Naraka.Features.Character.Model
             MoveInputDeadzone = moveInputDeadzone;
         }
 
-        /// <summary>行走速度。移动是相机相对的，四个方向同速，没有后退速度。</summary>
+        /// <summary>行走速度（已乘 <see cref="SpeedScale"/>）。移动是相机相对的，四个方向同速，没有后退速度。</summary>
         public float WalkSpeed { get; }
 
-        /// <summary>奔跑速度。</summary>
+        /// <summary>奔跑速度（已乘 <see cref="SpeedScale"/>）。</summary>
         public float RunSpeed { get; }
+
+        /// <summary>走 / 跑移动速度的等比例倍率。</summary>
+        public float SpeedScale { get; }
+
+        /// <summary>
+        /// Walk / Run 动画的播放倍率。与移动倍率分开：动画跟着移动倍率一起加速时，
+        /// 用户觉得模型动得太快、不自然，所以动画只加速一部分。不配置时跟随移动倍率。
+        /// </summary>
+        public float AnimationScale { get; }
 
         /// <summary>转向角速度（度/秒）。角色朝着输入方向转，转到位之前沿当前朝向前进。</summary>
         public float TurnDegreesPerSecond { get; }
@@ -393,16 +462,36 @@ namespace Naraka.Features.Character.Model
             float deathSeconds,
             float spawnProtectionSeconds,
             TimedActionTuning spawnLobbyToMap01,
-            TimedActionTuning spawnMap01ToMap02)
+            TimedActionTuning spawnMap01ToMap02,
+            float hitStunLockSeconds = -1f,
+            float hitStunRecoverySpeed = 1f)
         {
             HitStunSeconds = hitStunSeconds;
+            HitStunLockSeconds = hitStunLockSeconds < 0f || hitStunLockSeconds > hitStunSeconds
+                ? hitStunSeconds
+                : hitStunLockSeconds;
+            HitStunRecoverySpeed = hitStunRecoverySpeed > 0f ? hitStunRecoverySpeed : 1f;
             DeathSeconds = deathSeconds;
             SpawnProtectionSeconds = spawnProtectionSeconds;
             SpawnLobbyToMap01 = spawnLobbyToMap01;
             SpawnMap01ToMap02 = spawnMap01ToMap02;
         }
 
+        /// <summary>受击片段长度（片段时间）。由 Rebuild Player Animator 从动画同步。</summary>
         public float HitStunSeconds { get; }
+
+        /// <summary>
+        /// 受击的硬直段（真实时间）：这段时间里锁定输入，动画按原速播放。
+        /// 受击动画的主体反应只占开头一小段，后面是慢慢摇晃回站姿；整段锁住就是"罚站"。
+        /// </summary>
+        public float HitStunLockSeconds { get; }
+
+        /// <summary>硬直段之后剩余受击动画的播放倍率。这一段可以被任何操作打断。</summary>
+        public float HitStunRecoverySpeed { get; }
+
+        /// <summary>不做任何操作时，受击从开始到交还 Idle 的真实时长。</summary>
+        public float HitStunRealSeconds =>
+            HitStunLockSeconds + ((HitStunSeconds - HitStunLockSeconds) / HitStunRecoverySpeed);
 
         public float DeathSeconds { get; }
 
@@ -588,7 +677,13 @@ namespace Naraka.Features.Character.Model
                 runTurnbackSeconds: 1.667f,
                 runTurnbackInputWindowSeconds: 0.25f,
                 runTurnbackAngleThresholdDegrees: 135f,
-                moveInputDeadzone: 0.2f),
+                moveInputDeadzone: 0.2f,
+                // 2026-10-11：用户反馈走跑偏慢，确认等比例提高到 1.3 倍（走 6.5、跑 9.75 米/秒）。
+                // Run_F 自身步速实测 7.18 米/秒，动画同乘 1.3 后约 9.3，与 9.75 仍基本踩实；
+                // Walk_F 自身步速只有 2.47 米/秒，原本就打滑约 2 倍，等比例之后比例不变。
+                speedScale: 1.3f,
+                // 同日实机反馈：动画跟着加速到 1.3 倍显得太快、不自然；移动速度保持，动画只加速到 1.15 倍。
+                animationScale: 1.15f),
             stamina: new StaminaTuning(
                 max: 20f,
                 dashCost: 10f,
@@ -624,16 +719,24 @@ namespace Naraka.Features.Character.Model
                 reservedTier2Seconds: 1.2f),
             skillF: new SkillTuning(
                 cooldownSeconds: 15f,
+                // 2026-10-11：用户反馈 F 太快，确认整体放慢到 75%（主体 1.5 → 1.125、后摇 2.4 → 1.8）。
+                // 真实时长 2.377 → 3.169 秒，命中起点 0.715 → 0.954 秒；片段与窗口（片段时间）不变。
                 action: new TimedActionTuning(
-                    new ActionPlayback(4.6f, 1.5f, 2.4f, 1.840f),
+                    new ActionPlayback(4.6f, 1.125f, 1.8f, 1.840f),
                     1.073f, 1.840f, 4.6f, 4.6f, 0f, 0f, 1.2f),
                 radius: 4f),
             skillV: new SkillTuning(
                 cooldownSeconds: 40f,
-                // V 技能是位移技能：位移在片段前 0.9 秒内完成。
+                // V 技能：原地蓄势，然后看得见轨迹的高速冲刺。
+                // 蓄势时机取自动画根骨骼（片段 0 → 0.333 秒原地，Pre-P4 Skill V Motion Scan 实测）；
+                // 动画自己在两帧内窜出 13 米，照搬就是闪现，所以冲刺时长按用户要求定为 0.2 秒真实时间：
+                // 0.333 + 0.2 × 主体倍率 1.5 = 0.633 秒，恰好也是动画位移收住的时刻。
+                // 远早于命中窗（1.518 秒），伤害落在终点。
                 action: new TimedActionTuning(
                     new ActionPlayback(5.567f, 1.5f, 2.4f, 2.404f),
-                    1.518f, 2.404f, 5.567f, 5.567f, 17.838f, 0.9f, 2.5f),
+                    1.518f, 2.404f, 5.567f, 5.567f, 17.838f, 0.633f, 2.5f,
+                    pathDash: true,
+                    displacementStartClipSeconds: 0.333f),
                 radius: 6f),
             // 2026-10-04：待机动作延迟从 5 秒改为 2.4 秒。
             // 新 idle 片段（`AM_Stand1_Action03`，2.667 秒）烘焙的头发模拟不闭环，
@@ -644,6 +747,11 @@ namespace Naraka.Features.Character.Model
             idle: new IdleTuning(variationDelaySeconds: 2.4f, variationDurationSeconds: 8f),
             reaction: new ReactionTuning(
                 hitStunSeconds: 2.033f,
+                // 2026-10-11：用户反馈受击"罚站"。Behit_B_L 的主体反应在前 0.65 秒（身体角速度 > 380°/s），
+                // 之后是摇晃与回站（Pre-P4 Feel Scan 实测）。硬直只锁前 0.6 秒，
+                // 剩余部分 1.6 倍速播完且可被任何操作打断，不操作时总长 0.6 + 1.433 / 1.6 ≈ 1.50 秒。
+                hitStunLockSeconds: 0.6f,
+                hitStunRecoverySpeed: 1.6f,
                 deathSeconds: 2.5f,
                 spawnProtectionSeconds: 3f,
                 // Burst02：前 2 秒是落地亮相，之后是收招，收招放快。

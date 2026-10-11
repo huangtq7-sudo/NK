@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Naraka.Core.Application.MVC;
 using Naraka.Features.Character.Controller;
 using Naraka.Features.Character.Model;
@@ -39,6 +40,12 @@ namespace Naraka.Features.Character.View
         private IExecutionTargetRegistry _executionTargets;
         private ICombatTargetRegistry _combatTargets;
         private CharacterControllerMotor _motor;
+        private CharacterController _body;
+        private int _obstacleMask;
+
+        // 当前这一次路径冲刺校验好的贴地路径点。冲刺开始时算一次，之后每帧按进度插值。
+        private readonly List<Vector3> _dashPath = new List<Vector3>();
+        private bool _dashActive;
         private IDisposable _subscription;
         private PlayerPresentationState _state;
 
@@ -85,6 +92,8 @@ namespace Naraka.Features.Character.View
         private void Awake()
         {
             _motor = GetComponent<CharacterControllerMotor>();
+            _body = GetComponent<CharacterController>();
+            _obstacleMask = DashPathResolver.ObstacleMaskFor(gameObject.layer);
             if (animatorProjector == null)
             {
                 animatorProjector = GetComponentInChildren<PlayerAnimatorProjector>();
@@ -142,6 +151,8 @@ namespace Naraka.Features.Character.View
 
             _motor.Apply(
                 output.TurnDegrees, output.ForwardSpeed, _controller.Tuning.Locomotion, deltaSeconds);
+            ApplyPathDash(output.DashDistance, output.DashProgress);
+
             animatorProjector?.Apply(output.Animation, output.AnimationRestarted, output.AnimationSpeed);
 
             if (hitbox != null)
@@ -184,6 +195,40 @@ namespace Naraka.Features.Character.View
             }
 
             return _executionTargets.TryFindExecutable(transform.position, executeSearchRadius, out _);
+        }
+
+        /// <summary>
+        /// V 的路径冲刺：冲刺开始那一帧沿朝向校验整条路径（撞墙停在墙前、悬崖边不冲下去、
+        /// 贴合地形、怪物不挡路），之后每帧按 Model 给出的进度沿这条路径放置角色。
+        /// 位置每帧都更新，所以冲得再快也看得见轨迹；镜头按常规阻尼跟随，略带拖尾。
+        /// 冲刺被打断（距离回到 0）时停在当时的位置，那里本来就在校验过的路径上。
+        /// </summary>
+        private void ApplyPathDash(float distance, float progress)
+        {
+            if (distance <= 0f || _body == null)
+            {
+                _dashActive = false;
+                return;
+            }
+
+            if (!_dashActive)
+            {
+                DashPathResolver.ResolvePath(_body, transform.forward, distance, _obstacleMask, _dashPath);
+                _dashActive = true;
+            }
+
+            var point = DashPathResolver.PointAlong(_dashPath, progress);
+            if ((point - transform.position).sqrMagnitude > 1e-8f)
+            {
+                // 不用 CharacterController.Move：它会被怪物挡住，而冲刺要穿过怪物。
+                // 路径已经校验过不穿墙、不陷地，直接放置是安全的。
+                _motor.Teleport(point, transform.rotation);
+            }
+
+            if (progress >= 1f)
+            {
+                _dashActive = false;
+            }
         }
 
         /// <summary>把角色放到出生点。CharacterController 必须先停用再改位置。</summary>
