@@ -40,7 +40,12 @@
     "Game.Features.Monster.Controller",
     "Game.Features.CombatHud.Controller",
     "Game.Features.Expedition.Model",
-    "Game.Features.Expedition.Controller"
+    "Game.Features.Expedition.Controller",
+    "Game.Features.Quest.Model",
+    "Game.Features.Quest.Controller",
+    "Game.Features.Dialogue.Model",
+    "Game.Features.Dialogue.Controller",
+    "Game.Features.Dialogue.View"
   ],
   "includePlatforms": [
     "Editor"

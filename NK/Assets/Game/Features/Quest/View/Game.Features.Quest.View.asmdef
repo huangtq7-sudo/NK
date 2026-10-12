@@ -1,0 +1,21 @@
+{
+  "name": "Game.Features.Quest.View",
+  "rootNamespace": "Naraka.Features.Quest.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Character.View",
+    "Game.Features.Quest.Controller",
+    "Game.Features.Quest.Model",
+    "Game.Infrastructure.Camera",
+    "Unity.InputSystem",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

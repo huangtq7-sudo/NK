@@ -1,0 +1,13 @@
+{
+  "name": "Game.Features.Quest.Model",
+  "rootNamespace": "Naraka.Features.Quest.Model",
+  "references": [
+    "Game.Core.Domain"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

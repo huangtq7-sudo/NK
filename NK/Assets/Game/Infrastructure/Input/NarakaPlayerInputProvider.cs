@@ -1,5 +1,6 @@
 using Naraka.Features.Character.Controller;
 using Naraka.Features.Character.Model;
+using Naraka.Features.Quest.Controller;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -13,10 +14,13 @@ namespace Naraka.Infrastructure.Input
     /// 调试动作表只在编辑器与开发构建中启用，正式发布不会激活它。
     /// </summary>
     [DefaultExecutionOrder(-500)]
-    public sealed class NarakaPlayerInputProvider : MonoBehaviour, IPlayerInputSource
+    public sealed class NarakaPlayerInputProvider : MonoBehaviour, IPlayerInputSource, IInteractInputSource
     {
         public const string PlayerMapName = "Player";
         public const string DebugMapName = "Debug";
+
+        /// <summary>P4.1 NPC 交互动作名。由用户在输入资产的 Player 表中手工添加（建议绑定 E）。</summary>
+        public const string InteractActionName = "Interact";
 
         [SerializeField] private InputActionAsset actions;
 
@@ -30,6 +34,7 @@ namespace Naraka.Infrastructure.Input
         private InputAction _skillF;
         private InputAction _skillV;
         private InputAction _counter;
+        private InputAction _interact;
         private InputAction _debugHit;
         private InputAction _debugDeath;
         private InputAction _debugRevive;
@@ -46,6 +51,13 @@ namespace Naraka.Infrastructure.Input
         public bool DebugDeathPressed => _debugDeath != null && _debugDeath.WasPressedThisFrame();
 
         public bool DebugRevivePressed => _debugRevive != null && _debugRevive.WasPressedThisFrame();
+
+        /// <summary>
+        /// 本帧是否按下交互键。它不进入 <see cref="PlayerInputFrame"/>：交互只产生对话意图，与角色状态机无关。
+        /// Player 表被输入锁关闭时（对话、加载、出场）恒为 false。
+        /// </summary>
+        public bool InteractPressed =>
+            _interact != null && _playerMap != null && _playerMap.enabled && _interact.WasPressedThisFrame();
 
         private void Awake()
         {
@@ -170,6 +182,14 @@ namespace Naraka.Infrastructure.Input
             {
                 Debug.LogError($"'{PlayerMapName}' Action Map 缺少必需的 Action。", this);
                 return;
+            }
+
+            // 交互动作是 P4.1 新增的可选项：缺失时只报一次警告，已验收的移动与战斗输入照常工作。
+            _interact = _playerMap.FindAction(InteractActionName, throwIfNotFound: false);
+            if (_interact == null)
+            {
+                Debug.LogWarning(
+                    $"'{PlayerMapName}' Action Map 尚未添加 '{InteractActionName}' 动作，NPC 交互暂不可用。", this);
             }
 
             if (_debugMap != null)

@@ -1,0 +1,18 @@
+{
+  "name": "Game.Features.Dialogue.View",
+  "rootNamespace": "Naraka.Features.Dialogue.View",
+  "references": [
+    "Game.Core.Application",
+    "Game.Features.Dialogue.Controller",
+    "Game.Features.Dialogue.Model",
+    "Unity.InputSystem",
+    "Unity.TextMeshPro",
+    "VContainer"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

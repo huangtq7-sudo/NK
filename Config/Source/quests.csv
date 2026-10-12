@@ -1,0 +1,2 @@
+﻿QuestId,Category,Chapter,SortOrder,DisplayName,Summary,GiverNpcId,SubmitNpcId,OfferDialogueId,InProgressDialogueId,RewardPendingDialogueId,SubmitDialogueId,PrerequisiteQuestId,MinAccountLevel,RepeatRule,SubmitMinSeconds,IsActive
+main_c1_01,Main,1,1010,入世·问路,向守关人沈霜迟问路，再按其指点前往林边药庐拜访陆云笙。,npc_shuangchi,npc_shuangchi,dlg_c1_01_offer,dlg_c1_01_inprogress,dlg_c1_01_pending,dlg_c1_01_submit,,1,None,3,1

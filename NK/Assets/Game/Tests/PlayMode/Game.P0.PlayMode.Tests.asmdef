@@ -34,7 +34,12 @@
     "Game.Features.CombatHud.Controller",
     "Game.Features.CombatHud.View",
     "Game.Features.AI.Model",
-    "Game.Core.Domain"
+    "Game.Core.Domain",
+    "Game.Features.Quest.Controller",
+    "Game.Features.Quest.View",
+    "Game.Features.Dialogue.Controller",
+    "Game.Features.Dialogue.View",
+    "UnityEngine.UI"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

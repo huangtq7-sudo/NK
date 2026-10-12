@@ -1,8 +1,8 @@
 # 《NARAKA》开发进度与续聊入口
 
-版本：1.36
-更新日期：2026-10-11
-当前阶段：P0至P3已关闭；P4前置修复及Claude追加修改已由用户全部人工验收通过，用户已授权只读清点、Git保存并启动P4。当前P4.0设计交接，P4业务内容尚未实现；不擅自修改已验收代码。P3代码、自动化、本机验收、正式发布包、云端部署、部署后资源复查与用户真实云端Unity验收均已完成。2026-10-07用户接受P2当前性能并终止逐项人工验收，该决定不伪造严格性能门禁数据或降低既定预算。
+版本：1.39
+更新日期：2026-10-12
+当前阶段：P0至P3已关闭；P4前置修复及Claude追加修改已由用户全部人工验收通过。P4.0设计已交付并获批；P4.1（两名NPC、底部对话、首条主线闭环）代码、自动化、本机真实MySQL与真实Host链路已完成，NPC导入与Map01装配经用户授权由Claude完成，2026-10-12用户人工验收通过并确认素材许可，已Git保存（未推送）；不擅自修改已验收代码。P3代码、自动化、本机验收、正式发布包、云端部署、部署后资源复查与用户真实云端Unity验收均已完成。2026-10-07用户接受P2当前性能并终止逐项人工验收，该决定不伪造严格性能门禁数据或降低既定预算。
 
 ## 1. 当前状态
 
@@ -1722,6 +1722,24 @@ Unity 实现用 `UniTask.NextFrame`（刻意不用 `Delay`，计时器在主线�
 - 两份NPC和宠物来源在磁盘上实际为`.unitypackage`；两个武器目录与FBX存在，仅做路径核对，未导入/检验包内动画、骨骼、贴图或许可。详细路径与手工装配边界见任务书。
 - 2026-10-10该轮仅修改需求/规范/交接文档，未改代码/资产/云端或提交；2026-10-11新增的Claude功能及用户场景/配置变更现在按P4.R验收归档。NPC/A*/地图/HUD/宠物/武器新增内容仍未实现，不能以“前置已验收”关闭整个P4。
 
+#### P4.0设计与P4.1 NPC/对话/主线闭环：已验收
+
+- 2026-10-11 Claude交付P4.0只读设计（能力清点、任务/对话MVC、信任边界、配置/迁移草案、测试与手工步骤）；用户允许保存文档并“批准实施”，按推荐项实施：读完接取对话最后一句才接取、领取面板手动领取、背包满保持待领取、Interact动作由用户添加、首批NPC/对白/奖励草案采用。设计记录见`Docs/P4/P4.0-content-and-trust-design.md`，信任边界见ADR-0023（已接受），战斗事实方案见ADR-0024（Proposed，未授权实现）。
+- 配置：新增`npcs/quests/quest_objectives/quest_rewards/dialogues/dialogue_lines`六张UTF-8 BOM源表，`SchemaVersion`1.1.0→1.2.0（编译器、服务端、客户端三处常量同步），生成配置`p1-config-64133aeb886f`；`QuestContentValidator`校验外键、对话归属、行号连续、成环、仅允许已实现的Talk目标启用、奖励合法与经验总量。
+- 服务端：纯领域`QuestLog`/`QuestInstance`；`QuestService`（配置核对、活动远征、服务端时间最短时长、每账号读写限流）；`SqlSugarQuestRepository`一次事务内落地状态、领取记录（Quest种类）、物品、`QuestReward`货币流水、`account_xp`与新`account_xp_ledger`、大厅`account_level`与幂等记录；加锁顺序与远征结算一致。追加迁移`0011_p4_quests.sql`（3表，总36表），迁移器清单同步；应用消息`MsgQuestRequest=67`/`MsgQuestResponse=68`与能力`quest`，请求无账号/奖励/数量/经验字段。新增自清理`Naraka.Server.QuestSmoke`（未运行）。
+- Unity：`Quest.Model/Controller`（`QuestController`在AppRoot，日志只来自服务端，传输失败复用RequestId）、`Dialogue.Model/Controller/View`（`DialogueSession`一次点击只做一件事，TMP`maxVisibleCharacters`逐字）、地图Scope的`NpcInteractionController`、`PlayerGameplayInputLock`（复用既有`SetInputLocked`，关闭对话等左键松开才归还，不改timeScale）、`QuestWorldEntryPoint`，View：`NpcInteractionVolume`、`InteractPromptView`、`QuestTrackerView`、`QuestRewardPanelView`、`DialogueBoxView`。`NarakaPlayerInputProvider`只追加可选`Interact`读取；未修改PlayerCore/PlayerTuning/镜头/加载/场景/Prefab/输入资产。
+- 既有测试唯一改动：`LobbyEntryAcceptanceTests`能力登记数13→14（新增quest），迁移器契约33→36表、10→11版本；另加0010哈希锁。
+- 实测（2026-10-11）：配置编译器35/35、`--check`通过；服务端CI脚本Release 0警告0错误，444/444（含任务领域/应用22项、迁移契约6项、协议4项与真实加密Socket全链及重登2项）；迁移dry-run 0011为4语句；Unity预热0编译错误，EditMode 620总/619通过/1环境跳过/0失败（新增35项全部通过），PlayMode 54总/52通过/2诊断记录器按设计跳过/0失败；二进制完好性770个二进制0异常。日志：`artifacts/ci/server`、`artifacts/ci/unity-p41b`。
+- 未验证（2026-10-11时点）：本机真实MySQL、真实Host+Unity端到端、NPC导入与装配；2026-10-12已补，见下条。
+- 2026-10-12用户授权本机开发库执行0011与`QuestSmoke`，并授权Claude代为完成原手工装配：
+  - 本机MySQL 5.7.26：迁移0001–0011首次与重复执行均通过，36表/11版本核验；`QuestSmoke`首次运行暴露并发领取死锁（对不存在的幂等行加锁读产生间隙锁，两条领取随后插入同一间隙），修复为“先锁账号货币行/资料行，再在锁内普通读幂等记录”并对1213/1205整体重试一次；修复后连续5次通过（接取→对话→提交→两个不同RequestId并发领取恰好一次成功→同ID重放→新实例恢复→经验/等级/货币流水/经验流水/领取记录/幂等记录各一份），`ExpeditionSmoke`回归通过，测试账号均自清理。
+  - 素材：`Tools/import_combat_girls_npcs.py`按包字节数与SHA-256白名单导入21个文件（70.7 MiB，LFS），保留第三方GUID，与工程GUID零冲突；排除脚本、编辑器工具、演示UI/重复TMP着色器、Magica Cloth演示Prefab、包内Standard材质与非Idle动画。模型与Idle为Copy From Other Avatar，Avatar来源`Humanoid_Bot/Models/Humanoid_F.fbx`一并导入。
+  - 装配：`NARAKA/P4.1/Assemble NPCs And Quest HUD Into Map01`生成项目自有URP材质、单状态Idle控制器、`NPC_ShenShuangchi`/`NPC_LuYunsheng` Prefab（缩放到3.8、交互球半径3.5、实体胶囊、头顶标记），Map01放置沈霜迟(391.55,34.99,597.67)与陆云笙(423.47,34.99,573.55)（相距40米）及`P41_QuestHud`；Map01差异只增不删（2164行）。输入资产Player表新增`Interact`（E）。工程无中文TMP字体，任务界面改用内置动态字体`Text`（系统字体回退），未分发任何字体文件。EventSystem不保存进正式场景（P2.3派生工具会移除，保持其幂等），由领取面板运行时补建。
+  - 截图：`artifacts/p41/npc-npc_shuangchi.png`、`npc-npc_yunsheng.png`、`dialogue-hud.png`（材质非粉、Idle姿态、中文与逐字占位正常）。
+  - 实测：服务端CI 445/445、Release 0警告0错误；配置编译器36/36与`--check`；Unity EditMode 621总/619通过/2按环境跳过/0失败；PlayMode 56总/54通过/2诊断记录器按设计跳过/0失败（新增正式Map01装配与E键对话/输入锁/释放两项）。装配首轮被既有守卫拦下两处并已修正：隐藏变体留有空材质槽（改为移除）、场景内EventSystem破坏P2.3工具幂等（改为运行时补建）；PlayMode发现传送/重生不触发OnTriggerExit导致提示残留，交互范围改为超出半径1米即视为离开。
+  - 真实链路：隔离端口Host（127.0.0.1:18013/15224，`--no-launch-profile`；首次启动曾因launchSettings短暂监听localhost:5222，当时该端口空闲，已立即停止并改用隔离启动）+本机MySQL，Unity客户端`LegacyNetworkAdapter`完成注册→开始远征→日志→接取→过早对话被拒→对话→提交→领取（经验100、等级2）→同ID重放→换ID拒绝→断线重连恢复已领取；测试账号经`QuestSmoke --cleanup`删除，Host已停止，5222/8011/18013/15224均无监听。
+  - 2026-10-12用户人工验收通过，并确认CombatGirls素材许可可进入仓库（Q-035关闭）；按授权在`codex/p3-expedition-loop`本地提交，未推送、未合并main、未部署云端。云端、已部署迁移0001–0010与LegacyNetworkV1传输未改动。P4.2未开始，需另行批准。
+
 退出条件：所有内容可由配置驱动，并在已绑定的正式地图中完整跑通；灰盒场景只用于开发回退，不改变ADR-0020的正式运行路径。
 
 ### P5 联网展示与热更新：未开始
@@ -1746,6 +1764,7 @@ P0至P3已验收关闭，当前交接顺序：
 2. P3云端资源复查与用户Unity闭环已通过，最终记录见`Docs/Deployment/p3-cloud-batched-release-checklist.md`。
    归档提交`7a94b5d`已按用户授权推送P3分支并核对远端一致，未合并main。
    2026-10-11用户确认Claude前置与追加修改全部人工验收通过，授权清点后Git保存并启动P4。交`Docs/AI/CLAUDE_P4_START_BRIEF.md`和完整版任务书，从P4.0设计交付开始；不重做修复、不改已验收功能。具体P4.1方案与对白/奖励经批准后再实施，每批完成暂停。
+   2026-10-12 P4.1已由用户验收并本地提交（未推送）；下一步P4.2需用户另行批准。
 3. 用户已明确选择保持GitHub仓库公开；仓库可见性不再作为当前阻塞项。第三方正式狼原始FBX/贴图的公开再分发风险仍记录在Q-007，后续新增外部素材必须继续核对授权范围。
 
 ## 5. 新对话续接提示词

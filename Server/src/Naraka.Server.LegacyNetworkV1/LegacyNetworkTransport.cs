@@ -9,6 +9,7 @@ using Naraka.Server.Application.Forge;
 using Naraka.Server.Application.Gacha;
 using Naraka.Server.Application.Inventory;
 using Naraka.Server.Application.Progression;
+using Naraka.Server.Application.Quests;
 using Naraka.Server.Application.Shop;
 using Naraka.Server.Application.Social;
 using Naraka.Server.Application.Sessions;
@@ -38,7 +39,8 @@ public sealed class LegacyNetworkTransport(
     RedDotService redDots,
     SocialService socials,
     ILegacyTransportDiagnostics? diagnostics = null,
-    ExpeditionService? expeditions = null) : ILegacyNetworkTransport
+    ExpeditionService? expeditions = null,
+    QuestService? quests = null) : ILegacyNetworkTransport
 {
     public const string PublicHandshakeKey = "abc123";
     public const int LegacyClientHeartbeatIntervalSeconds = 300;
@@ -359,6 +361,10 @@ public sealed class LegacyNetworkTransport(
 
             case LegacyMsgExpeditionRequest expeditionRequest:
                 HandleExpedition(client, expeditionRequest, key, cancellationToken);
+                break;
+
+            case LegacyMsgQuestRequest questRequest:
+                HandleQuest(client, questRequest, key, cancellationToken);
                 break;
 
             default:
@@ -1525,6 +1531,97 @@ public sealed class LegacyNetworkTransport(
         response.Death = result.Death is null ? null : ToWireDeath(result.Death);
         response.Settlement = result.Settlement is null ? null : ToWireSettlement(result.Settlement);
         Send(client, response, key);
+    }
+
+    private void HandleQuest(
+        LegacyClientConnection client,
+        LegacyMsgQuestRequest request,
+        string key,
+        CancellationToken cancellationToken)
+    {
+        var response = new LegacyMsgQuestResponse
+        {
+            RequestId = request.RequestId,
+            Operation = request.Operation
+        };
+        if (!TryResolveAccount(client, request.RequestId, out var accountId, out var failure))
+        {
+            response.Status = failure;
+            Send(client, response, key);
+            return;
+        }
+
+        if (quests is null)
+        {
+            response.Status = LegacyLobbyOperationStatus.InternalError;
+            Send(client, response, key);
+            return;
+        }
+
+        var result = (request.Operation switch
+        {
+            LegacyQuestOperation.GetJournal => quests.GetJournalAsync(accountId, cancellationToken),
+            LegacyQuestOperation.Accept => quests.AcceptAsync(
+                accountId, request.RequestId, request.QuestId, request.DialogueId, cancellationToken),
+            LegacyQuestOperation.CompleteDialogue => quests.CompleteDialogueAsync(
+                accountId, request.RequestId, request.QuestId, request.ObjectiveId, request.DialogueId,
+                cancellationToken),
+            LegacyQuestOperation.Submit => quests.SubmitAsync(
+                accountId, request.RequestId, request.QuestId, request.DialogueId, cancellationToken),
+            LegacyQuestOperation.Claim => quests.ClaimAsync(
+                accountId, request.RequestId, request.QuestId, cancellationToken),
+            _ => Task.FromResult(QuestResult.Failed(LobbyOperationStatus.InvalidRequest))
+        }).GetAwaiter().GetResult();
+
+        response.Status = ToWireStatus(result.Status);
+        response.IsReplay = result.IsReplay;
+        response.Journal = result.Journal is null ? null : ToWireJournal(result.Journal);
+        response.Claim = result.Claim is null ? null : ToWireClaim(result.Claim);
+        Send(client, response, key);
+    }
+
+    private static LegacyQuestJournal ToWireJournal(QuestJournalView journal)
+    {
+        var wire = new LegacyQuestJournal
+        {
+            AccountXp = journal.AccountXp,
+            AccountLevel = journal.AccountLevel
+        };
+        wire.AvailableQuestIds.AddRange(journal.AvailableQuestIds);
+        foreach (var quest in journal.Quests)
+        {
+            var entry = new LegacyQuestEntry
+            {
+                QuestId = quest.QuestId,
+                Status = (LegacyQuestStatus)(int)quest.Status
+            };
+            entry.Objectives.AddRange(quest.Objectives.Select(objective => new LegacyQuestObjective
+            {
+                ObjectiveId = objective.ObjectiveId,
+                Progress = objective.Progress,
+                TargetCount = objective.TargetCount,
+                IsCompleted = objective.IsCompleted
+            }));
+            wire.Quests.Add(entry);
+        }
+
+        return wire;
+    }
+
+    private static LegacyQuestClaim ToWireClaim(QuestClaimSummary claim)
+    {
+        var wire = new LegacyQuestClaim
+        {
+            QuestId = claim.QuestId,
+            AccountXpAfter = claim.AccountXpAfter
+        };
+        wire.Rewards.AddRange(claim.Rewards.Select(reward => new LegacyQuestReward
+        {
+            Kind = reward.Kind,
+            RewardId = reward.RewardId,
+            Amount = reward.Amount
+        }));
+        return wire;
     }
 
     private static LegacyExpeditionSnapshot ToWireSnapshot(ExpeditionSnapshot snapshot)

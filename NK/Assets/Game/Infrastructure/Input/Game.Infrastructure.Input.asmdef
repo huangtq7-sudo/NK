@@ -5,6 +5,7 @@
     "Game.Core.Application",
     "Game.Features.Character.Controller",
     "Game.Features.Character.Model",
+    "Game.Features.Quest.Controller",
     "Unity.InputSystem"
   ],
   "autoReferenced": true,

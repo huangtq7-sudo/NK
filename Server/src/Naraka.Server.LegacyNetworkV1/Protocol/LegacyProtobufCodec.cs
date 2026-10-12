@@ -59,7 +59,9 @@ public static class LegacyProtobufCodec
             [ApplicationProtocolCatalog.LobbyChatRequest] =
                 typeof(LegacyMsgLobbyChatRequest),
             [ApplicationProtocolCatalog.ExpeditionRequest] =
-                typeof(LegacyMsgExpeditionRequest)
+                typeof(LegacyMsgExpeditionRequest),
+            [ApplicationProtocolCatalog.QuestRequest] =
+                typeof(LegacyMsgQuestRequest)
         };
 
     /// <summary>
@@ -116,7 +118,9 @@ public static class LegacyProtobufCodec
             [ApplicationProtocolCatalog.LobbyChatResponse] =
                 typeof(LegacyMsgLobbyChatResponse),
             [ApplicationProtocolCatalog.ExpeditionResponse] =
-                typeof(LegacyMsgExpeditionResponse)
+                typeof(LegacyMsgExpeditionResponse),
+            [ApplicationProtocolCatalog.QuestResponse] =
+                typeof(LegacyMsgQuestResponse)
         };
 
     public static byte[] Serialize(LegacyMessage message)

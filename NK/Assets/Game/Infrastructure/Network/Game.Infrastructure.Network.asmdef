@@ -19,7 +19,9 @@
     "Game.Features.RedDot.Controller",
     "Game.Features.Social.Controller",
     "Game.Features.Expedition.Controller",
-    "Game.Features.Expedition.Model"
+    "Game.Features.Expedition.Model",
+    "Game.Features.Quest.Controller",
+    "Game.Features.Quest.Model"
   ],
   "autoReferenced": true,
   "overrideReferences": false,

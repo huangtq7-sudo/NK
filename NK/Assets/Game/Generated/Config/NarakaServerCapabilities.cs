@@ -59,6 +59,9 @@ namespace Naraka.Config
         /// <summary>P3远征开始、活动快照、死亡清理与幂等结算。</summary>
         public const string Expedition = "expedition";
 
+        /// <summary>P4任务日志、接取、对话目标、提交与奖励领取。</summary>
+        public const string Quest = "quest";
+
         /// <summary>
         /// 旧云端（只部署到 P1.1-A）没有返回能力字段时客户端使用的兼容集合。
         /// 只包含旧云端确实实现过的协议，因此登录、进入大厅与账号概要仍然可用，
@@ -84,7 +87,8 @@ namespace Naraka.Config
             Achievement,
             Social,
             RedDot,
-            Expedition
+            Expedition,
+            Quest
         };
 
         /// <summary>
@@ -108,7 +112,8 @@ namespace Naraka.Config
             Achievement,
             Social,
             RedDot,
-            Expedition
+            Expedition,
+            Quest
         };
 
         public static bool Contains(string[] capabilities, string capability)

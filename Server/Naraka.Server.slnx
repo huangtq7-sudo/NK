@@ -16,6 +16,7 @@
     <Project Path="tools/Naraka.Server.AccountSmoke/Naraka.Server.AccountSmoke.csproj" />
     <Project Path="tools/Naraka.Server.DatabaseMigrator/Naraka.Server.DatabaseMigrator.csproj" />
     <Project Path="tools/Naraka.Server.ExpeditionSmoke/Naraka.Server.ExpeditionSmoke.csproj" />
+    <Project Path="tools/Naraka.Server.QuestSmoke/Naraka.Server.QuestSmoke.csproj" />
     <Project Path="../Tools/Config/Naraka.ConfigCompiler/Naraka.ConfigCompiler.csproj" />
     <Project Path="../Tools/Config/Naraka.ConfigCompiler.Tests/Naraka.ConfigCompiler.Tests.csproj" />
   </Folder>

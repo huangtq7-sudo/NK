@@ -98,7 +98,8 @@ namespace Naraka.P0.Tests
                 lobby.CloseFeature();
             }
 
-            Assert.That(NarakaServerCapabilities.Full.Length, Is.EqualTo(13));
+            // 13 项 P1–P3 能力 + P4.1 的 quest。任务不是大厅入口，它在地图里由交互控制器自行门控。
+            Assert.That(NarakaServerCapabilities.Full.Length, Is.EqualTo(14));
         }
 
         [Test]

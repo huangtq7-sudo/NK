@@ -1,6 +1,6 @@
 {
-  "SchemaVersion": "1.1.0",
-  "ConfigVersion": "p1-config-45539ed9c3ac",
+  "SchemaVersion": "1.2.0",
+  "ConfigVersion": "p1-config-64133aeb886f",
   "Currencies": [
     {
       "CurrencyId": "Copper",
@@ -2874,6 +2874,291 @@
       "RecoverySeconds": 0.9,
       "RecentUseSuppressionSeconds": 6,
       "Description": "红色锥形吐息。不可反击；生命高于一半时不会释放。红色预警先于伤害窗口。"
+    }
+  ],
+  "Npcs": [
+    {
+      "NpcId": "npc_shuangchi",
+      "DisplayName": "沈霜迟",
+      "Title": "守关人",
+      "MapId": "Map01",
+      "SortOrder": 1,
+      "PresentationKey": "npc_combat_girl_katana",
+      "IdleDialogueId": "dlg_shuangchi_idle",
+      "Description": "镇守地图一传送门的守关人，持太刀。"
+    },
+    {
+      "NpcId": "npc_yunsheng",
+      "DisplayName": "陆云笙",
+      "Title": "药庐引路人",
+      "MapId": "Map01",
+      "SortOrder": 2,
+      "PresentationKey": "npc_combat_girl_sword",
+      "IdleDialogueId": "dlg_yunsheng_idle",
+      "Description": "林边药庐的引路人，持剑。"
+    }
+  ],
+  "Quests": [
+    {
+      "QuestId": "main_c1_01",
+      "Category": "Main",
+      "Chapter": 1,
+      "SortOrder": 1010,
+      "DisplayName": "入世·问路",
+      "Summary": "向守关人沈霜迟问路，再按其指点前往林边药庐拜访陆云笙。",
+      "GiverNpcId": "npc_shuangchi",
+      "SubmitNpcId": "npc_shuangchi",
+      "OfferDialogueId": "dlg_c1_01_offer",
+      "InProgressDialogueId": "dlg_c1_01_inprogress",
+      "RewardPendingDialogueId": "dlg_c1_01_pending",
+      "SubmitDialogueId": "dlg_c1_01_submit",
+      "PrerequisiteQuestId": "",
+      "MinAccountLevel": 1,
+      "RepeatRule": "None",
+      "SubmitMinSeconds": 3,
+      "IsActive": true
+    }
+  ],
+  "QuestObjectives": [
+    {
+      "ObjectiveId": "main_c1_01_o1",
+      "QuestId": "main_c1_01",
+      "Order": 1,
+      "ObjectiveType": "Talk",
+      "Description": "前往林边药庐，与陆云笙交谈。",
+      "TargetNpcId": "npc_yunsheng",
+      "TargetDialogueId": "dlg_c1_01_yunsheng",
+      "TargetCount": 1,
+      "MinCompletionSeconds": 3,
+      "IsActive": true
+    }
+  ],
+  "QuestRewards": [
+    {
+      "QuestId": "main_c1_01",
+      "RewardIndex": 1,
+      "RewardKind": "AccountXp",
+      "ItemId": "",
+      "CurrencyId": "",
+      "Amount": 100
+    },
+    {
+      "QuestId": "main_c1_01",
+      "RewardIndex": 2,
+      "RewardKind": "Currency",
+      "ItemId": "",
+      "CurrencyId": "Copper",
+      "Amount": 300
+    },
+    {
+      "QuestId": "main_c1_01",
+      "RewardIndex": 3,
+      "RewardKind": "Item",
+      "ItemId": "consumable_blood_pack",
+      "CurrencyId": "",
+      "Amount": 2
+    }
+  ],
+  "Dialogues": [
+    {
+      "DialogueId": "dlg_c1_01_inprogress",
+      "NpcId": "npc_shuangchi",
+      "Purpose": "InProgress",
+      "QuestId": "main_c1_01"
+    },
+    {
+      "DialogueId": "dlg_c1_01_offer",
+      "NpcId": "npc_shuangchi",
+      "Purpose": "Offer",
+      "QuestId": "main_c1_01"
+    },
+    {
+      "DialogueId": "dlg_c1_01_pending",
+      "NpcId": "npc_shuangchi",
+      "Purpose": "RewardPending",
+      "QuestId": "main_c1_01"
+    },
+    {
+      "DialogueId": "dlg_c1_01_submit",
+      "NpcId": "npc_shuangchi",
+      "Purpose": "Submit",
+      "QuestId": "main_c1_01"
+    },
+    {
+      "DialogueId": "dlg_c1_01_yunsheng",
+      "NpcId": "npc_yunsheng",
+      "Purpose": "Objective",
+      "QuestId": "main_c1_01"
+    },
+    {
+      "DialogueId": "dlg_shuangchi_idle",
+      "NpcId": "npc_shuangchi",
+      "Purpose": "Idle",
+      "QuestId": ""
+    },
+    {
+      "DialogueId": "dlg_yunsheng_idle",
+      "NpcId": "npc_yunsheng",
+      "Purpose": "Idle",
+      "QuestId": ""
+    }
+  ],
+  "DialogueLines": [
+    {
+      "DialogueId": "dlg_c1_01_inprogress",
+      "LineIndex": 1,
+      "Speaker": "Npc",
+      "Text": "还没见到云笙？她在林边药庐。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_inprogress",
+      "LineIndex": 2,
+      "Speaker": "Player",
+      "Text": "这就去。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_offer",
+      "LineIndex": 1,
+      "Speaker": "Npc",
+      "Text": "站住。此门之后妖氛弥漫，来者何人？"
+    },
+    {
+      "DialogueId": "dlg_c1_01_offer",
+      "LineIndex": 2,
+      "Speaker": "Player",
+      "Text": "初来此地，听闻门后妖物作乱，想去看看。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_offer",
+      "LineIndex": 3,
+      "Speaker": "Npc",
+      "Text": "口气不小。没有通行剑符，我不会放你过去。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_offer",
+      "LineIndex": 4,
+      "Speaker": "Player",
+      "Text": "剑符去哪里求？"
+    },
+    {
+      "DialogueId": "dlg_c1_01_offer",
+      "LineIndex": 5,
+      "Speaker": "Npc",
+      "Text": "林边药庐，找陆云笙。问过她，再回来见我。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_offer",
+      "LineIndex": 6,
+      "Speaker": "Player",
+      "Text": "好，我这就去。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_pending",
+      "LineIndex": 1,
+      "Speaker": "Npc",
+      "Text": "东西还没拿？收好再走。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_pending",
+      "LineIndex": 2,
+      "Speaker": "Player",
+      "Text": "好。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_submit",
+      "LineIndex": 1,
+      "Speaker": "Npc",
+      "Text": "回来了。云笙怎么说？"
+    },
+    {
+      "DialogueId": "dlg_c1_01_submit",
+      "LineIndex": 2,
+      "Speaker": "Player",
+      "Text": "见红光便躲，见金光便反击。还让我转告：这一位，她看过了。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_submit",
+      "LineIndex": 3,
+      "Speaker": "Npc",
+      "Text": "……她倒难得松口。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_submit",
+      "LineIndex": 4,
+      "Speaker": "Player",
+      "Text": "那这道门？"
+    },
+    {
+      "DialogueId": "dlg_c1_01_submit",
+      "LineIndex": 5,
+      "Speaker": "Npc",
+      "Text": "门一直开着，拦你的只有你自己。拿着这些，活着回来。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_yunsheng",
+      "LineIndex": 1,
+      "Speaker": "Npc",
+      "Text": "霜迟让你来的？那人向来嘴硬心软。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_yunsheng",
+      "LineIndex": 2,
+      "Speaker": "Player",
+      "Text": "守关人说，没有剑符不得过门。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_yunsheng",
+      "LineIndex": 3,
+      "Speaker": "Npc",
+      "Text": "剑符只是一句话，门后的妖物可不会因此手下留情。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_yunsheng",
+      "LineIndex": 4,
+      "Speaker": "Player",
+      "Text": "那该如何应对？"
+    },
+    {
+      "DialogueId": "dlg_c1_01_yunsheng",
+      "LineIndex": 5,
+      "Speaker": "Npc",
+      "Text": "见红光便躲开，见金光便接招反击。血包、甲药随身带好。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_yunsheng",
+      "LineIndex": 6,
+      "Speaker": "Player",
+      "Text": "记下了，多谢。"
+    },
+    {
+      "DialogueId": "dlg_c1_01_yunsheng",
+      "LineIndex": 7,
+      "Speaker": "Npc",
+      "Text": "去吧，替我转告霜迟：这一位，我看过了。"
+    },
+    {
+      "DialogueId": "dlg_shuangchi_idle",
+      "LineIndex": 1,
+      "Speaker": "Npc",
+      "Text": "此门之后妖物横行，没准备就别靠近。"
+    },
+    {
+      "DialogueId": "dlg_shuangchi_idle",
+      "LineIndex": 2,
+      "Speaker": "Player",
+      "Text": "明白。"
+    },
+    {
+      "DialogueId": "dlg_yunsheng_idle",
+      "LineIndex": 1,
+      "Speaker": "Npc",
+      "Text": "药庐简陋，伤了便来。"
+    },
+    {
+      "DialogueId": "dlg_yunsheng_idle",
+      "LineIndex": 2,
+      "Speaker": "Player",
+      "Text": "多谢。"
     }
   ]
 }

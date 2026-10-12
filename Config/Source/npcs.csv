@@ -1,0 +1,3 @@
+﻿NpcId,DisplayName,Title,MapId,SortOrder,PresentationKey,IdleDialogueId,Description
+npc_shuangchi,沈霜迟,守关人,Map01,1,npc_combat_girl_katana,dlg_shuangchi_idle,镇守地图一传送门的守关人，持太刀。
+npc_yunsheng,陆云笙,药庐引路人,Map01,2,npc_combat_girl_sword,dlg_yunsheng_idle,林边药庐的引路人，持剑。

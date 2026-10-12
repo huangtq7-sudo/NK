@@ -1,0 +1,11 @@
+{
+  "name": "Game.Features.Dialogue.Model",
+  "rootNamespace": "Naraka.Features.Dialogue.Model",
+  "references": [],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

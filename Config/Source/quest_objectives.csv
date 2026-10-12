@@ -1,0 +1,2 @@
+﻿ObjectiveId,QuestId,Order,ObjectiveType,Description,TargetNpcId,TargetDialogueId,TargetCount,MinCompletionSeconds,IsActive
+main_c1_01_o1,main_c1_01,1,Talk,前往林边药庐，与陆云笙交谈。,npc_yunsheng,dlg_c1_01_yunsheng,1,3,1

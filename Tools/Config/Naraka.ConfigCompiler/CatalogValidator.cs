@@ -53,6 +53,7 @@ public static class CatalogValidator
         ValidateHeroes(catalog, diagnostics);
         ValidateMonsters(catalog, diagnostics);
         ValidateMonsterSkills(catalog, monsters, diagnostics);
+        QuestContentValidator.Validate(catalog, currencies, items, diagnostics);
     }
 
     /// <summary>已确认的体力上限。见 D-013 与 ADR-0013。</summary>

@@ -1037,6 +1037,88 @@ public sealed class LegacyExpeditionDeath
 }
 
 [ProtoContract]
+public sealed class LegacyMsgQuestRequest : LegacyMessage
+{
+    public LegacyMsgQuestRequest() => ProtocolType = LegacyProtocolValue.MsgQuestRequest;
+
+    [ProtoMember(1)]
+    public override LegacyProtocolValue ProtocolType { get; set; }
+
+    [ProtoMember(2)] public string? RequestId { get; set; }
+    [ProtoMember(3)] public LegacyQuestOperation Operation { get; set; }
+    [ProtoMember(4)] public string? QuestId { get; set; }
+
+    /// <summary>Required only for CompleteDialogue.</summary>
+    [ProtoMember(5)] public string? ObjectiveId { get; set; }
+
+    /// <summary>The dialogue the player finished. The server checks it belongs to the requested step.</summary>
+    [ProtoMember(6)] public string? DialogueId { get; set; }
+}
+
+/// <summary>
+/// P4.1 quest response. The request contract deliberately has no account, reward, quantity or
+/// experience field: everything granted comes from the server configuration.
+/// </summary>
+[ProtoContract]
+public sealed class LegacyMsgQuestResponse : LegacyMessage
+{
+    public LegacyMsgQuestResponse() => ProtocolType = LegacyProtocolValue.MsgQuestResponse;
+
+    [ProtoMember(1)]
+    public override LegacyProtocolValue ProtocolType { get; set; }
+
+    [ProtoMember(2)] public string? RequestId { get; set; }
+    [ProtoMember(3)] public LegacyQuestOperation Operation { get; set; }
+    [ProtoMember(4)] public LegacyLobbyOperationStatus Status { get; set; }
+    [ProtoMember(5)] public bool IsReplay { get; set; }
+    [ProtoMember(6)] public LegacyQuestJournal? Journal { get; set; }
+    [ProtoMember(7)] public LegacyQuestClaim? Claim { get; set; }
+}
+
+[ProtoContract]
+public sealed class LegacyQuestJournal
+{
+    [ProtoMember(1)] public List<LegacyQuestEntry> Quests { get; } = new();
+    [ProtoMember(2)] public List<string> AvailableQuestIds { get; } = new();
+    [ProtoMember(3)] public long AccountXp { get; set; }
+    [ProtoMember(4)] public int AccountLevel { get; set; }
+}
+
+[ProtoContract]
+public sealed class LegacyQuestEntry
+{
+    [ProtoMember(1)] public string? QuestId { get; set; }
+    [ProtoMember(2)] public LegacyQuestStatus Status { get; set; }
+    [ProtoMember(3)] public List<LegacyQuestObjective> Objectives { get; } = new();
+}
+
+[ProtoContract]
+public sealed class LegacyQuestObjective
+{
+    [ProtoMember(1)] public string? ObjectiveId { get; set; }
+    [ProtoMember(2)] public int Progress { get; set; }
+    [ProtoMember(3)] public int TargetCount { get; set; }
+    [ProtoMember(4)] public bool IsCompleted { get; set; }
+}
+
+[ProtoContract]
+public sealed class LegacyQuestClaim
+{
+    [ProtoMember(1)] public string? QuestId { get; set; }
+    [ProtoMember(2)] public List<LegacyQuestReward> Rewards { get; } = new();
+    [ProtoMember(3)] public long AccountXpAfter { get; set; }
+}
+
+[ProtoContract]
+public sealed class LegacyQuestReward
+{
+    /// <summary>AccountXp, Item or Currency.</summary>
+    [ProtoMember(1)] public string? Kind { get; set; }
+    [ProtoMember(2)] public string? RewardId { get; set; }
+    [ProtoMember(3)] public long Amount { get; set; }
+}
+
+[ProtoContract]
 public sealed class LegacyExpeditionSettlement
 {
     [ProtoMember(1)] public string? ExpeditionId { get; set; }

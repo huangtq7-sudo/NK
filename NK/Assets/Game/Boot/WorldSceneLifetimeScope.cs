@@ -1,6 +1,10 @@
 using Naraka.Features.Combat.View;
 using Naraka.Features.CombatHud.View;
+using Naraka.Features.Dialogue.Controller;
+using Naraka.Features.Dialogue.View;
 using Naraka.Features.Monster.View;
+using Naraka.Features.Quest.Controller;
+using Naraka.Features.Quest.View;
 using Naraka.Features.World.View;
 using UnityEngine;
 using VContainer;
@@ -38,6 +42,33 @@ namespace Naraka.Boot
             {
                 builder.RegisterComponentInHierarchy<CombatHudView>();
             }
+
+            RegisterQuestInteraction(builder);
+        }
+
+        /// <summary>
+        /// P4.1 NPC 交互与底部对话。控制器随地图场景创建与释放：卸载时取消对话、归还角色输入，
+        /// 不在持久根上留下任何场景引用。对话框、提示、追踪栏、领取面板与 NPC 范围都由用户手工挂载，
+        /// 缺哪个就少哪个功能，不影响地图加载；没有对话框时不会开始任何对话。
+        /// </summary>
+        private static void RegisterQuestInteraction(IContainerBuilder builder)
+        {
+            builder.Register<PlayerGameplayInputLock>(Lifetime.Singleton)
+                .AsSelf()
+                .As<IGameplayInputLock>();
+            builder.Register<DialogueController>(Lifetime.Singleton)
+                .AsSelf()
+                .As<IDialogueController>();
+            builder.Register<NpcInteractionController>(Lifetime.Singleton)
+                .AsSelf()
+                .As<INpcInteractionController>();
+            builder.RegisterEntryPoint<QuestWorldEntryPoint>();
+
+            InjectAll(builder, FindObjectsOfType<NpcInteractionVolume>(true));
+            InjectAll(builder, FindObjectsOfType<DialogueBoxView>(true));
+            InjectAll(builder, FindObjectsOfType<InteractPromptView>(true));
+            InjectAll(builder, FindObjectsOfType<QuestTrackerView>(true));
+            InjectAll(builder, FindObjectsOfType<QuestRewardPanelView>(true));
         }
 
         private static void InjectAll<T>(IContainerBuilder builder, T[] components)

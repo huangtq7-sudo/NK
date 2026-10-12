@@ -37,7 +37,10 @@
     "Game.Features.Monster.Controller",
     "Game.Features.Monster.View",
     "Game.Features.CombatHud.Controller",
-    "Game.Features.CombatHud.View"
+    "Game.Features.CombatHud.View",
+    "Game.Features.Dialogue.View",
+    "Game.Features.Quest.View",
+    "UnityEngine.UI"
   ],
   "includePlatforms": [
     "Editor"

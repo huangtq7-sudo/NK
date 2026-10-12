@@ -23,13 +23,14 @@ using Naraka.Features.SignIn.Controller;
 using Naraka.Features.Social.Controller;
 using Naraka.Features.Lobby.Controller;
 using Naraka.Features.Lobby.Model;
+using Naraka.Features.Quest.Controller;
 
 namespace Naraka.Infrastructure.Network
 {
     /// <summary>
     /// Client adapter for the frozen LegacyNetworkV1 wire. It never accesses Unity objects.
     /// </summary>
-    public sealed class LegacyNetworkAdapter :
+    public sealed partial class LegacyNetworkAdapter :
         INetworkFacade,
         IAccountGateway,
         ILobbyAccountGateway,
@@ -44,6 +45,7 @@ namespace Naraka.Infrastructure.Network
         IRedDotGateway,
         ISocialGateway,
         IExpeditionGateway,
+        IQuestGateway,
         IDisposable
     {
         public const string PublicHandshakeKey = "abc123";

@@ -223,6 +223,153 @@ public sealed class ConfigCompilerTests : IDisposable
         Assert.All(catalog.Currencies, currency => Assert.Equal(1000L, currency.StarterGrant));
     }
 
+    [Fact]
+    public void GeneratedCatalogCarriesTheQuestContent()
+    {
+        var catalog = ReadCatalog(ConfigBuild.Run(_paths, checkOnly: false).Emitted!.CatalogBytes);
+
+        Assert.Equal(2, catalog.Npcs.Length);
+        Assert.Contains(catalog.Quests, quest => quest.QuestId == "main_c1_01" && quest.IsActive);
+        Assert.All(
+            catalog.QuestObjectives.Where(objective => objective.IsActive),
+            objective => Assert.True(ConfigQuestObjectiveType.IsImplemented(objective.ObjectiveType)));
+        Assert.Equal(
+            Enumerable.Range(1, 6),
+            catalog.DialogueLines.Where(line => line.DialogueId == "dlg_c1_01_offer").Select(line => line.LineIndex));
+    }
+
+    [Fact]
+    public void DuplicateNpcIdIsRejected()
+    {
+        AppendRow("npcs.csv", "npc_shuangchi,重复,守关人,Map01,99,npc_combat_girl_katana,dlg_shuangchi_idle,重复 ID。");
+
+        AssertDiagnosticContains("npcs.csv", "NpcId 重复");
+    }
+
+    [Fact]
+    public void NpcOutsideTheTaskMapIsRejected()
+    {
+        ReplaceCell("npcs.csv", "npc_yunsheng", column: 3, value: "Map02");
+
+        AssertDiagnosticContains("npcs.csv", "MapId 'Map02' 非法");
+    }
+
+    [Fact]
+    public void QuestWithUnknownOfferDialogueIsRejected()
+    {
+        ReplaceCell("quests.csv", "main_c1_01", column: 8, value: "dlg_missing");
+
+        AssertDiagnosticContains("quests.csv", "OfferDialogueId 'dlg_missing' 不存在");
+    }
+
+    [Fact]
+    public void OfferDialogueOwnedByAnotherNpcIsRejected()
+    {
+        ReplaceCell("dialogues.csv", "dlg_c1_01_offer", column: 1, value: "npc_yunsheng");
+
+        AssertDiagnosticContains("quests.csv", "这里需要 'npc_shuangchi'");
+    }
+
+    [Fact]
+    public void PrerequisiteCycleIsRejected()
+    {
+        ReplaceCell("quests.csv", "main_c1_01", column: 12, value: "main_c1_02");
+        AppendRow(
+            "quests.csv",
+            "main_c1_02,Main,1,1020,入世·二,环。,npc_shuangchi,npc_shuangchi,dlg_c1_02_offer,,,dlg_c1_02_submit,main_c1_01,1,None,0,0");
+        AppendRow("quest_objectives.csv", "main_c1_02_o1,main_c1_02,1,Talk,环。,npc_yunsheng,dlg_c1_02_talk,1,0,1");
+        AppendRow("dialogues.csv", "dlg_c1_02_offer,npc_shuangchi,Offer,main_c1_02");
+        AppendRow("dialogues.csv", "dlg_c1_02_submit,npc_shuangchi,Submit,main_c1_02");
+        AppendRow("dialogues.csv", "dlg_c1_02_talk,npc_yunsheng,Objective,main_c1_02");
+        AppendRow("dialogue_lines.csv", "dlg_c1_02_offer,1,Npc,环。");
+        AppendRow("dialogue_lines.csv", "dlg_c1_02_submit,1,Npc,环。");
+        AppendRow("dialogue_lines.csv", "dlg_c1_02_talk,1,Npc,环。");
+
+        AssertDiagnosticContains("quests.csv", "前置任务成环");
+    }
+
+    [Fact]
+    public void DialogueLineGapIsRejected()
+    {
+        RemoveRow("dialogue_lines.csv", line => line.StartsWith("dlg_c1_01_offer,3,", StringComparison.Ordinal));
+
+        AssertDiagnosticContains("dialogue_lines.csv", "LineIndex 必须从 1 开始连续");
+    }
+
+    [Fact]
+    public void UnknownSpeakerIsRejected()
+    {
+        ReplaceCell("dialogue_lines.csv", "dlg_yunsheng_idle", column: 2, value: "Narrator");
+
+        AssertDiagnosticContains("dialogue_lines.csv", "Speaker 'Narrator' 非法");
+    }
+
+    [Fact]
+    public void RichTextMarkersInDialogueAreRejected()
+    {
+        ReplaceCell("dialogue_lines.csv", "dlg_yunsheng_idle", column: 3, value: "<b>药庐</b>");
+
+        AssertDiagnosticContains("dialogue_lines.csv", "尖括号");
+    }
+
+    [Fact]
+    public void ActiveObjectiveWithoutServerVerificationIsRejected()
+    {
+        // 战斗目标在可信战斗事实落地前不能启用：否则等于开放"客户端报击杀就推进"。
+        ReplaceCell("quest_objectives.csv", "main_c1_01_o1", column: 3, value: "Kill");
+
+        AssertDiagnosticContains("quest_objectives.csv", "还没有可信的服务端校验路径");
+    }
+
+    [Fact]
+    public void ActiveQuestWithInactiveObjectiveIsRejected()
+    {
+        ReplaceCell("quest_objectives.csv", "main_c1_01_o1", column: 9, value: "0");
+
+        AssertDiagnosticContains("quest_objectives.csv", "接取后将永远无法完成");
+    }
+
+    [Fact]
+    public void AccountXpRewardCannotCarryAnItem()
+    {
+        AppendRow("quest_rewards.csv", "main_c1_01,4,AccountXp,consumable_blood_pack,,10");
+
+        AssertDiagnosticContains("quest_rewards.csv", "不能同时填写物品或货币");
+    }
+
+    [Fact]
+    public void NonPositiveQuestRewardIsRejected()
+    {
+        AppendRow("quest_rewards.csv", "main_c1_01,4,Currency,,Silk,0");
+
+        AssertDiagnosticContains("quest_rewards.csv", "Amount 必须大于 0");
+    }
+
+    [Fact]
+    public void QuestXpBeyondTheLevelCapIsRejected()
+    {
+        ReplaceCell("quest_rewards.csv", "main_c1_01", column: 5, value: "23201");
+
+        AssertDiagnosticContains("quest_rewards.csv", "超过满级所需");
+    }
+
+    [Fact]
+    public void UnimplementedRepeatRuleIsRejected()
+    {
+        ReplaceCell("quests.csv", "main_c1_01", column: 14, value: "Daily");
+
+        AssertDiagnosticContains("quests.csv", "尚未实现");
+    }
+
+    [Fact]
+    public void OrphanQuestDialogueIsRejected()
+    {
+        AppendRow("dialogues.csv", "dlg_orphan,npc_yunsheng,InProgress,main_c1_01");
+        AppendRow("dialogue_lines.csv", "dlg_orphan,1,Npc,孤立。");
+
+        AssertDiagnosticContains("dialogues.csv", "没有被任何任务、目标或 NPC 引用");
+    }
+
     private static NarakaConfigCatalog ReadCatalog(byte[] bytes) =>
         System.Text.Json.JsonSerializer.Deserialize<NarakaConfigCatalog>(
             bytes,

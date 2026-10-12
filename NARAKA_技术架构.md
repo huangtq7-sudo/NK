@@ -152,6 +152,7 @@
 - NPC球型检测属于Unity边界，仅产出交互候选；范围内E交互、NPC/玩家依次说话，底部逐字对话框的揭示/继续意图交Controller。主线对话目标与大厅战斗任务分类隔离，不在View判任务完成或发奖。
 - 冷却、属性、背包和体力只有一个业务来源；逐字、透明度、武器淡变是表现计时，不能改变业务时间。地图/Tab/对话输入上下文统一仲裁，不暂停世界，不长持场景View。
 - 小地图渲染/更新频率、A*预算、宠物目标有效期、武器淡变仲裁等仍属待批准实施方案，不据本摘要宣称实现或测量通过。
+- P4.1实现：`Quest.Model/Controller`（`QuestController`在持久AppRoot，任务日志只来自服务端）、通用`Dialogue.Model/Controller/View`（揭示规则在`DialogueSession`，一次点击只做一件事）、地图Scope内的`NpcInteractionController`与`IGameplayInputLock`（对话/领取面板持有者锁角色输入，不改timeScale）。交互键为输入资产Player表中由用户添加的可选`Interact`动作。服务端信任边界见[ADR-0023](Docs/ADR/0023-quest-dialogue-authority.md)。
 
 ## 8. 网络边界
 
@@ -242,6 +243,7 @@ P1新增大厅业务按ADR-0007从适配边界扩展应用消息，不解冻Lega
 **不存在"实例物品"表**：按 ADR-0009，魂玉与护甲也按 `ItemId` 堆叠，所有仓库物品统一走堆叠数量模型。
 
 - 所有关键业务使用RequestId或OrderId幂等。
+- P4.1任务：迁移`0011`新增`account_quests`、`account_quest_objectives`、`account_xp_ledger`；领取在一个事务内写领取记录（`account_reward_claims`的Quest种类）、物品、货币流水、经验流水、大厅等级与幂等记录。应用消息67/68与能力`quest`见ADR-0023。
 - 货币余额和货币流水在同一个事务内保持守恒。经济操作把余额变动、库存变动、业务结果、货币流水与幂等结果**写在一起**，任一步失败全部回滚。
 - 初始货币不靠列默认值，而是一笔有记录、可审计、幂等的 StarterGrant 发放，由 `account_grants` 的主键保证每个账号只发一次，且是**累加而不是覆盖**。见 [ADR-0011](Docs/ADR/0011-starter-grant-and-currency-ledger.md)。
 - 好友关系**成对写入**（A→B 与 B→A 两行），接受申请、删除好友、屏蔽都在一个事务里完成全部相关行，因此不会出现单向好友。

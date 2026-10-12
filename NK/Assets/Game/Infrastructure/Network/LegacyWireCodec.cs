@@ -169,6 +169,8 @@ namespace Naraka.Infrastructure.Network
                     return typeof(LegacyMsgLobbyChatResponse);
                 case "MsgExpeditionResponse":
                     return typeof(LegacyMsgExpeditionResponse);
+                case "MsgQuestResponse":
+                    return typeof(LegacyMsgQuestResponse);
                 default: throw new InvalidDataException("Unsupported legacy inbound protocol: " + protocolName + ".");
             }
         }

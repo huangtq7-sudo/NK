@@ -23,6 +23,8 @@ using Naraka.Features.Loading.View;
 using Naraka.Features.Loadout.Controller;
 using Naraka.Features.Lobby.Controller;
 using Naraka.Features.Monster.Controller;
+using Naraka.Features.Quest.Controller;
+using Naraka.Features.Quest.Model;
 using Naraka.Features.RedDot.Controller;
 using Naraka.Features.Shop.Controller;
 using Naraka.Features.SignIn.Controller;
@@ -126,7 +128,8 @@ namespace Naraka.Boot
                 .As<IAchievementGateway>()
                 .As<IRedDotGateway>()
                 .As<ISocialGateway>()
-                .As<IExpeditionGateway>();
+                .As<IExpeditionGateway>()
+                .As<IQuestGateway>();
 
             // 会话、能力声明与远征快照同样跨场景存活。回到Bootstrap时只重建View和大厅控制器，
             // 不要求玩家重新输入密码，也不会丢失首次结算摘要。
@@ -139,6 +142,14 @@ namespace Naraka.Boot
             builder.Register<ExpeditionController>(Lifetime.Singleton)
                 .AsSelf()
                 .As<IExpeditionController>();
+
+            // P4.1 任务日志同样跨场景存活：从地图一进地图二、死亡回地图一都不需要重新拉取，
+            // 但状态只来自服务端响应。旧 Host 不声明 quest 能力时控制器不发送任何任务协议。
+            builder.Register<QuestModel>(Lifetime.Singleton);
+            builder.Register<IQuestRequestIdSource, GuidQuestRequestIdSource>(Lifetime.Singleton);
+            builder.Register<QuestController>(Lifetime.Singleton)
+                .AsSelf()
+                .As<IQuestController>();
 
             builder.Register<IGameClock, UnityGameClock>(Lifetime.Singleton);
             builder.Register<ISceneLoader, UnitySceneLoader>(Lifetime.Singleton);
@@ -196,12 +207,14 @@ namespace Naraka.Boot
             {
                 builder.RegisterInstance(inputProvider)
                     .AsSelf()
-                    .As<IPlayerInputSource>();
+                    .As<IPlayerInputSource>()
+                    .As<IInteractInputSource>();
             }
             else
             {
                 Debug.LogError(
                     "AppRootLifetimeScope 未绑定 NarakaPlayerInputProvider；玩家输入不可用。", this);
+                builder.Register<IInteractInputSource, NoInteractInputSource>(Lifetime.Singleton);
             }
 
             if (cameraRig != null)

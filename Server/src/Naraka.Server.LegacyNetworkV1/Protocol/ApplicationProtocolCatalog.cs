@@ -140,6 +140,14 @@ public static class ApplicationProtocolCatalog
 
     public const string ExpeditionResponse = "MsgExpeditionResponse";
 
+    /// <summary>
+    /// P4.1 client to server command for reading the quest journal, accepting, completing a dialogue
+    /// objective, submitting or claiming. Rewards are server configuration only and never on the wire.
+    /// </summary>
+    public const string QuestRequest = "MsgQuestRequest";
+
+    public const string QuestResponse = "MsgQuestResponse";
+
     /// <summary>Requests the client may send. Names, not numbers, travel on the wire.</summary>
     public static IReadOnlyDictionary<string, int> Inbound { get; } =
         new ReadOnlyDictionary<string, int>(new Dictionary<string, int>(StringComparer.Ordinal)
@@ -167,7 +175,8 @@ public static class ApplicationProtocolCatalog
             [LobbySocialSearchRequest] = 59,
             [LobbySocialActionRequest] = 61,
             [LobbyChatRequest] = 63,
-            [ExpeditionRequest] = 65
+            [ExpeditionRequest] = 65,
+            [QuestRequest] = 67
         });
 
     /// <summary>Responses the server may send.</summary>
@@ -197,7 +206,8 @@ public static class ApplicationProtocolCatalog
             [LobbySocialSearchResponse] = 60,
             [LobbySocialActionResponse] = 62,
             [LobbyChatResponse] = 64,
-            [ExpeditionResponse] = 66
+            [ExpeditionResponse] = 66,
+            [QuestResponse] = 68
         });
 
     public static bool TryGetInbound(string protocolName, out int protocolValue) =>

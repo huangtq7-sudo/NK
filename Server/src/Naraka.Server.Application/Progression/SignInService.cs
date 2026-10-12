@@ -61,6 +61,9 @@ public static class RewardClaimKind
     public const string SignInMilestone = "SignInMilestone";
     public const string AccountLevel = "AccountLevel";
     public const string Achievement = "Achievement";
+
+    /// <summary>任务奖励。键为任务实例键，主键保证同一实例只领一次。</summary>
+    public const string Quest = "Quest";
 }
 
 public sealed class ProgressionStorageException : Exception

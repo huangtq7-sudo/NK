@@ -17,7 +17,7 @@ namespace Naraka.Infrastructure.Config
     /// </summary>
     public sealed class StreamingAssetsGameConfigProvider : IGameConfigProvider
     {
-        public const string RequiredSchemaVersion = "1.1.0";
+        public const string RequiredSchemaVersion = "1.2.0";
         private const string RelativePath = "Config/naraka-config.json";
 
         public StreamingAssetsGameConfigProvider(string absolutePath = null)

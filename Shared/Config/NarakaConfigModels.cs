@@ -47,6 +47,12 @@ namespace Naraka.Config
         public PetConfig[] Pets = Array.Empty<PetConfig>();
         public MonsterConfig[] Monsters = Array.Empty<MonsterConfig>();
         public MonsterSkillConfig[] MonsterSkills = Array.Empty<MonsterSkillConfig>();
+        public NpcConfig[] Npcs = Array.Empty<NpcConfig>();
+        public QuestConfig[] Quests = Array.Empty<QuestConfig>();
+        public QuestObjectiveConfig[] QuestObjectives = Array.Empty<QuestObjectiveConfig>();
+        public QuestRewardConfig[] QuestRewards = Array.Empty<QuestRewardConfig>();
+        public DialogueConfig[] Dialogues = Array.Empty<DialogueConfig>();
+        public DialogueLineConfig[] DialogueLines = Array.Empty<DialogueLineConfig>();
     }
 
     /// <summary>物品品质。抽奖、商店与仓库共用同一套五档品质。</summary>
@@ -546,5 +552,262 @@ namespace Naraka.Config
         public float RecentUseSuppressionSeconds;
 
         public string Description = string.Empty;
+    }
+
+    /// <summary>可以放置 NPC 的业务地图。地图二是战斗区域，不放置任务 NPC。</summary>
+    public static class ConfigNpcMap
+    {
+        public const string Map01 = "Map01";
+
+        public static readonly string[] All = { Map01 };
+
+        public static bool IsDefined(string mapId) => Array.IndexOf(All, mapId) >= 0;
+    }
+
+    /// <summary>任务类型。主线同时只能进行 1 条，支线最多 5 条。</summary>
+    public static class ConfigQuestCategory
+    {
+        public const string Main = "Main";
+        public const string Side = "Side";
+        public const string Guide = "Guide";
+        public const string Bounty = "Bounty";
+
+        public static readonly string[] All = { Main, Side, Guide, Bounty };
+
+        public static bool IsDefined(string category) => Array.IndexOf(All, category) >= 0;
+    }
+
+    /// <summary>任务重复规则。重复悬赏的周期实例尚未实现，编译器拒绝 None 以外的值。</summary>
+    public static class ConfigQuestRepeatRule
+    {
+        public const string None = "None";
+        public const string Daily = "Daily";
+
+        public static readonly string[] All = { None, Daily };
+
+        /// <summary>服务端当前真正实现的重复规则。</summary>
+        public static readonly string[] Implemented = { None };
+
+        public static bool IsDefined(string rule) => Array.IndexOf(All, rule) >= 0;
+    }
+
+    /// <summary>
+    /// 任务目标类型，按玩法文档登记。登记不代表已有可信的生产链：
+    /// 只有 <see cref="Implemented"/> 里的类型允许在配置中启用。
+    /// </summary>
+    public static class ConfigQuestObjectiveType
+    {
+        public const string Talk = "Talk";
+        public const string Reach = "Reach";
+        public const string Interact = "Interact";
+        public const string Teleport = "Teleport";
+        public const string Kill = "Kill";
+        public const string Collect = "Collect";
+        public const string Break = "Break";
+        public const string Counter = "Counter";
+        public const string Execute = "Execute";
+        public const string Skill = "Skill";
+        public const string SwitchWeapon = "SwitchWeapon";
+        public const string ExpeditionSettle = "ExpeditionSettle";
+
+        public static readonly string[] All =
+        {
+            Talk, Reach, Interact, Teleport, Kill, Collect, Break, Counter, Execute, Skill, SwitchWeapon,
+            ExpeditionSettle
+        };
+
+        /// <summary>
+        /// 已有服务端校验路径的目标类型。战斗类目标要等可信战斗事实方案落地后才能加入，
+        /// 不能先开放"客户端报击杀就推进"的路径。
+        /// </summary>
+        public static readonly string[] Implemented = { Talk };
+
+        public static bool IsDefined(string type) => Array.IndexOf(All, type) >= 0;
+
+        public static bool IsImplemented(string type) => Array.IndexOf(Implemented, type) >= 0;
+
+        /// <summary>
+        /// 目标所属类别。主线对话目标属于 Dialogue，不计入大厅战斗任务；
+        /// 将来的战斗任务列表只统计 Combat 类别。
+        /// </summary>
+        public static string CategoryOf(string type)
+        {
+            switch (type)
+            {
+                case Talk:
+                    return ConfigQuestObjectiveCategory.Dialogue;
+                case Reach:
+                case Interact:
+                case Teleport:
+                    return ConfigQuestObjectiveCategory.Exploration;
+                case ExpeditionSettle:
+                    return ConfigQuestObjectiveCategory.Expedition;
+                default:
+                    return ConfigQuestObjectiveCategory.Combat;
+            }
+        }
+    }
+
+    /// <summary>任务目标类别。由目标类型唯一推导，不单独配置，因此不可能填错。</summary>
+    public static class ConfigQuestObjectiveCategory
+    {
+        public const string Dialogue = "Dialogue";
+        public const string Exploration = "Exploration";
+        public const string Combat = "Combat";
+        public const string Expedition = "Expedition";
+    }
+
+    /// <summary>任务奖励种类。账号经验只允许出现在任务奖励里。</summary>
+    public static class ConfigQuestRewardKind
+    {
+        public const string AccountXp = "AccountXp";
+        public const string Item = "Item";
+        public const string Currency = "Currency";
+
+        public static readonly string[] All = { AccountXp, Item, Currency };
+
+        public static bool IsDefined(string kind) => Array.IndexOf(All, kind) >= 0;
+    }
+
+    /// <summary>对话用途。客户端按任务状态选择对话，服务端按用途校验请求对应的对话。</summary>
+    public static class ConfigDialoguePurpose
+    {
+        /// <summary>接取对话：读到最后一句即请求接取。</summary>
+        public const string Offer = "Offer";
+
+        /// <summary>对话目标：读完即请求完成对应目标。</summary>
+        public const string Objective = "Objective";
+
+        /// <summary>任务进行中回到发放者处的提示，不推进任何状态。</summary>
+        public const string InProgress = "InProgress";
+
+        /// <summary>奖励待领取提示，结束后打开领取面板。</summary>
+        public const string RewardPending = "RewardPending";
+
+        /// <summary>提交对话：读完即请求提交。</summary>
+        public const string Submit = "Submit";
+
+        /// <summary>日常对白，不关联任务。</summary>
+        public const string Idle = "Idle";
+
+        public static readonly string[] All = { Offer, Objective, InProgress, RewardPending, Submit, Idle };
+
+        public static bool IsDefined(string purpose) => Array.IndexOf(All, purpose) >= 0;
+    }
+
+    /// <summary>对白说话人。NPC 与玩家按行序交替，不是随机对白。</summary>
+    public static class ConfigDialogueSpeaker
+    {
+        public const string Npc = "Npc";
+        public const string Player = "Player";
+
+        public static readonly string[] All = { Npc, Player };
+
+        public static bool IsDefined(string speaker) => Array.IndexOf(All, speaker) >= 0;
+    }
+
+    [Serializable]
+    public sealed class NpcConfig
+    {
+        public string NpcId = string.Empty;
+        public string DisplayName = string.Empty;
+        public string Title = string.Empty;
+
+        /// <summary>业务地图 Id，不是 Unity 场景名。</summary>
+        public string MapId = string.Empty;
+        public int SortOrder;
+
+        /// <summary>客户端表现资源键。只用于客户端映射模型，服务端不加载任何 Unity 资产。</summary>
+        public string PresentationKey = string.Empty;
+
+        /// <summary>没有任务内容时播放的日常对话。</summary>
+        public string IdleDialogueId = string.Empty;
+        public string Description = string.Empty;
+    }
+
+    [Serializable]
+    public sealed class QuestConfig
+    {
+        public string QuestId = string.Empty;
+        public string Category = string.Empty;
+        public int Chapter;
+        public int SortOrder;
+        public string DisplayName = string.Empty;
+        public string Summary = string.Empty;
+        public string GiverNpcId = string.Empty;
+        public string SubmitNpcId = string.Empty;
+        public string OfferDialogueId = string.Empty;
+
+        /// <summary>可选。任务进行中回到发放者处播放。</summary>
+        public string InProgressDialogueId = string.Empty;
+
+        /// <summary>可选。奖励待领取时在提交者处播放。</summary>
+        public string RewardPendingDialogueId = string.Empty;
+        public string SubmitDialogueId = string.Empty;
+
+        /// <summary>前置任务。为空表示没有前置；前置任务必须已领取奖励。</summary>
+        public string PrerequisiteQuestId = string.Empty;
+        public int MinAccountLevel;
+        public string RepeatRule = string.Empty;
+
+        /// <summary>全部目标完成后到提交之间的最短秒数，由服务端时间判定。</summary>
+        public float SubmitMinSeconds;
+
+        /// <summary>未启用的任务对服务端不可见：不可接取，也不会出现在可接取列表里。</summary>
+        public bool IsActive;
+    }
+
+    [Serializable]
+    public sealed class QuestObjectiveConfig
+    {
+        public string ObjectiveId = string.Empty;
+        public string QuestId = string.Empty;
+
+        /// <summary>目标顺序，从 1 连续。目标必须按顺序完成。</summary>
+        public int Order;
+        public string ObjectiveType = string.Empty;
+        public string Description = string.Empty;
+        public string TargetNpcId = string.Empty;
+        public string TargetDialogueId = string.Empty;
+        public int TargetCount;
+
+        /// <summary>该目标成为当前目标后到完成之间的最短秒数，由服务端时间判定。</summary>
+        public float MinCompletionSeconds;
+        public bool IsActive;
+    }
+
+    [Serializable]
+    public sealed class QuestRewardConfig
+    {
+        public string QuestId = string.Empty;
+        public int RewardIndex;
+        public string RewardKind = string.Empty;
+        public string ItemId = string.Empty;
+        public string CurrencyId = string.Empty;
+
+        /// <summary>数量。账号经验、物品数量或货币数量，由 RewardKind 决定含义。</summary>
+        public long Amount;
+    }
+
+    [Serializable]
+    public sealed class DialogueConfig
+    {
+        public string DialogueId = string.Empty;
+        public string NpcId = string.Empty;
+        public string Purpose = string.Empty;
+
+        /// <summary>关联任务。日常对话为空。</summary>
+        public string QuestId = string.Empty;
+    }
+
+    [Serializable]
+    public sealed class DialogueLineConfig
+    {
+        public string DialogueId = string.Empty;
+
+        /// <summary>行序，从 1 连续。</summary>
+        public int LineIndex;
+        public string Speaker = string.Empty;
+        public string Text = string.Empty;
     }
 }

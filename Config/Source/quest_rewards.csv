@@ -1,0 +1,4 @@
+﻿QuestId,RewardIndex,RewardKind,ItemId,CurrencyId,Amount
+main_c1_01,1,AccountXp,,,100
+main_c1_01,2,Currency,,Copper,300
+main_c1_01,3,Item,consumable_blood_pack,,2

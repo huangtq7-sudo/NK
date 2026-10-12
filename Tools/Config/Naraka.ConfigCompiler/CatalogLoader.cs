@@ -4,7 +4,7 @@ using Naraka.ConfigCompiler.Csv;
 namespace Naraka.ConfigCompiler;
 
 /// <summary>
-/// 把 20 张 CSV 源表读成一份 <see cref="NarakaConfigCatalog"/>。
+/// 把 26 张 CSV 源表读成一份 <see cref="NarakaConfigCatalog"/>。
 /// 这里只做逐行解析和逐行的形状校验；跨表引用与业务规则交给 <see cref="CatalogValidator"/>。
 /// </summary>
 public static class CatalogLoader
@@ -17,6 +17,8 @@ public static class CatalogLoader
         "avatar_frames.csv",
         "avatars.csv",
         "currencies.csv",
+        "dialogue_lines.csv",
+        "dialogues.csv",
         "forge_recipes.csv",
         "gacha_entries.csv",
         "gacha_pools.csv",
@@ -26,7 +28,11 @@ public static class CatalogLoader
         "items.csv",
         "monster_skills.csv",
         "monsters.csv",
+        "npcs.csv",
         "pets.csv",
+        "quest_objectives.csv",
+        "quest_rewards.csv",
+        "quests.csv",
         "shop_products.csv",
         "signin_milestones.csv",
         "signin_rewards.csv",
@@ -60,7 +66,13 @@ public static class CatalogLoader
             AvatarFrames = Read(sourceDirectory, "avatar_frames.csv", diagnostics, ReadAvatarFrame),
             Pets = Read(sourceDirectory, "pets.csv", diagnostics, ReadPet),
             Monsters = Read(sourceDirectory, "monsters.csv", diagnostics, ReadMonster),
-            MonsterSkills = Read(sourceDirectory, "monster_skills.csv", diagnostics, ReadMonsterSkill)
+            MonsterSkills = Read(sourceDirectory, "monster_skills.csv", diagnostics, ReadMonsterSkill),
+            Npcs = Read(sourceDirectory, "npcs.csv", diagnostics, ReadNpc),
+            Quests = Read(sourceDirectory, "quests.csv", diagnostics, ReadQuest),
+            QuestObjectives = Read(sourceDirectory, "quest_objectives.csv", diagnostics, ReadQuestObjective),
+            QuestRewards = Read(sourceDirectory, "quest_rewards.csv", diagnostics, ReadQuestReward),
+            Dialogues = Read(sourceDirectory, "dialogues.csv", diagnostics, ReadDialogue),
+            DialogueLines = Read(sourceDirectory, "dialogue_lines.csv", diagnostics, ReadDialogueLine)
         };
 
         Sort(catalog);
@@ -98,6 +110,22 @@ public static class CatalogLoader
         catalog.Pets = Order(catalog.Pets, value => value.PetId);
         catalog.Monsters = Order(catalog.Monsters, value => value.MonsterId);
         catalog.MonsterSkills = Order(catalog.MonsterSkills, value => value.SkillId);
+        catalog.Npcs = Order(catalog.Npcs, value => value.NpcId);
+        catalog.Quests = Order(catalog.Quests, value => value.QuestId);
+        catalog.QuestObjectives = catalog.QuestObjectives
+            .OrderBy(value => value.QuestId, StringComparer.Ordinal)
+            .ThenBy(value => value.Order)
+            .ThenBy(value => value.ObjectiveId, StringComparer.Ordinal)
+            .ToArray();
+        catalog.QuestRewards = catalog.QuestRewards
+            .OrderBy(value => value.QuestId, StringComparer.Ordinal)
+            .ThenBy(value => value.RewardIndex)
+            .ToArray();
+        catalog.Dialogues = Order(catalog.Dialogues, value => value.DialogueId);
+        catalog.DialogueLines = catalog.DialogueLines
+            .OrderBy(value => value.DialogueId, StringComparer.Ordinal)
+            .ThenBy(value => value.LineIndex)
+            .ToArray();
     }
 
     private static T[] Order<T>(T[] source, Func<T, string> key) =>
@@ -377,5 +405,78 @@ public static class CatalogLoader
         RecoverySeconds = row.GetSingle("RecoverySeconds", diagnostics),
         RecentUseSuppressionSeconds = row.GetSingle("RecentUseSuppressionSeconds", diagnostics),
         Description = row.GetString("Description", diagnostics)
+    };
+
+    private static NpcConfig ReadNpc(CsvRecord row, DiagnosticBag diagnostics) => new()
+    {
+        NpcId = row.GetRequiredString("NpcId", diagnostics),
+        DisplayName = row.GetRequiredString("DisplayName", diagnostics),
+        Title = row.GetString("Title", diagnostics),
+        MapId = row.GetRequiredString("MapId", diagnostics),
+        SortOrder = row.GetInt32("SortOrder", diagnostics),
+        PresentationKey = row.GetRequiredString("PresentationKey", diagnostics),
+        IdleDialogueId = row.GetRequiredString("IdleDialogueId", diagnostics),
+        Description = row.GetString("Description", diagnostics)
+    };
+
+    private static QuestConfig ReadQuest(CsvRecord row, DiagnosticBag diagnostics) => new()
+    {
+        QuestId = row.GetRequiredString("QuestId", diagnostics),
+        Category = row.GetRequiredString("Category", diagnostics),
+        Chapter = row.GetInt32("Chapter", diagnostics),
+        SortOrder = row.GetInt32("SortOrder", diagnostics),
+        DisplayName = row.GetRequiredString("DisplayName", diagnostics),
+        Summary = row.GetString("Summary", diagnostics),
+        GiverNpcId = row.GetRequiredString("GiverNpcId", diagnostics),
+        SubmitNpcId = row.GetRequiredString("SubmitNpcId", diagnostics),
+        OfferDialogueId = row.GetRequiredString("OfferDialogueId", diagnostics),
+        InProgressDialogueId = row.GetString("InProgressDialogueId", diagnostics),
+        RewardPendingDialogueId = row.GetString("RewardPendingDialogueId", diagnostics),
+        SubmitDialogueId = row.GetRequiredString("SubmitDialogueId", diagnostics),
+        PrerequisiteQuestId = row.GetString("PrerequisiteQuestId", diagnostics),
+        MinAccountLevel = row.GetInt32("MinAccountLevel", diagnostics),
+        RepeatRule = row.GetRequiredString("RepeatRule", diagnostics),
+        SubmitMinSeconds = row.GetSingle("SubmitMinSeconds", diagnostics),
+        IsActive = row.GetBoolean("IsActive", diagnostics)
+    };
+
+    private static QuestObjectiveConfig ReadQuestObjective(CsvRecord row, DiagnosticBag diagnostics) => new()
+    {
+        ObjectiveId = row.GetRequiredString("ObjectiveId", diagnostics),
+        QuestId = row.GetRequiredString("QuestId", diagnostics),
+        Order = row.GetInt32("Order", diagnostics),
+        ObjectiveType = row.GetRequiredString("ObjectiveType", diagnostics),
+        Description = row.GetString("Description", diagnostics),
+        TargetNpcId = row.GetString("TargetNpcId", diagnostics),
+        TargetDialogueId = row.GetString("TargetDialogueId", diagnostics),
+        TargetCount = row.GetInt32("TargetCount", diagnostics),
+        MinCompletionSeconds = row.GetSingle("MinCompletionSeconds", diagnostics),
+        IsActive = row.GetBoolean("IsActive", diagnostics)
+    };
+
+    private static QuestRewardConfig ReadQuestReward(CsvRecord row, DiagnosticBag diagnostics) => new()
+    {
+        QuestId = row.GetRequiredString("QuestId", diagnostics),
+        RewardIndex = row.GetInt32("RewardIndex", diagnostics),
+        RewardKind = row.GetRequiredString("RewardKind", diagnostics),
+        ItemId = row.GetString("ItemId", diagnostics),
+        CurrencyId = row.GetString("CurrencyId", diagnostics),
+        Amount = row.GetInt64("Amount", diagnostics)
+    };
+
+    private static DialogueConfig ReadDialogue(CsvRecord row, DiagnosticBag diagnostics) => new()
+    {
+        DialogueId = row.GetRequiredString("DialogueId", diagnostics),
+        NpcId = row.GetRequiredString("NpcId", diagnostics),
+        Purpose = row.GetRequiredString("Purpose", diagnostics),
+        QuestId = row.GetString("QuestId", diagnostics)
+    };
+
+    private static DialogueLineConfig ReadDialogueLine(CsvRecord row, DiagnosticBag diagnostics) => new()
+    {
+        DialogueId = row.GetRequiredString("DialogueId", diagnostics),
+        LineIndex = row.GetInt32("LineIndex", diagnostics),
+        Speaker = row.GetRequiredString("Speaker", diagnostics),
+        Text = row.GetRequiredString("Text", diagnostics)
     };
 }

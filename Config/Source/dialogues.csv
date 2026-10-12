@@ -1,0 +1,8 @@
+﻿DialogueId,NpcId,Purpose,QuestId
+dlg_c1_01_offer,npc_shuangchi,Offer,main_c1_01
+dlg_c1_01_yunsheng,npc_yunsheng,Objective,main_c1_01
+dlg_c1_01_inprogress,npc_shuangchi,InProgress,main_c1_01
+dlg_c1_01_pending,npc_shuangchi,RewardPending,main_c1_01
+dlg_c1_01_submit,npc_shuangchi,Submit,main_c1_01
+dlg_shuangchi_idle,npc_shuangchi,Idle,
+dlg_yunsheng_idle,npc_yunsheng,Idle,

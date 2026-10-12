@@ -80,3 +80,28 @@ active lookup, death, return, replay, disconnect settlement, and Host-shutdown p
 with a zero-warning Release build. A separate Host composition smoke returned HTTP 200 for live and
 Bootstrap and opened the isolated legacy listener. Readiness was intentionally not recorded as passed
 because port 3306 was occupied by an unrelated phpStudy MySQL instance; that process was left untouched.
+
+## P4.1 quests and dialogue objectives
+
+P4.1 adds the server-authoritative quest journal described in ADR-0023. The pure aggregate
+`Naraka.Server.Domain.Quests.QuestLog` owns the state chain, the one-main/five-side limits, ordered
+objectives and server-time minimum durations. `QuestService` validates every request against the
+generated configuration (quest, objective, dialogue ownership) and requires an active expedition for
+accept, dialogue objectives and submit. Claiming does not require an expedition and writes straight
+to the account: items, currencies with `currency_ledger` reason `QuestReward`, account experience
+with the new `account_xp_ledger`, the lobby `account_level`, the `account_reward_claims` row keyed by
+the quest instance and the `idempotency_records` replay row commit in one transaction.
+
+The application pair `MsgQuestRequest=67` and `MsgQuestResponse=68` is appended after 65/66 and the
+Host advertises the `quest` capability. Requests carry intent only and never an account, reward,
+quantity or experience. Dialogue objectives are client-attested and server-checked for order,
+ownership, expedition and minimum time; combat objectives stay disabled by the configuration
+compiler until ADR-0024 is approved and implemented.
+
+Migration `0011_p4_quests.sql` is additive (3 tables, 36 in total). `Naraka.Server.QuestSmoke`
+creates and removes its own `p4_` account to verify the chain, concurrent claims, replay and ledgers
+against a reachable development database:
+
+```powershell
+dotnet run --project Server/tools/Naraka.Server.QuestSmoke
+```

@@ -67,7 +67,32 @@ namespace Naraka.Infrastructure.Network
         MsgLobbyChatRequest = 63,
         MsgLobbyChatResponse = 64,
         MsgExpeditionRequest = 65,
-        MsgExpeditionResponse = 66
+        MsgExpeditionResponse = 66,
+        MsgQuestRequest = 67,
+        MsgQuestResponse = 68
+    }
+
+    /// <summary>与服务端 LegacyQuestOperation 数值一一对应。只能追加。</summary>
+    internal enum LegacyQuestOperation
+    {
+        None = 0,
+        GetJournal = 1,
+        Accept = 2,
+        CompleteDialogue = 3,
+        Submit = 4,
+        Claim = 5
+    }
+
+    /// <summary>与服务端 LegacyQuestStatus 数值一一对应。只能追加。</summary>
+    internal enum LegacyQuestStatus
+    {
+        Locked = 0,
+        Available = 1,
+        Accepted = 2,
+        InProgress = 3,
+        ReadyToSubmit = 4,
+        RewardPending = 5,
+        Claimed = 6
     }
 
     /// <summary>与服务端 LegacySocialAction 数值一一对应。</summary>

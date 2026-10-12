@@ -73,7 +73,34 @@ public enum LegacyProtocolValue
 
     // P3 application adapter. The audited P0 transport and its 0-18 values remain untouched.
     MsgExpeditionRequest = 65,
-    MsgExpeditionResponse = 66
+    MsgExpeditionResponse = 66,
+
+    // P4.1 quest application adapter. Same append-only rule as 19-66.
+    MsgQuestRequest = 67,
+    MsgQuestResponse = 68
+}
+
+/// <summary>P4.1 quest operations. Values are append-only wire contracts.</summary>
+public enum LegacyQuestOperation
+{
+    None = 0,
+    GetJournal = 1,
+    Accept = 2,
+    CompleteDialogue = 3,
+    Submit = 4,
+    Claim = 5
+}
+
+/// <summary>Wire mirror of <c>Naraka.Server.Domain.Quests.QuestStatus</c>. Append only.</summary>
+public enum LegacyQuestStatus
+{
+    Locked = 0,
+    Available = 1,
+    Accepted = 2,
+    InProgress = 3,
+    ReadyToSubmit = 4,
+    RewardPending = 5,
+    Claimed = 6
 }
 
 /// <summary>P3 expedition operations. Values are append-only wire contracts.</summary>

@@ -1,8 +1,8 @@
 {
-  "SchemaVersion": "1.1.0",
-  "ConfigVersion": "p1-config-45539ed9c3ac",
-  "ContentSha256": "45539ed9c3aca2e42224310f7142d83c7d47add71bb1c3386a73495e2f5e3f93",
-  "CatalogSha256": "ca84cff628a612edb7861e56daa38292a9b71fbfbadc634ecd3a8661f3932ce6",
+  "SchemaVersion": "1.2.0",
+  "ConfigVersion": "p1-config-64133aeb886f",
+  "ContentSha256": "64133aeb886f2e7615f682934c1a76c7af840cd905282469fda9434b01c48dd8",
+  "CatalogSha256": "569560378d5f6c7585eb1b34ff2cf98434c692c6583a3ed6f80ed3c907db992a",
   "Generator": "Naraka.ConfigCompiler",
   "Sources": [
     {
@@ -24,6 +24,14 @@
     {
       "FileName": "currencies.csv",
       "Sha256": "4b579bcdeaed07c266f6d8d450f91f9e8c2f7a857a27e4e33b6b4128ad4dc020"
+    },
+    {
+      "FileName": "dialogue_lines.csv",
+      "Sha256": "362c98a726355c24caa1c56d61639ce8bfc297b565815b30820a94e94c8b6725"
+    },
+    {
+      "FileName": "dialogues.csv",
+      "Sha256": "9352bfee26f8abae559bed1db29b98bc35d6d11574fe59a507d360d73636f8db"
     },
     {
       "FileName": "forge_recipes.csv",
@@ -62,8 +70,24 @@
       "Sha256": "19468c9de3128048f54c47e7d43500e35ec798f30fd450d0dbb2c16ad9c8071b"
     },
     {
+      "FileName": "npcs.csv",
+      "Sha256": "ef987c486d95c2962cb917ea0a172bd650885343f8b4a5adaa4b2126c12118a5"
+    },
+    {
       "FileName": "pets.csv",
       "Sha256": "e5531464401f96ae011bec4473961f1c23ff486ff73b8c7abff69a837f2782c0"
+    },
+    {
+      "FileName": "quest_objectives.csv",
+      "Sha256": "23a3db94bb0ccc4e1cda31d7ded8946fce899486b4d974847d9c51d9ae438506"
+    },
+    {
+      "FileName": "quest_rewards.csv",
+      "Sha256": "bf4f26ce6b3d59df9d606cda63d2b3d86ceb55c7fe99b0e4d4f5d14a2c9947e2"
+    },
+    {
+      "FileName": "quests.csv",
+      "Sha256": "431ca58816c2281cca909c8f458069fd162efdc0cb5f5e51316292b9b419cbe6"
     },
     {
       "FileName": "shop_products.csv",

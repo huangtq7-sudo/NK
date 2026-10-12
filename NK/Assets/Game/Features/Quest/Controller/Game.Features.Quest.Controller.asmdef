@@ -1,0 +1,22 @@
+{
+  "name": "Game.Features.Quest.Controller",
+  "rootNamespace": "Naraka.Features.Quest.Controller",
+  "references": [
+    "Game.Core.Application",
+    "Game.Core.Domain",
+    "Game.Features.Account.Model",
+    "Game.Features.Character.Controller",
+    "Game.Features.Character.Model",
+    "Game.Features.Dialogue.Controller",
+    "Game.Features.Dialogue.Model",
+    "Game.Features.Quest.Model",
+    "Game.Generated.Config",
+    "UniTask"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

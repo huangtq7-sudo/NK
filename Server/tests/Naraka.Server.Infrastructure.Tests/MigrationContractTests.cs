@@ -667,6 +667,93 @@ public sealed class ExpeditionMigrationContractTests
     }
 }
 
+public sealed class QuestMigrationContractTests
+{
+    private static readonly string Migration = File.ReadAllText(
+        Path.Combine(AppContext.BaseDirectory, "Migrations", "0011_p4_quests.sql"));
+
+    private static readonly string ExecutableSql = string.Join(
+        '\n',
+        Migration.Split('\n').Where(line => !line.TrimStart().StartsWith("--", StringComparison.Ordinal)));
+
+    [Fact]
+    public void MigrationIsAdditiveRepeatableAndMySql57Compatible()
+    {
+        Assert.DoesNotContain("DROP ", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("TRUNCATE", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ALTER TABLE", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("UPDATE account", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CHECK (", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("IF NOT EXISTS (", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ON DUPLICATE KEY UPDATE", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void CommentsContainNoSemicolonThatWouldSplitAStatement()
+    {
+        foreach (var line in Migration.Split('\n').Where(line => line.TrimStart().StartsWith("--", StringComparison.Ordinal)))
+        {
+            Assert.DoesNotContain(";", line, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void MigrationCreatesTheQuestStorageSet()
+    {
+        foreach (var table in new[] { "account_quests", "account_quest_objectives", "account_xp_ledger" })
+        {
+            Assert.Contains(
+                "CREATE TABLE IF NOT EXISTS " + table, ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void OneInstancePerQuestKeyAndOneExperienceGrantPerReference()
+    {
+        Assert.Contains(
+            "PRIMARY KEY (account_id, quest_instance_key)", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "PRIMARY KEY (account_id, quest_instance_key, objective_id)",
+            ExecutableSql,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "UNIQUE KEY uq_account_xp_ledger_reference (account_id, source, reference_id)",
+            ExecutableSql,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("delta BIGINT UNSIGNED NOT NULL", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("progress INT UNSIGNED NOT NULL", ExecutableSql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void MigrationRecordsOnlyItsOwnVersionAndHasFourStatements()
+    {
+        Assert.Contains("'0011'", ExecutableSql, StringComparison.Ordinal);
+        Assert.DoesNotContain("'0010'", ExecutableSql, StringComparison.Ordinal);
+
+        var statements = Migration
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(statement => !string.IsNullOrWhiteSpace(statement))
+            .ToArray();
+
+        Assert.Equal(4, statements.Length);
+    }
+
+    [Fact]
+    public void P3DeployedMigrationKeepsItsAcceptedHash()
+    {
+        // 0011 只能追加：0010 已部署到 P3 云端，任何改动都会让云端与本地迁移漂移。
+        var bytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Migrations", "0010_p3_expeditions.sql"));
+        var text = System.Text.Encoding.UTF8.GetString(bytes)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace("\r", "\n", StringComparison.Ordinal);
+        var hash = Convert
+            .ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)))
+            .ToLowerInvariant();
+
+        Assert.Equal("507e1a57d1189a341a9f9fc7789569abd307dceecb54bac9e329da42a5517071", hash);
+    }
+}
+
 /// <summary>
 /// 迁移器最终验收必须覆盖全部迁移实际创建的表和版本记录。
 /// 这项源码契约防止“迁移已经成功，但遗漏清单导致部署被误判失败”的回归。
@@ -677,7 +764,7 @@ public sealed class DatabaseMigratorVerificationContractTests
         Path.Combine(AppContext.BaseDirectory, "MigratorSource", "Program.cs"));
 
     [Fact]
-    public void FinalVerificationIncludesAllThirtyThreeTables()
+    public void FinalVerificationIncludesAllThirtySixTables()
     {
         foreach (var table in new[]
                  {
@@ -690,23 +777,24 @@ public sealed class DatabaseMigratorVerificationContractTests
                      "account_friends", "account_friend_requests", "account_blocks",
                      "chat_conversations", "chat_messages", "chat_read_positions",
                      "expeditions", "expedition_assets", "expedition_events", "expedition_settlements",
-                     "expedition_settlement_assets", "account_mail_items"
+                     "expedition_settlement_assets", "account_mail_items",
+                     "account_quests", "account_quest_objectives", "account_xp_ledger"
                  })
         {
             Assert.Contains("'" + table + "'", MigratorSource, StringComparison.Ordinal);
         }
 
-        Assert.Contains("tableCount != 33", MigratorSource, StringComparison.Ordinal);
+        Assert.Contains("tableCount != 36", MigratorSource, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void FinalVerificationRequiresAllTenMigrationVersions()
+    public void FinalVerificationRequiresAllElevenMigrationVersions()
     {
-        for (var version = 1; version <= 10; version++)
+        for (var version = 1; version <= 11; version++)
         {
             Assert.Contains($"'{version:0000}'", MigratorSource, StringComparison.Ordinal);
         }
 
-        Assert.Contains("versionCount != 10", MigratorSource, StringComparison.Ordinal);
+        Assert.Contains("versionCount != 11", MigratorSource, StringComparison.Ordinal);
     }
 }

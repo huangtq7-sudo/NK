@@ -30,7 +30,7 @@ public sealed class GameConfig
     /// 服务端要求的配置结构版本。与 <c>Naraka.ConfigCompiler</c> 的 SchemaVersion 必须一致，
     /// 由测试断言，因此结构升级时不可能只改一边。
     /// </summary>
-    public const string RequiredSchemaVersion = "1.1.0";
+    public const string RequiredSchemaVersion = "1.2.0";
 
     private static readonly JsonSerializerOptions DeserializerOptions = new()
     {
@@ -54,6 +54,11 @@ public sealed class GameConfig
     private readonly Dictionary<string, AvatarConfig> _avatars;
     private readonly Dictionary<string, AvatarFrameConfig> _avatarFrames;
     private readonly Dictionary<string, PetConfig> _pets;
+    private readonly Dictionary<string, NpcConfig> _npcs;
+    private readonly Dictionary<string, QuestConfig> _quests;
+    private readonly Dictionary<string, DialogueConfig> _dialogues;
+    private readonly Dictionary<string, QuestObjectiveConfig[]> _objectivesByQuest;
+    private readonly Dictionary<string, QuestRewardConfig[]> _rewardsByQuest;
 
     private GameConfig(NarakaConfigCatalog catalog, string catalogSha256)
     {
@@ -80,6 +85,22 @@ public sealed class GameConfig
         _avatars = Index(catalog.Avatars, value => value.AvatarId);
         _avatarFrames = Index(catalog.AvatarFrames, value => value.AvatarFrameId);
         _pets = Index(catalog.Pets, value => value.PetId);
+        _npcs = Index(catalog.Npcs, value => value.NpcId);
+        _quests = Index(catalog.Quests, value => value.QuestId);
+        _dialogues = Index(catalog.Dialogues, value => value.DialogueId);
+        _objectivesByQuest = catalog.QuestObjectives
+            .GroupBy(objective => objective.QuestId, StringComparer.Ordinal)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderBy(objective => objective.Order).ToArray(),
+                StringComparer.Ordinal);
+        _rewardsByQuest = catalog.QuestRewards
+            .GroupBy(reward => reward.QuestId, StringComparer.Ordinal)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderBy(reward => reward.RewardIndex).ToArray(),
+                StringComparer.Ordinal);
+        QuestsInDisplayOrder = catalog.Quests.OrderBy(quest => quest.SortOrder).ToArray();
 
         HeroesInDisplayOrder = catalog.Heroes.OrderBy(hero => hero.SortOrder).ToArray();
         WeaponsInDisplayOrder = catalog.Weapons.OrderBy(weapon => weapon.SortOrder).ToArray();
@@ -123,6 +144,11 @@ public sealed class GameConfig
     public IReadOnlyList<AchievementConfig> Achievements { get; }
 
     public IReadOnlyList<ShopProductConfig> ShopProductsInDisplayOrder { get; }
+
+    public IReadOnlyList<QuestConfig> QuestsInDisplayOrder { get; }
+
+    /// <summary>满级所需的累计账号经验。任务经验累加到这里为止。</summary>
+    public long MaximumAccountXp => AccountLevelRewards[^1].XpToReach;
 
     /// <summary>新账号的默认出战英雄。稳定 HeroId，绝不依赖列表下标。</summary>
     public string DefaultHeroId => HeroesInDisplayOrder[0].HeroId;
@@ -276,6 +302,27 @@ public sealed class GameConfig
 
     public bool TryGetPet(string petId, out PetConfig? pet) =>
         _pets.TryGetValue(petId ?? string.Empty, out pet);
+
+    public bool TryGetNpc(string npcId, out NpcConfig? npc) =>
+        _npcs.TryGetValue(npcId ?? string.Empty, out npc);
+
+    public bool TryGetQuest(string questId, out QuestConfig? quest) =>
+        _quests.TryGetValue(questId ?? string.Empty, out quest);
+
+    public bool TryGetDialogue(string dialogueId, out DialogueConfig? dialogue) =>
+        _dialogues.TryGetValue(dialogueId ?? string.Empty, out dialogue);
+
+    /// <summary>任务目标，按 Order 排序。</summary>
+    public IReadOnlyList<QuestObjectiveConfig> GetQuestObjectives(string questId) =>
+        _objectivesByQuest.TryGetValue(questId ?? string.Empty, out var objectives)
+            ? objectives
+            : Array.Empty<QuestObjectiveConfig>();
+
+    /// <summary>任务奖励，按 RewardIndex 排序。</summary>
+    public IReadOnlyList<QuestRewardConfig> GetQuestRewards(string questId) =>
+        _rewardsByQuest.TryGetValue(questId ?? string.Empty, out var rewards)
+            ? rewards
+            : Array.Empty<QuestRewardConfig>();
 
     /// <summary>档位对应的仓库容量。档位越界时回退到最近的合法档位，绝不返回 0 让仓库变成不可用。</summary>
     public int GetInventoryCapacity(int tier)
